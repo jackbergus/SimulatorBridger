@@ -120,7 +120,7 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 		for(Flow flow : this.flowList){
 			boolean isCompleted = flow.updateTransmission();						
 			if(isCompleted){
-				finshedFlows.add(flow);				
+				finshedFlows.add(flow);
 			}			
 		}
 		

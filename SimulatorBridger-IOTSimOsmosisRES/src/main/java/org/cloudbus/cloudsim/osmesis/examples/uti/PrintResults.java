@@ -17,6 +17,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.cloudsim.sdn.SDNHost;
@@ -127,13 +128,30 @@ public class PrintResults {
 		overallAppResults = new ArrayList<>();
 		TreeMap<Double, HashMultimap<String, String>> tm = new TreeMap<>();
 		List<WorkflowInfo> tags = new ArrayList<>();
+		Multimap<Integer, OsmoticAppDescription> leftTable = HashMultimap.create();
+		Multimap<Integer, WorkflowInfo> rightTable = HashMultimap.create();
+		Set<Integer> allIds = new HashSet<>();
+
 		for(OsmoticAppDescription app : appList){
-			for(WorkflowInfo workflowTag : OsmoticBroker.workflowTag){
-				if(app.getAppID() == workflowTag.getAppId()){
-					tags.add(workflowTag);
-				}
+			leftTable.put(app.getAppID(), app);
+			allIds.add(app.getAppID());
+		}
+		for(WorkflowInfo app : OsmoticBroker.workflowTag){
+			rightTable.put(app.getAppId(), app);
+		}
+		allIds.retainAll(OsmoticBroker.workflowTag.stream().map(x->x.getAppId()).collect(Collectors.toSet()));
+
+		for(Integer appId : allIds){
+			tags.clear();
+			for(WorkflowInfo workflowTag : rightTable.get(appId)){
+				tags.add(workflowTag);
 			}
 			tags.forEach(x -> this.generateAppTag(x, osmoticAppsStats, osmoticBroker, tm));
+			if (!tags.isEmpty()) {
+				for (var x : leftTable.get(appId)) {
+					printAppStat(x, tags, overallAppResults);
+				}
+			}
 			tags.clear();
 		}
 
@@ -152,17 +170,17 @@ public class PrintResults {
 						}))
 				.collect(Collectors.toList());
 
-		for(OsmoticAppDescription app : appList){
-			for(WorkflowInfo workflowTag : OsmoticBroker.workflowTag){
-				workflowTag.getAppId();
-				if(app.getAppID() == workflowTag.getAppId()){
-					tags.add(workflowTag);
-				}
-			}
-			if (!tags.isEmpty())
-				printAppStat(app, tags, overallAppResults);
-			tags.clear();
-		}
+//		for(OsmoticAppDescription app : appList){
+//			for(WorkflowInfo workflowTag : OsmoticBroker.workflowTag){
+//				workflowTag.getAppId();
+//				if(app.getAppID() == workflowTag.getAppId()){
+//					tags.add(workflowTag);
+//				}
+//			}
+//			if (!tags.isEmpty())
+//				printAppStat(app, tags, overallAppResults);
+//			tags.clear();
+//		}
 		this.appList = appList;
 	}
 

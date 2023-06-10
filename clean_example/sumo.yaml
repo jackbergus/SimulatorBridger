@@ -1,8 +1,8 @@
 
 trace_file: "clean_example/1_sumo_output/sumo_trace_TAVF.xml"
 logger_file: "clean_example/1_sumo_output/sumo_log.txt"
-sumo_program: "sumo"                                                                            # The path via which run the program, OS dependant!
-sumo_configuration_file_path: "/home/giacomo/Scrivania/Bologna/run_simulation.sumocfg"     # The path where the SUMO simulation is run.
+sumo_program: "C:/Program Files (x86)/Eclipse/Sumo/bin/sumo.exe"                                                                        # The path via which run the program, OS dependant!
+sumo_configuration_file_path: "C:/Users/rohin/Sumo/Bologna-Reham/run.sumocfg"    # The path where the SUMO simulation is run.   # The path where the SUMO simulation is run.
 default_rsu_communication_radius: 100.0
 default_max_vehicle_communication:  15
 generateRSUAdjacencyList: "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_orchestrator.TopKConnections"

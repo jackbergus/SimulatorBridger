@@ -16,10 +16,14 @@ import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 
+import com.sun.tools.javac.Main;
+import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.core.predicates.PredicateType;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 import org.cloudbus.cloudsim.sdn.Channel;
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
@@ -159,7 +163,21 @@ public class OsmosisOrchestrator extends SimEntity {
 	
 	protected void removeCompletedFlows(Flow flow ){				
 		flow.setFinishTime(MainEventManager.clock());
+		String curMEl = flow.getWorkflowTag().getSourceDCName();
+		OsmoticBroker.activePerSource.put(curMEl, OsmoticBroker.activePerSource.get(curMEl) - 1);
 		sendNow(OsmoticBroker.brokerID, OsmoticTags.Transmission_SDWAN_ACK, flow);
+		if(OsmoticBroker.getQueueSize() != 0 && OsmoticBroker.getEventHashMapSize() == 0) {
+			SimEvent ev1 = OsmoticBroker.getQueue().first();
+			OsmoticBroker.getQueue().remove(ev1);
+			Cloudlet cl = (Cloudlet) ev1.getData();
+			sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
+		}
+		if(OsmoticBroker.getEventHashMapSize() != 0) {
+			SimEvent ev2 = OsmoticBroker.getEventHashMap().entrySet().iterator().next().getKey();
+			OsmoticBroker.getEventHashMap().remove(ev2, ((EdgeLet) ev2.getData()).getWorkflowTag().getSourceDCName());
+			Cloudlet cl = (Cloudlet) ev2.getData();
+			sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
+		}
 	}
 	
 	private Channel removeChannel(String key) {

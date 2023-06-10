@@ -58,9 +58,32 @@ public class OsmoticBroker extends DatacenterBroker {
 	public Map<String, IoTDevice> getDevices() {
 		return iotDeviceNameToObject;
 	}
-
+	protected static int activeCount = 0;
+	protected static int comCount = 0;
+	public static int getActiveCount() {
+		return activeCount;
+	}
+	public static int getComCount() {
+		return comCount;
+	}
+	public static void setActiveCount(int newCount) {
+		activeCount = newCount;
+	}
 	//private Map<String, Integer> roundRobinMelMap = new HashMap<>();
-
+	/////////////////////////////////////////////////////////////////////////////////////
+	protected static TreeSet<SimEvent> eventQueue = new TreeSet<>(Collections.reverseOrder());
+	public static int getQueueSize() {
+		return eventQueue.size();
+	}
+	public static TreeSet<SimEvent> getQueue() {
+		return eventQueue;
+	}
+	protected static TreeMap<SimEvent, String> eventHashMap = new TreeMap<>(Collections.reverseOrder());
+	public static  int getEventHashMapSize(){return eventHashMap.size();}
+	public static TreeMap<SimEvent, String> getEventHashMap() {return eventHashMap; }
+	public static HashMap<String, Integer> activePerSource = new HashMap<>();
+	private static TreeSet<SimEvent> waitQueue = new TreeSet<>();
+	//////////////////////////////////////////////////////////////////////////////////////////////
 	public CentralAgent osmoticCentralAgent;
 	private AtomicInteger flowId;
 	private IoTEntityGenerator ioTEntityGenerator;
@@ -72,7 +95,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		super(name);
 		this.edgeLetId = edgeLetId;
 		this.flowId = flowId;
-		this.appList = new ArrayList<>();		
+		this.appList = new ArrayList<>();
 		brokerID = this.getId();
 		isWakeupStartSet = false;
 	}
@@ -228,18 +251,52 @@ public class OsmoticBroker extends DatacenterBroker {
 
 	protected void processCloudletReturn(SimEvent ev)
 	{
-		Cloudlet cloudlet = (Cloudlet) ev.getData();						
+		Cloudlet cloudlet = (Cloudlet) ev.getData();
 		getCloudletReceivedList().add(cloudlet);
-		EdgeLet edgeLet = (EdgeLet) ev.getData();	
-		if(!edgeLet.getIsFinal()){	
-			askMelToSendDataToCloud(ev);			
+		EdgeLet edgeLet = (EdgeLet) ev.getData();
+		if(!edgeLet.getIsFinal()){
+			transferEvents(ev);
 			return;
-		}	
-		edgeLet.getWorkflowTag().setFinishTime(MainEventManager.clock());
+		}
+		edgeLet.getWorkflowTag(). setFinishTime(MainEventManager.clock());
 	}
-	
+	public void transferEvents(SimEvent ev) {
+		int limit = 3;//Integer.MAX_VALUE;
+
+		activePerSource.putIfAbsent(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName(), 0);
+		eventQueue.add(ev);
+
+		var toDelete = new TreeSet<SimEvent>();
+		for (var x : eventQueue) {
+			if (eventHashMap.values().stream().filter(v -> v.equals(((EdgeLet) x.getData()).getWorkflowTag().getSourceDCName())).count() < limit) {
+				eventHashMap.put(x, ((EdgeLet) x.getData()).getWorkflowTag().getSourceDCName());
+				toDelete.add(x);
+			}
+		}
+		eventQueue.removeAll(toDelete);
+		toDelete.clear();
+
+		//for (int i = 0; i < eventHashMap.size(); i++) {
+		while(eventHashMap.size() > 0) {
+			SimEvent newEv = eventHashMap.entrySet().iterator().next().getKey();
+			eventHashMap.remove(newEv, ((EdgeLet) newEv.getData()).getWorkflowTag().getSourceDCName());
+			if (activePerSource.get(((EdgeLet) newEv.getData()).getWorkflowTag().getSourceDCName()) < limit) {
+				askMelToSendDataToCloud(newEv);
+			} else {
+				waitQueue.add(newEv);
+			}
+		}
+
+		for (var x : waitQueue) {
+			//eventHashMap.put(x, ((EdgeLet) x.getData()).getWorkflowTag().getSourceDCName());
+			eventQueue.add(x);
+			toDelete.add(x);
+		}
+		waitQueue.removeAll(toDelete);
+	}
+
 	private void askMelToProccessData(SimEvent ev) {
-		Flow flow = (Flow) ev.getData();		
+		Flow flow = (Flow) ev.getData();
 		EdgeLet edgeLet = generateEdgeLet(flow.getOsmesisEdgeletSize());
 		edgeLet.setVmId(flow.getDestination());
 		edgeLet.setCloudletLength(flow.getOsmesisEdgeletSize());
@@ -248,58 +305,67 @@ public class OsmoticBroker extends DatacenterBroker {
 		int appId = flow.getOsmesisAppId();
 		edgeLet.setOsmesisAppId(appId);
 		edgeLet.setWorkflowTag(flow.getWorkflowTag());
-		edgeLet.getWorkflowTag().setEdgeLet(edgeLet);		
-		this.setCloudletSubmittedList(edgeletList);		
+		edgeLet.getWorkflowTag().setEdgeLet(edgeLet);
+		this.setCloudletSubmittedList(edgeletList);
 		sendNow(flow.getDatacenterId(), CloudSimTags.CLOUDLET_SUBMIT, edgeLet);
 	}
-	
-	private EdgeLet generateEdgeLet(long length) {				
+
+	private EdgeLet generateEdgeLet(long length) {
 		long fileSize = 30;
-		long outputSize = 1;		
+		long outputSize = 1;
 		EdgeLet edgeLet = new EdgeLet(edgeLetId.getAndIncrement(), length, 1, fileSize, outputSize, new UtilizationModelFull(), new UtilizationModelFull(),
-				new UtilizationModelFull());			
+				new UtilizationModelFull());
 		edgeLet.setUserId(this.getId());
 //		LegacyTopologyBuilder.edgeLetId++;
 		return edgeLet;
-	}	
+	}
 
 	protected void askCloudVmToProccessData(SimEvent ev) {
-		Flow flow = (Flow) ev.getData();		
-		int appId = flow.getOsmesisAppId();		
-		int dest = flow.getDestination();				
+		Flow flow = (Flow) ev.getData();
+		int appId = flow.getOsmesisAppId();
+		int dest = flow.getDestination();
 		OsmoticAppDescription app = getAppById(appId);
-		long length = app.getOsmesisCloudletSize();		
-		EdgeLet cloudLet =	generateEdgeLet(length);							
+		long length = app.getOsmesisCloudletSize();
+		EdgeLet cloudLet =	generateEdgeLet(length);
 		cloudLet.setVmId(dest);
-		cloudLet.isFinal(true);			
-		edgeletList.add(cloudLet);		
+		cloudLet.isFinal(true);
+		edgeletList.add(cloudLet);
 		cloudLet.setOsmesisAppId(appId);
 		cloudLet.setWorkflowTag(flow.getWorkflowTag());
-		cloudLet.getWorkflowTag().setCloudLet(cloudLet);		
-		this.setCloudletSubmittedList(edgeletList);		
+		cloudLet.getWorkflowTag().setCloudLet(cloudLet);
+		this.setCloudletSubmittedList(edgeletList);
 		cloudLet.setUserId(OsmoticBroker.brokerID);
 		this.setCloudletSubmittedList(edgeletList);
 		int dcId = getDatacenterIdByVmId(dest);
 		sendNow(dcId, CloudSimTags.CLOUDLET_SUBMIT, cloudLet);
 	}
 
-	private void askMelToSendDataToCloud(SimEvent ev) {
-		EdgeLet edgeLet = (EdgeLet) ev.getData();		
-		int osmesisAppId = edgeLet.getOsmesisAppId();		
-		OsmoticAppDescription app = getAppById(osmesisAppId);
-		int sourceId = edgeLet.getVmId(); // MEL or VM  			
-		int destId = this.getVmIdByName(app.getVmName()); // MEL or VM
-		int id = flowId.getAndIncrement();
-		int melDataceneter = this.getDatacenterIdByVmId(sourceId);		
-		Flow flow = new Flow(app.getMELName(), app.getVmName(), sourceId, destId, id, null, app);
-		flow.setAppName(app.getAppName());
-		flow.addPacketSize(app.getMELOutputSize());
-		flow.setSubmitTime(MainEventManager.clock());
-		flow.setOsmesisAppId(osmesisAppId);				
-		flow.setWorkflowTag(edgeLet.getWorkflowTag());
-		flow.getWorkflowTag().setEdgeToCloudFlow(flow);
-		sendNow(melDataceneter, OsmoticTags.BUILD_ROUTE, flow);
-	}	
+	private void askMelToSendDataToCloud(SimEvent ev){
+			EdgeLet edgeLet = (EdgeLet) ev.getData();
+			int osmesisAppId = edgeLet.getOsmesisAppId();
+			OsmoticAppDescription app = getAppById(osmesisAppId);
+			int sourceId = edgeLet.getVmId(); // MEL or VM
+			int destId = this.getVmIdByName(app.getVmName()); // MEL or VM
+			int id = flowId.getAndIncrement();
+			int melDataceneter = this.getDatacenterIdByVmId(sourceId);
+			int thisSource = ev.getSource();
+
+			int thisActive = activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName());
+			thisActive++;
+			String curMEl = ((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName();
+			activePerSource.put(curMEl, thisActive);
+			activeCount++;
+			comCount++;
+
+			Flow flow = new Flow(app.getMELName(), app.getVmName(), sourceId, destId, id, null, app);
+			flow.setAppName(app.getAppName());
+			flow.addPacketSize(app.getMELOutputSize());
+			flow.setSubmitTime(MainEventManager.clock());
+			flow.setOsmesisAppId(osmesisAppId);
+			flow.setWorkflowTag(edgeLet.getWorkflowTag());
+			flow.getWorkflowTag().setEdgeToCloudFlow(flow);
+			sendNow(melDataceneter, OsmoticTags.BUILD_ROUTE, flow);
+	}
 
 	private OsmoticAppDescription getAppById(int osmesisAppId) {
 		OsmoticAppDescription osmesis = null;
@@ -369,18 +435,18 @@ public class OsmoticBroker extends DatacenterBroker {
 		return null;
 	}
 
-	public void submitVmList(List<? extends Vm> list, int datacenterId) {		
+	public void submitVmList(List<? extends Vm> list, int datacenterId) {
 		mapVmsToDatacenter.put(datacenterId, list);
 		getVmList().addAll(list);
 	}
-	
-	protected void createVmsInDatacenter(int datacenterId) {		
+
+	protected void createVmsInDatacenter(int datacenterId) {
 		int requestedVms = 0;
 		List<? extends Vm> vmList = mapVmsToDatacenter.get(datacenterId);
 		if(vmList != null){
 			for (int i = 0; i < vmList.size(); i++) {
-				Vm vm = vmList.get(i);		
-					sendNow(datacenterId, CloudSimTags.VM_CREATE_ACK, vm);				
+				Vm vm = vmList.get(i);
+					sendNow(datacenterId, CloudSimTags.VM_CREATE_ACK, vm);
 					requestedVms++;
 			}
 		}
@@ -393,12 +459,12 @@ public class OsmoticBroker extends DatacenterBroker {
 	protected void processOtherEvent(SimEvent ev) {
 
 	}
-	
+
 	@Override
 	public void processVmCreate(SimEvent ev) {
 		super.processVmCreate(ev);
-		if (allRequestedVmsCreated()) {		
-			for(OsmoticAppDescription app : this.appList){				
+		if (allRequestedVmsCreated()) {
+			for(OsmoticAppDescription app : this.appList){
 				int iotDeviceID = getiotDeviceIdByName(app.getIoTDeviceName());
 
 				//This is necessary for osmotic flow abstract routing.
@@ -409,12 +475,12 @@ public class OsmoticBroker extends DatacenterBroker {
 				app.setMelId(melId);
 				int vmIdInCloud = this.getVmIdByName(app.getVmName());
 				app.setIoTDeviceId(iotDeviceID);
-				int edgeDatacenterId = this.getDatacenterIdByVmId(melId);		
+				int edgeDatacenterId = this.getDatacenterIdByVmId(melId);
 				app.setEdgeDcId(edgeDatacenterId);
-				app.setEdgeDatacenterName(this.getDatacenterNameById(edgeDatacenterId));				
-				int cloudDatacenterId = this.getDatacenterIdByVmId(vmIdInCloud);				
+				app.setEdgeDatacenterName(this.getDatacenterNameById(edgeDatacenterId));
+				int cloudDatacenterId = this.getDatacenterIdByVmId(vmIdInCloud);
 				app.setCloudDcId(cloudDatacenterId);
-				app.setCloudDatacenterName(this.getDatacenterNameById(cloudDatacenterId));				
+				app.setCloudDatacenterName(this.getDatacenterNameById(cloudDatacenterId));
 				if(app.getAppStartTime() == -1){
 					app.setAppStartTime(MainEventManager.clock());
 				}
@@ -422,7 +488,7 @@ public class OsmoticBroker extends DatacenterBroker {
 				send(this.getId(), delay, OsmoticTags.GENERATE_OSMESIS, app);
 			}
 		}
-	}	
+	}
 
 	private void generateIoTData(SimEvent ev){
 		OsmoticAppDescription app = (OsmoticAppDescription) ev.getData();
@@ -433,13 +499,13 @@ public class OsmoticBroker extends DatacenterBroker {
 			send(this.getId(), app.getDataRate(), OsmoticTags.GENERATE_OSMESIS, app);
 		}
 	}
-			
+
 	private boolean allRequestedVmsCreated() {
 		return this.getVmsCreatedList().size() == getVmList().size() - getVmsDestroyed();
 	}
 
 	public void submitOsmesisApps(List<OsmoticAppDescription> appList) {
-		this.appList = appList;		
+		this.appList = appList;
 	}
 
 	public List<OsmoticAppDescription> submitWorkloadCSVApps(List<WorkloadCSV> appList) {
@@ -457,7 +523,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	public void mapVmNameToId(Map<String, Integer> melNameToIdList) {
 		this.iotVmIdByName.putAll(melNameToIdList);
 	}
-	
+
 	public int getVmIdByName(String name){
 		Integer val = this.iotVmIdByName.get(name);
 		if (val == null)
@@ -466,21 +532,21 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 
 	public void setDatacenters(List<OsmoticDatacenter> osmesisDatacentres) {
-		this.datacenters = osmesisDatacentres;		
+		this.datacenters = osmesisDatacentres;
 	}
-	
+
 	private int getDatacenterIdByVmId(int vmId){
 		int dcId = 0;
 		for(OsmoticDatacenter dc :datacenters){
 			for(Vm vm : dc.getVmList()){
 				if(vm.getId() == vmId){
-					dcId = dc.getId();					
+					dcId = dc.getId();
 				}
 			}
 		}
 		return dcId;
 	}
-	
+
 	private String getDatacenterNameById(int id){
 		String name = "";
 		for(OsmoticDatacenter dc :datacenters){

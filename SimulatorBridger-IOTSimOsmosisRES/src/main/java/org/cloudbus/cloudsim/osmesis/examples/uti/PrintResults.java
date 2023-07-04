@@ -309,6 +309,7 @@ public class PrintResults {
 		public double MelEndTransmissionTime;
 		public int flowMELCloudAppId;
 		public int flowIoTMelAppId;
+		public double zEdgeToWANBW;
 	}
 
 	public void generateAppTag(WorkflowInfo workflowTag,
@@ -361,6 +362,7 @@ public class PrintResults {
 			fromTag.TransactionTotalTime =  workflowTag.getIotDeviceFlow().getTransmissionTime() + workflowTag.getEdgeLet().getActualCPUTime()
 					+ workflowTag.getEdgeToCloudFlow().getTransmissionTime() + workflowTag.getCloudLet().getActualCPUTime();
 			list.add(fromTag);
+			fromTag.zEdgeToWANBW = workflowTag.getEdgeToCloudFlow().getEdgeToWANBW();
 	}
 
 	public static class PowerConsumption {

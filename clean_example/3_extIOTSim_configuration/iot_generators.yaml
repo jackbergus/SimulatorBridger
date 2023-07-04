@@ -5,4 +5,4 @@ battery_sending_rate:     1.0
 signalRange:            100.0
 ioTClassName:           "uk.ncl.giacomobergami.components.iot.CarSensor"
 communicationProtocol:  "uk.ncl.giacomobergami.components.iot_protocol.XMPPProtocol"
-networkType:            "wifi"
+networkType:            "uk.ncl.giacomobergami.components.network_type.networkTyping.cellular_4G"

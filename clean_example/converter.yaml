@@ -1,7 +1,7 @@
 clazzPath:                  "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter" # Simulator Class
 YAMLConverterConfiguration: "clean_example/sumo.yaml"    # Simulator Configuration for the Class
 begin: 0                                                                                               # Start simulator time
-end: 100                                                                                               # End simulator time
+end: 30                                                                                               # End simulator time
 step: 1.0                                                                                              # Simulation granularity
 
 ## Output

@@ -94,6 +94,9 @@ public class Flow {
 	private double sourceBw; 	
 	private double destBw;
 
+	//////////////////////////////
+	private double edgeToWANBW;
+
 	public Flow(String vmNameSrc,
 				String vmNameDest,
 				int source,
@@ -503,4 +506,13 @@ public class Flow {
 	public void updateDestBw(double destBw) {
 		this.destBw = destBw;
 	}
+
+	///////////////////////////////////////////////////
+	public double getEdgeToWANBW() { return edgeToWANBW; }
+
+	public void updateEdgeToWANBW(double edgeToWANBW) {
+		this.edgeToWANBW = edgeToWANBW;
+	}
+
+	///////////////////////////////////////////////////
 }

@@ -153,8 +153,10 @@ public class OsmosisOrchestrator extends SimEntity {
 	}
 	
 	protected void processCompleteFlows(List<Channel> channels){
-		for(Channel ch:channels) {												
+		for(Channel ch:channels) {
+			double bw = ch.getAllocatedBandwidth();
 			for (Flow flow : ch.getFinishedFlows()){
+				flow.updateEdgeToWANBW(bw);
 				removeCompletedFlows(flow);
 				flow.setTransmissionTime(MainEventManager.clock());
 			}
@@ -181,6 +183,7 @@ public class OsmosisOrchestrator extends SimEntity {
 	}
 	
 	private Channel removeChannel(String key) {
+		Channel data = channelTable.get("232-8-24");
 		Channel ch = this.channelTable.remove(key);		
 		ch.terminate();
 		adjustAllChannels();	
@@ -189,7 +192,7 @@ public class OsmosisOrchestrator extends SimEntity {
 		
 	protected void adjustAllChannels() {
 		for(Channel ch:this.channelTable.values()) {
-			ch.adjustSharedBandwidthAlongLink();				
+			ch.adjustSharedBandwidthAlongLink();
 		}
 	}
 		

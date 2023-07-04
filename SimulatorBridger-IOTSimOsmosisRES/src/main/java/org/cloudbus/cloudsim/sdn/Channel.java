@@ -12,6 +12,7 @@ import java.util.*;
 
 import org.cloudbus.osmosis.core.Flow;
 import org.cloudbus.cloudsim.core.MainEventManager;
+import org.cloudbus.osmosis.core.OsmoticBroker;
 
 /** 
  *   
@@ -113,7 +114,9 @@ public class Channel {
 		if(this.inTransmission.size() != 0){
 			this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
 		}
-
+		if(this.inTransmission.size() > 0) {
+			OsmoticBroker.updateEdgeTOCloudBandwidth(this.inTransmission.getFirst().getAppNameSrc(), (float) this.allocatedBandwidth);
+		}
 		return isChanged;
 	}
 	

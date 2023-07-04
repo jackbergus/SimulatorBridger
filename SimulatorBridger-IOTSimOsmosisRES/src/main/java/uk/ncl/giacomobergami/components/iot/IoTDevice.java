@@ -11,6 +11,7 @@
 
 package uk.ncl.giacomobergami.components.iot;
 
+
 import org.cloudbus.agent.AgentBroker;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEntity;
@@ -24,6 +25,8 @@ import org.cloudbus.cloudsim.edge.utils.LogUtil;
 import org.cloudbus.osmosis.core.*;
 import uk.ncl.giacomobergami.components.iot_protocol.IoTProtocolGeneratorFactory;
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
+import uk.ncl.giacomobergami.components.network_type.networkTyping;
+import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -43,6 +46,9 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
     private double runningTime = 0;
 	protected Battery battery;
 	private EdgeNetworkInfo networkModel;
+	////////////////////////////////////////
+	private String netType;
+	////////////////////////////////////////
 	public Mobility mobility;
 	int connectingEdgeDeviceId = -1;
 	private boolean enabled;
@@ -92,7 +98,9 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 						IoTProtocolGeneratorFactory.generateFacade(onta.getNetworkModelEntity().getCommunicationProtocol())
 				);
 		this.enabled = true;
-		this.bw = onta.getBw();
+		this.netType = this.getNetworkModel().getNetWorkType().getNetworkType();
+
+		this.bw = Objects.equals(this.netType, "custom") ? onta.getBw() : NetworkTypingGeneratorFactory.generateFacade(this.netType).getNTBW();
 		
 		//Osmosis Agents
 		AgentBroker.getInstance().createDeviceAgent(onta.getName(), this);

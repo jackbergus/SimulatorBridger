@@ -83,6 +83,11 @@ public class OsmoticBroker extends DatacenterBroker {
 	public static TreeMap<SimEvent, String> getEventHashMap() {return eventHashMap; }
 	public static HashMap<String, Integer> activePerSource = new HashMap<>();
 	private static TreeSet<SimEvent> waitQueue = new TreeSet<>();
+	protected static HashMap<String, Float> edgeTOCloudBandwidth = new HashMap<>();
+	public static HashMap<String, Float> getEdgeTOCloudBandwidth() { return edgeTOCloudBandwidth; }
+	public static void updateEdgeTOCloudBandwidth(String id, float bw) {
+		edgeTOCloudBandwidth.replace(id, bw);
+	}
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	public CentralAgent osmoticCentralAgent;
 	private AtomicInteger flowId;
@@ -261,10 +266,15 @@ public class OsmoticBroker extends DatacenterBroker {
 		edgeLet.getWorkflowTag(). setFinishTime(MainEventManager.clock());
 	}
 	public void transferEvents(SimEvent ev) {
-		int limit = 3;//Integer.MAX_VALUE;
+		float maxEdgeBW = 100.0f;
+		int messageSize = 70;
 
+		edgeTOCloudBandwidth.putIfAbsent(getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName(), maxEdgeBW);
 		activePerSource.putIfAbsent(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName(), 0);
 		eventQueue.add(ev);
+
+		float bw = edgeTOCloudBandwidth.get(getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName());
+		int limit = bw >= messageSize ? Integer.MAX_VALUE : 3;
 
 		var toDelete = new TreeSet<SimEvent>();
 		for (var x : eventQueue) {
@@ -276,7 +286,6 @@ public class OsmoticBroker extends DatacenterBroker {
 		eventQueue.removeAll(toDelete);
 		toDelete.clear();
 
-		//for (int i = 0; i < eventHashMap.size(); i++) {
 		while(eventHashMap.size() > 0) {
 			SimEvent newEv = eventHashMap.entrySet().iterator().next().getKey();
 			eventHashMap.remove(newEv, ((EdgeLet) newEv.getData()).getWorkflowTag().getSourceDCName());

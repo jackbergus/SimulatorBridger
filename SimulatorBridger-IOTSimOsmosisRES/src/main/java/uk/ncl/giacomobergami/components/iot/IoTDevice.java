@@ -25,7 +25,6 @@ import org.cloudbus.cloudsim.edge.utils.LogUtil;
 import org.cloudbus.osmosis.core.*;
 import uk.ncl.giacomobergami.components.iot_protocol.IoTProtocolGeneratorFactory;
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
-import uk.ncl.giacomobergami.components.network_type.networkTyping;
 import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
 
 import java.util.*;
@@ -48,6 +47,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	private EdgeNetworkInfo networkModel;
 	////////////////////////////////////////
 	private String netType;
+	private double netLatency;
 	////////////////////////////////////////
 	public Mobility mobility;
 	int connectingEdgeDeviceId = -1;
@@ -101,7 +101,8 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		this.netType = this.getNetworkModel().getNetWorkType().getNetworkType();
 
 		this.bw = Objects.equals(this.netType, "custom") ? onta.getBw() : NetworkTypingGeneratorFactory.generateFacade(this.netType).getNTBW();
-		
+		this.netLatency = Objects.equals(this.netType, "custom") ? onta.getLatency() : NetworkTypingGeneratorFactory.generateFacade(this.netType).getNTLat();
+
 		//Osmosis Agents
 		AgentBroker.getInstance().createDeviceAgent(onta.getName(), this);
 
@@ -122,6 +123,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		battery.setMaxChargingCurrent(onta.getMax_charging_current());
 
 		// Mobility Setting
+		onta.getMobilityEntity().setSignalRange(Objects.equals(this.netType, "custom") ? onta.getMobilityEntity().getSignalRange() : NetworkTypingGeneratorFactory.generateFacade(this.netType).getNTSR());
 		this.mobility = new Mobility(onta.getMobilityEntity());
 	}
 	
@@ -237,6 +239,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 
 	private Flow createFlow(OsmoticAppDescription app) {
 		//melID will be set in the osmosis broker in the MEL_ID_RESOLUTION process.
+		String networkType = this.networkModel.getNetWorkType().getNetworkType();
 		int melId = -1;
 		int datacenterId = -1;
 		datacenterId = app.getEdgeDcId();					
@@ -248,6 +251,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		flow.setSubmitTime(MainEventManager.clock());
 		flow.setDatacenterId(datacenterId);
 		flow.setOsmesisEdgeletSize(app.getOsmesisEdgeletSize());
+		flow.updateFlowLatency(this.netLatency);
 		flowList.add(flow);
 		return flow;
 	}

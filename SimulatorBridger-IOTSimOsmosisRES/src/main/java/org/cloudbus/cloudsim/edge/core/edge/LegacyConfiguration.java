@@ -240,6 +240,7 @@ public class LegacyConfiguration {
 		double processingAbility;
 		EdgeLetEntity dataTemplate;
 		double bw;
+		double latency;
 
 	}
 	

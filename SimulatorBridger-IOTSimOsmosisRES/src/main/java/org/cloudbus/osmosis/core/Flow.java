@@ -43,7 +43,7 @@ public class Flow {
 	public long requestedBW =0;
 	private double submitTime = 0;
 	private double startTime = -1;
-	private double finishTime = -1;		 
+	private double finishTime = -1;
 	private String appNameSrc;
 
 	private String actualEdgeDevice;
@@ -96,6 +96,7 @@ public class Flow {
 
 	//////////////////////////////
 	private double edgeToWANBW;
+	private double latency;
 
 	public Flow(String vmNameSrc,
 				String vmNameDest,
@@ -408,7 +409,7 @@ public class Flow {
 	}
 
 	public double FinishingTime() {
-		double finishingTime = this.amountToBeProcessed/this.flowBandwidth;
+		double finishingTime = this.latency * amountToBeProcessed;//this.amountToBeProcessed/this.flowBandwidth;
 		return finishingTime;
 	}
 	
@@ -514,5 +515,8 @@ public class Flow {
 		this.edgeToWANBW = edgeToWANBW;
 	}
 
+	public double getFlowLatency() {return latency; }
+
+	public void updateFlowLatency(double latency) { this.latency = latency; }
 	///////////////////////////////////////////////////
 }

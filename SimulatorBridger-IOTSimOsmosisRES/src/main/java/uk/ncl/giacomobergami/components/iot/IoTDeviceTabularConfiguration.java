@@ -49,6 +49,8 @@ public class IoTDeviceTabularConfiguration {
     public String utilizationModelRam;
     public String utilizationModelBw;
     public String associatedEdge;
+    ////////////////////////////
+    public double latency;
 
 
     private static CSVMediator<IoTDeviceTabularConfiguration> readerWriter = null;
@@ -185,6 +187,7 @@ public class IoTDeviceTabularConfiguration {
         result.setMax_charging_current(max_charging_current);
         result.setProcessingAbility(processingAbility);
         result.setBw(bw);
+        result.setLatency(latency);
 
         result.setMobilityEntity(mobility);
 

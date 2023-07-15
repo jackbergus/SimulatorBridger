@@ -266,8 +266,8 @@ public class OsmoticBroker extends DatacenterBroker {
 		edgeLet.getWorkflowTag(). setFinishTime(MainEventManager.clock());
 	}
 	public void transferEvents(SimEvent ev) {
-		float maxEdgeBW = 100.0f;
-		int messageSize = 70;
+		float maxEdgeBW = (float) ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getFlowBandwidth();
+		int messageSize = (int) this.getAppById(1).getMELOutputSize();
 
 		edgeTOCloudBandwidth.putIfAbsent(getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName(), maxEdgeBW);
 		activePerSource.putIfAbsent(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName(), 0);

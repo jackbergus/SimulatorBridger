@@ -409,8 +409,8 @@ public class Flow {
 	}
 
 	public double FinishingTime() {
-		double finishingTime = this.latency * amountToBeProcessed;//this.amountToBeProcessed/this.flowBandwidth;
-		return finishingTime;
+		double latency = this.latency == 0 ? (double) 1/this.flowBandwidth : this.latency;
+		return latency * amountToBeProcessed;
 	}
 	
 	public void setPreviousTime(double previousTime) {

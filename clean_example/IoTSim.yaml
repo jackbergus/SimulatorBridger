@@ -4,13 +4,13 @@ global_simulation_terminate:
 start_time:                      "20160901:0000"
 start_vehicle_time:              0.0    #dynamically defined: clean_example/1_traffic_information_collector_configuration/converter.yaml, begin
 simulation_step:                 1.0    #dynamically defined: clean_example/1_traffic_information_collector_configuration/converter.yaml, step
-end_vehicle_time:                30    #dynamically defined: clean_example/1_traffic_information_collector_configuration/converter.yaml, end
+end_vehicle_time:                100    #dynamically defined: clean_example/1_traffic_information_collector_configuration/converter.yaml, end
 only_one_mel_per_edge_network:   no
 mel_routing_policy:              "uk.ncl.giacomobergami.SumoOsmosisBridger.osmotic.mel_routing.MELDelegatedHost"           # MEL switch policy
 mel_app_policy:                  "NETWORK_MEL"                                                                             # This is exploited only when generating the CSV apps from legacy configuration
 ignore_csv_apps:                 yes                                                                                       # Whether we need to generate no CSV apps (e.g., we exploit run-time communication)
 reset_rsu_communication_radius:         #dynamically defined
-reset_max_vehicle_communication:        #dynamically definedn
+reset_max_vehicle_communication:        #dynamically defined
 
 ## Input: Linking old configuration files and generated outputs
 converter_yaml:                 # dynamically defined

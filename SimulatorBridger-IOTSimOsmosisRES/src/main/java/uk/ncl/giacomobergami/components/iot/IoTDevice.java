@@ -142,17 +142,17 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	public void processEvent(SimEvent ev) {
 		switch (ev.getTag()) {
 			case OsmoticTags.SENSING:
-				if (getName().equals("XXI_Aprile_1_27")) System.out.println("XXI_Aprile_1_27: SENSING @"+ + MainEventManager.clock());
+				//if (getName().equals("XXI_Aprile_1_27")) System.out.println("XXI_Aprile_1_27: SENSING @"+ + MainEventManager.clock());
 				this.sensing(ev);
 				break;
 
 			case  OsmoticTags.updateIoTBW:
-				if (getName().equals("XXI_Aprile_1_27")) System.out.println("XXI_Aprile_1_27: updateIoTBW @"+ + MainEventManager.clock());
+				//if (getName().equals("XXI_Aprile_1_27")) System.out.println("XXI_Aprile_1_27: updateIoTBW @"+ + MainEventManager.clock());
 				this.removeFlow(ev);
 				break;
 
 			case OsmoticTags.MOVING: {
-				if (getName().equals("XXI_Aprile_1_27")) System.out.println("XXI_Aprile_1_27: MOVING @"+ + MainEventManager.clock());
+				//if (getName().equals("XXI_Aprile_1_27")) System.out.println("XXI_Aprile_1_27: MOVING @"+ + MainEventManager.clock());
 				updateEnergyConsumptionInformation(ev, -1);
 			}
 			break;

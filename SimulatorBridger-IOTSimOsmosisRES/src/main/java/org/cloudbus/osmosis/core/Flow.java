@@ -97,6 +97,7 @@ public class Flow {
 	//////////////////////////////
 	private double edgeToWANBW;
 	private double latency;
+	private double partialPackets = 0.0;
 
 	public Flow(String vmNameSrc,
 				String vmNameDest,
@@ -431,8 +432,12 @@ public class Flow {
 		}			
 		
 		previousTime = currentTime;
-		long completed =  Math.round((timeSpent * this.flowBandwidth));
-		
+		///////////////////////////////////////////////////////////////////////////////////
+		long fullPacks = (long) Math.floor(partialPackets);
+		long completed =  Math.round((timeSpent * this.flowBandwidth)) + fullPacks;
+		double temp = (double) Math.round((timeSpent * this.flowBandwidth) * 10) / 10;
+		partialPackets+=temp - fullPacks;
+		///////////////////////////////////////////////////////////////////////////////////
 		amountToBeProcessed = amountToBeProcessed - completed;
 		if (amountToBeProcessed <= 0){
 			amountToBeProcessed = 0;

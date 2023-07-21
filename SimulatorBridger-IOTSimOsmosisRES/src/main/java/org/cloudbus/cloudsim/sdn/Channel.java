@@ -142,7 +142,7 @@ public class Channel {
 		if(timeSpent <= 0 || inTransmission.size() == 0)
 			return false;	// Nothing changed
 
-		long processedThisRound =  Math.round((timeSpent*getAllocatedBandwidthPerFlow()));
+		double processedThisRound = NetworkOperatingSystem.round((timeSpent*getAllocatedBandwidthPerFlow()));
 		
 		LinkedList<Flow> completedTransmissions = new LinkedList<>();
 		for(Flow transmission: inTransmission){

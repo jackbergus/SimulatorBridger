@@ -70,6 +70,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	}
 	
 	public static double round(double value) {
+		if(value == 0) return value;
 		int places = resolutionPlaces;
 	    if (places < 0) throw new IllegalArgumentException();
 

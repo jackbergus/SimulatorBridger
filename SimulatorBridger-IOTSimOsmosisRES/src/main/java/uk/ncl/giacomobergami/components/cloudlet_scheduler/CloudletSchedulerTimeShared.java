@@ -55,9 +55,12 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		setCurrentMipsShare(mipsShare);
 		double timeSpam = currentTime - getPreviousTime();
 
+
+		double getMipsShare = (getCapacity(mipsShare));
 		for (ResCloudlet rcl : getCloudletExecList()) {
-			rcl.updateCloudletFinishedSoFar((long) (getCapacity(mipsShare) * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
+			rcl.updateCloudletFinishedSoFar((long) (getMipsShare * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
 		}
+
 
 		if (getCloudletExecList().size() == 0) {
 			setPreviousTime(currentTime);
@@ -80,7 +83,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		// estimate finish time of cloudlets
 		for (ResCloudlet rcl : getCloudletExecList()) {
 			double estimatedFinishTime = currentTime
-					+ (rcl.getRemainingCloudletLength() / (getCapacity(mipsShare) * rcl.getNumberOfPes()));
+					+ (rcl.getRemainingCloudletLength() /  getMipsShare * rcl.getNumberOfPes());
 			if (estimatedFinishTime - currentTime < MainEventManager.getMinTimeBetweenEvents()) {
 				estimatedFinishTime = currentTime + MainEventManager.getMinTimeBetweenEvents();
 			}
@@ -305,7 +308,8 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 
 		// use the current capacity to estimate the extra amount of
 		// time to file transferring. It must be added to the cloudlet length
-		double extraSize = getCapacity(getCurrentMipsShare()) * fileTransferTime;
+		double getMipsShare = getCapacity(getCurrentMipsShare());
+		double extraSize = getMipsShare * fileTransferTime;
 		//long length = (long) (cloudlet.getCloudletLength() + extraSize);
 		
 		/*double length = (double) (cloudlet.getCloudletLength() + extraSize);
@@ -322,7 +326,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		cloudlet.setCloudletLength(length);
 		
 
-		return cloudlet.getCloudletLength() / getCapacity(getCurrentMipsShare());
+		return cloudlet.getCloudletLength() / getMipsShare;
 	}
 
 	/*

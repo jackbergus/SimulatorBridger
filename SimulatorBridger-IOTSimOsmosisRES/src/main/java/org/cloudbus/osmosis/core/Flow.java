@@ -38,7 +38,7 @@ public class Flow {
 	int source ; // --> mapper, reducer, HDFS, etc. 
 	int destination; // --> mapper, reducer, VM, etc.	
 	long flowSize;
-	long amountToBeProcessed; 
+	double amountToBeProcessed;
 	private double transmissionTime;
 	public long requestedBW =0;
 	private double submitTime = 0;
@@ -48,22 +48,22 @@ public class Flow {
 
 	private String actualEdgeDevice;
 
-	private String appNameDest;		
+	private String appNameDest;
 	private String flowType;
 	private OsmoticAppDescription app;
-	private boolean isScheduled = false;	
+	private boolean isScheduled = false;
 	private int osmesisAppId;
-	private int appPriority; 	
-	private int ackEntity; // used to notify the respective destination of packet's completion -- khaled	 
+	private int appPriority;
+	private int ackEntity; // used to notify the respective destination of packet's completion -- khaled
 	private int datacenterId;
 	private double flowBandwidth = 0;
 
 	private String labelPlace; // used to identify the desintation of the flow (inside datacenters or outside datacenters)
 
 	private long osmesisEdgeletSize;
-	private WorkflowInfo workflowTag;	
+	private WorkflowInfo workflowTag;
 	private String datacenterName;
-	
+
 	public static int resolutionPlaces = 5;
 	public static int timeUnit = 1;	// 1: sec, 1000: msec
 	private double previousTime;
@@ -78,7 +78,7 @@ public class Flow {
 	private int totalFrNum;
 	private double totalDelay;
 	long totalHeaders;
-	
+
 	int tcpPacketSize = 12000; // 1500KB
 	int tcpPacketNo; // size/ tcpPacketSize
 
@@ -86,18 +86,18 @@ public class Flow {
 	private boolean sourceSent;
 	private boolean packetOnWAN;
 	private boolean destReceived;
-	
+
 	/*
-	 * The bw variables are used to determine which one has less bw, 
-	 * which will be used as the main flow bw 
+	 * The bw variables are used to determine which one has less bw,
+	 * which will be used as the main flow bw
 	 */
-	private double sourceBw; 	
+	private double sourceBw;
 	private double destBw;
 
 	//////////////////////////////
 	private double edgeToWANBW;
 	private double latency;
-	private double partialPackets = 0.0;
+
 
 	public Flow(String vmNameSrc,
 				String vmNameDest,
@@ -109,7 +109,7 @@ public class Flow {
 		this.appNameDest = vmNameDest;
 		this.source = source;
 		this.destination = destination;
-		this.flowId = flowId;	
+		this.flowId = flowId;
 		this.flowType = flowType;
 		this.app = app;
 		this.actualEdgeDevice = "N/A";
@@ -126,11 +126,11 @@ public class Flow {
 	public double getTransmissionTime() {
 		return transmissionTime;
 	}
-	
-	public void setTransmissionTime(double transmissionTime) {				
+
+	public void setTransmissionTime(double transmissionTime) {
 		this.transmissionTime = transmissionTime - this.startTime;
 	}
-	
+
 	public List<NetworkNIC> getNodeOnRouteList() {
 		return nodeOnRouteList;
 	}
@@ -168,7 +168,7 @@ public class Flow {
 	public void setDatacenterId(int setDatacenterId) {
 		this.datacenterId = setDatacenterId;
 	}
-	
+
 	public String getFlowType() {
 		return flowType;
 	}
@@ -210,7 +210,7 @@ public class Flow {
 	public String getAppName(){
 		return this.appName;
 	}
-	
+
 	public int getOrigin() {
 		return source;
 	}
@@ -226,7 +226,7 @@ public class Flow {
 	public long getSize() {
 		return flowSize;
 	}
-	
+
 	public void setFlowSize(long size) {
 		this.flowSize = size;
 	}
@@ -234,19 +234,19 @@ public class Flow {
 	public int getFlowId() {
 		return flowId;
 	}
-	
+
 	public void setFlowId(int flowId) {
 		this.flowId = flowId;
 	}
-	
+
 	public void setStartTime(double time) {
 		this.startTime = time;
 	}
-	
+
 	public void setFinishTime(double time) {
-		this.finishTime = time;	
+		this.finishTime = time;
 	}
-	
+
 	public double getStartTime() {
 		return this.startTime;
 	}
@@ -256,7 +256,7 @@ public class Flow {
 
 
 	public String getAppNameSrc(){
-		return this.appNameSrc;	
+		return this.appNameSrc;
 	}
 
 	public String getAppNameDest(){
@@ -266,22 +266,22 @@ public class Flow {
 	public void setAppNameDest(String appNameDest){
 		this.appNameDest = appNameDest;
 	}
-		
-	public long getAmountToBeProcessed() {
+
+	public double getAmountToBeProcessed() {
 		return this.amountToBeProcessed;
 	}
 
-	public void addCompletedLength(long completed){
+	public void addCompletedLength(double completed){
 		amountToBeProcessed = amountToBeProcessed - completed;
 		if (amountToBeProcessed <= 0){
 			amountToBeProcessed = 0;
 		}
 	}
-	
+
 	public boolean isCompleted(){
 		return amountToBeProcessed == 0;
 	}
-	
+
 	public double getSubmitTime() {
 		return submitTime;
 	}
@@ -350,54 +350,54 @@ public class Flow {
 
 	public List<SDNController> getControllerList() {
 		return this.controllerList;
-	}				
-	
+	}
+
 	public void computePktNum(){
 		this.totalPktNum = (int) Math.ceil((getPktSizeNoHeaders() / getTransportProtocol().getAveragePktSize()));
 	}
-	
+
 	public int getTotalPktNum() {
 		return totalPktNum;
 	}
-	
+
 	public void computeFrNum(){
 		this.totalFrNum = (int) (getPktSizeNoHeaders() / getTransportProtocol().getAveragefrSize());
 
 	}
-	
+
 	public int getTotalFrNum() {
 		return totalFrNum;
 	}
-	
+
 	public void computeTotalDelay() {
 		totalDelay = totalFrNum *  getTransportProtocol().getDelays();
 	}
-	
+
 	public double getTotalDelay() {
 		return totalDelay;
 	}
 
 	public void addHeaderSizes(){
-		totalHeaders = (long) (totalFrNum * getTransportProtocol().getTotalHeaders()); // bit		
-		totalHeaders = totalHeaders * 8; // bit 
-		amountToBeProcessed = getAmountToBeProcessed() + totalHeaders; //add TCP/UDP header data 
+		totalHeaders = (long) (totalFrNum * getTransportProtocol().getTotalHeaders()); // bit
+		totalHeaders = totalHeaders * 8; // bit
+		amountToBeProcessed = getAmountToBeProcessed() + totalHeaders; //add TCP/UDP header data
 	}
-	
+
 	public double getHeaderBytes(){
 		double inByte = (double)  totalHeaders / (8000000);
 		return inByte;
 	}
-	
+
 	public void updateBandwidth() {
 		double smallestBw = Double.MAX_VALUE;
 		if(this.getSourceBw() < smallestBw){
-			smallestBw = this.getSourceBw(); 
+			smallestBw = this.getSourceBw();
 		}
-		
+
 		if(this.getDestBw() < smallestBw){
-			smallestBw = this.getDestBw(); 
+			smallestBw = this.getDestBw();
 		}
-		
+
 		this.flowBandwidth = smallestBw;
 	}
 
@@ -410,39 +410,36 @@ public class Flow {
 	}
 
 	public double FinishingTime() {
-		double latency = this.latency == 0 ? (double) 1/this.flowBandwidth : this.latency;
-		return latency * amountToBeProcessed;
+		double latency = this.latency <= 0 ? (double) 1/this.flowBandwidth : this.latency;
+		return round(latency * amountToBeProcessed);
 	}
-	
+
 	public void setPreviousTime(double previousTime) {
 		this.previousTime = previousTime;
 	}
 
-	public void addPacketSize(long pktSize){	 
+	public void addPacketSize(long pktSize){
 		this.flowSize = pktSize; // for printing
 		this.amountToBeProcessed = pktSize;
 	}
-	
+
 	public boolean updateTransmission(){
 		double currentTime = MainEventManager.clock();
 		double timeSpent = round(currentTime - this.previousTime);
-		
+
 		if(timeSpent <= 0 || this.previousTime == 0){
-			return false;	// Nothing changed	
-		}			
-		
+			return false;	// Nothing changed
+		}
+
 		previousTime = currentTime;
-		///////////////////////////////////////////////////////////////////////////////////
-		long fullPacks = (long) Math.floor(partialPackets);
-		long completed =  Math.round((timeSpent * this.flowBandwidth)) + fullPacks;
-		double temp = (double) Math.round((timeSpent * this.flowBandwidth) * 10) / 10;
-		partialPackets+=temp - fullPacks;
-		///////////////////////////////////////////////////////////////////////////////////
+
+		double completed = round(timeSpent * this.flowBandwidth);
+
 		amountToBeProcessed = amountToBeProcessed - completed;
 		if (amountToBeProcessed <= 0){
 			amountToBeProcessed = 0;
 		}
-		
+
 		if (amountToBeProcessed == 0){
 			transmissionTime  = currentTime - this.startTime; // time spent
 			return true;
@@ -451,6 +448,7 @@ public class Flow {
 	}
 
 	public static double round(double value) {
+		if(value == 0) return value;
 		int places = resolutionPlaces;
 	    if (places < 0) throw new IllegalArgumentException();
 

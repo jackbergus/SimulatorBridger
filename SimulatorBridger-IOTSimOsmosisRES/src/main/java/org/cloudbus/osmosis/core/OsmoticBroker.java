@@ -274,7 +274,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		eventQueue.add(ev);
 
 		float bw = edgeToCloudBandwidth.get(getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName());
-		int limit = Integer.MAX_VALUE;
+		int limit = 3;//Integer.MAX_VALUE;
 		/*if(activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName()) < limit) {
 			limit = bw >= messageSize ? Integer.MAX_VALUE : 10;
 		}*/

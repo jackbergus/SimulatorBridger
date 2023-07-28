@@ -6,6 +6,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.traffic_converter.abstracted.TrafficConverter;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.netgen.NetworkGenerator;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.netgen.NetworkGeneratorFactory;
@@ -68,6 +69,7 @@ public class SUMOConverter extends TrafficConverter {
         temporalOrdering.clear();
         timedIoTDevices.clear();
         networkFile = null;
+
         File file = new File(concreteConf.sumo_configuration_file_path);
         Document configurationFile = null;
         try {
@@ -216,7 +218,9 @@ public class SUMOConverter extends TrafficConverter {
     @Override
     public boolean runSimulator(long begin,
                              long end,
-                             long step) {
+                             double step) {
+        var conf = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration.class, new File("clean_example/3_extIOTSim_configuration/iot_generators.yaml")).orElseThrow();
+        step = conf.match ?  conf.latency : step;
         if (new File(concreteConf.trace_file).exists()) {
             logger.info("Skipping the sumo running: the trace_file already exists");
             return true;
@@ -231,7 +235,7 @@ public class SUMOConverter extends TrafficConverter {
         }
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
         ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command(concreteConf.sumo_program, "-c", concreteConf.sumo_configuration_file_path, "--begin", Long.toString(begin), "--end", Long.toString(end), "--step-length", Long.toString(step), "--fcd-output", concreteConf.trace_file);
+        processBuilder.command(concreteConf.sumo_program, "-c", concreteConf.sumo_configuration_file_path, "--begin", Long.toString(begin), "--end", Long.toString(end), "--step-length", Double.toString(step), "--fcd-output", concreteConf.trace_file);
         try {
             Process process = processBuilder.start();
             BufferedReader reader =

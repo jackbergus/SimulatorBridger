@@ -151,6 +151,6 @@ public abstract class TrafficConverter {
         return true;
     }
 
-    public abstract boolean runSimulator(long begin, long end, long step);
+    public abstract boolean runSimulator(long begin, long end, double step);
 
 }

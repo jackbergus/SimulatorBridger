@@ -7,8 +7,8 @@ edge_switch_iops:         1000000000
 between_edge_bw:          100
 n_core: -1                                        #defined dynamically: we have a configuration parameter for this.
 n_edges_to_one_core:      3                       #defined dynamically
-edge_to_core_bw:          00
-core_to_gateway_bw:       00
+edge_to_core_bw:          100
+core_to_gateway_bw:       100
 reset_max_vehicle_communication:                  #defined dynamically
 hosts_and_vms:
   n_hosts_per_edges:              3               #Used for n. of VMs per hosts

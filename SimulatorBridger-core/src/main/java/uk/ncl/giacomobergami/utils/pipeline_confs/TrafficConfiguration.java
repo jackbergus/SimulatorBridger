@@ -5,7 +5,8 @@ public class TrafficConfiguration {
         public String YAMLConverterConfiguration;
         public String RSUCsvFile;
         public String VehicleCsvFile;
-        public long begin, end, step;
+        public long begin, end;
+        public double step;
 
         public long getBegin() {
             return begin;
@@ -23,11 +24,11 @@ public class TrafficConfiguration {
             this.end = end;
         }
 
-        public long getStep() {
+        public double getStep() {
             return step;
         }
 
-        public void setStep(long step) {
+        public void setStep(double step) {
             this.step = step;
         }
 

@@ -51,6 +51,7 @@ public class IoTDeviceTabularConfiguration {
     public String associatedEdge;
     ////////////////////////////
     public double latency;
+    public boolean match;
 
 
     private static CSVMediator<IoTDeviceTabularConfiguration> readerWriter = null;

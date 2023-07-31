@@ -11,7 +11,6 @@ import uk.ncl.giacomobergami.utils.structures.StraightforwardAdjacencyList;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -39,20 +38,20 @@ public class EdgeInfrastructureGenerator {
         return new Switch("edge", edgeId(id), mips);
     }
 
-    public static Switch generateCoreSwitch(int id, long mips) {
-        return new Switch("core", coreId(id), mips);
+    public static Switch generateCoreSwitch(int id, double mips) {
+        return new Switch("core", coreId(id), (long) mips);
     }
 
-    public static Host generateEdgeDevice(int id, int bw, int mips, int pes, int ram, long storage, double max_vehicle_communication) {
+    public static Host generateEdgeDevice(int id, double bw, int mips, int pes, int ram, long storage, double max_vehicle_communication) {
         return new Host(edgeDeviceId(id),  pes, ram,  bw, storage, mips, 0, 0, 0, 0, max_vehicle_communication);
     }
-    public static List<Host> generateDistinctEdgeDevices(int n, int bandwidth, int mips, int pes, int ram, long storage, double max_vehicle_communication) {
+    public static List<Host> generateDistinctEdgeDevices(int n, double bandwidth, int mips, int pes, int ram, long storage, double max_vehicle_communication) {
         return IntStream.range(1, n+1).mapToObj(x-> generateEdgeDevice(edgeDevice.getAndIncrement(), bandwidth, mips, pes, ram, storage, max_vehicle_communication)).collect(Collectors.toList());
     }
-    public static VM generateMEL(String network_name, int id, int bandwidth, String policy, double mips, int pes, int ram, long storage) {
+    public static VM generateMEL(String network_name, int id, double bandwidth, String policy, double mips, int pes, int ram, long storage) {
         return new VM(melId(network_name, id), bandwidth, mips, ram, pes, policy, storage);
     }
-    public static List<VM> generateVMs(String network_name, int n, int bandwidth, String policy, double mips, int pes, int ram, long storage) {
+    public static List<VM> generateVMs(String network_name, int n, double bandwidth, String policy, double mips, int pes, int ram, long storage) {
         return IntStream.range(1, n+1).mapToObj(x-> generateMEL(network_name, vm.getAndIncrement(), bandwidth, policy, mips, pes, ram, storage)).collect(Collectors.toList());
     }
 
@@ -63,15 +62,15 @@ public class EdgeInfrastructureGenerator {
         public double reset_max_vehicle_communication;
 
         public int n_edgeDevices_and_edges;
-        public int edge_device_to_edge_bw;
+        public double edge_device_to_edge_bw;
         public int edge_switch_iops;
-        public int between_edge_bw;
+        public double between_edge_bw;
 
         public int n_core;
         public int n_edges_to_one_core;
-        public int edge_to_core_bw;
+        public double edge_to_core_bw;
 
-        public int core_to_gateway_bw;
+        public double core_to_gateway_bw;
 
         public HostsAndVMs              hosts_and_vms;
         public DataCenterWithController network_configuration;

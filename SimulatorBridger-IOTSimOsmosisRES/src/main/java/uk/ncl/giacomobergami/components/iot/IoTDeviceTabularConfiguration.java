@@ -29,6 +29,7 @@ public class IoTDeviceTabularConfiguration {
     public double signalRange;
     public String communicationProtocol;
     public String networkType;
+    public String stepSizeEditorPath;
     public double data_frequency;
     public double dataGenerationTime;
     public int complexityOfDataPackage;

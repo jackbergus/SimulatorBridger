@@ -109,7 +109,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 			long mips = hostEntity.getMips();
 			int ram = hostEntity.getRam();
 			long storage = hostEntity.getStorage();
-			long bw = hostEntity.getBw();
+			double bw = hostEntity.getBw();
 			String hostName = hostEntity.getName();
 			Host host = createHost(hostId.getAndIncrement(), ram, bw, storage, pes, mips);
 			host.setDatacenter(this);
@@ -136,7 +136,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 			long mips = hostEntity.getMips();
 			int ram = hostEntity.getRam();
 			long storage = hostEntity.getStorage();					
-			long bw = hostEntity.getBw(); 																				
+			double bw = hostEntity.getBw();
 			String hostName = hostEntity.getName();					
 			Host host = createHost(hostId.getAndIncrement(), ram, bw, storage, pes, mips);
 			host.setDatacenter(this);

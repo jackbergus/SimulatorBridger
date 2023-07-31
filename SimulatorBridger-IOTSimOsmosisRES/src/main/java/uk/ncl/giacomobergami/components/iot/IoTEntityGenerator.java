@@ -22,6 +22,7 @@ public class IoTEntityGenerator {
 
     public static class IoTGlobalConfiguration {
         public String networkType;
+        public String stepSizeEditorPath;
         public String communicationProtocol;
         public double bw;
         public double max_battery_capacity;
@@ -153,6 +154,7 @@ public class IoTEntityGenerator {
                     iot.signalRange = conf.signalRange;
                     iot.associatedEdge = null;
                     iot.networkType = conf.networkType;
+                    iot.stepSizeEditorPath = conf.stepSizeEditorPath;
                     iot.velocity = min.speed;
                     iot.name = min.id;
                     iot.communicationProtocol = conf.communicationProtocol;

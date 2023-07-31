@@ -5,6 +5,9 @@ public class SUMOConfiguration {
     public String logger_file;
     public String sumo_program;
     public String sumo_configuration_file_path;
+    public String sumo_detectors_file_path;
+    public String sumo_vTypes_file_path;
+    public String python_filepath;
     public String generateRSUAdjacencyList;
     public String updateRSUFields;
     public double default_rsu_communication_radius;
@@ -58,5 +61,21 @@ public class SUMOConfiguration {
     }
     public void setSumo_configuration_file_path(String sumo_configuration_file_path) {
         this.sumo_configuration_file_path = sumo_configuration_file_path;
+    }
+    public String getSumo_detectors_file_path() {
+        return sumo_detectors_file_path;
+    }
+    public void setSumo_detectors_file_path(String sumo_detectors_file_path) {
+        this.sumo_detectors_file_path = sumo_detectors_file_path;
+    }
+    public String getSumo_vTypes_file_path() {
+        return sumo_vTypes_file_path;
+    }
+    public void setSumo_vTypes_file_path(String sumo_vTypes_file_path) {
+        this.sumo_vTypes_file_path = sumo_vTypes_file_path;
+    }
+    public String getPython_filepath() { return python_filepath; }
+    public void setPython_filepath(String python_filepath) {
+        this.python_filepath = python_filepath;
     }
 }

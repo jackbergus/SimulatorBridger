@@ -34,11 +34,11 @@ public class TopologyLink {
     public String network;
     public String source;
     public String destination;
-    public long bandwidth;
+    public double bandwidth;
 
     public TopologyLink() {}
 
-    public TopologyLink(String network, String source, String destination, long bandwidth) {
+    public TopologyLink(String network, String source, String destination, double bandwidth) {
         this.network = network;
         this.source = source;
         this.destination = destination;
@@ -107,10 +107,10 @@ public class TopologyLink {
     public void setDestination(String destination) {
         this.destination = destination;
     }
-    public long getBandwidth() {
+    public double getBandwidth() {
         return bandwidth;
     }
-    public void setBandwidth(long bandwidth) {
+    public void setBandwidth(double bandwidth) {
         this.bandwidth = bandwidth;
     }
 }

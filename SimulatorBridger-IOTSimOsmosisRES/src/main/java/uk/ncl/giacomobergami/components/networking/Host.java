@@ -4,15 +4,11 @@ import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.cloudsim.edge.core.edge.Mobility;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-
 public class Host {
     public String name;
     public int pes;
     public int ram;
-    public int bw;
+    public double bw;
     public long storage;
     public int mips;
     public double x;
@@ -21,7 +17,7 @@ public class Host {
     public double signalRange;
     public double max_vehicle_communication;
 
-    public Host(String name, int pes, int ram, int bw, long storage, int mips, double x, double y, double z, double signalRange, double max_vehicle_communication) {
+    public Host(String name, int pes, int ram, double bw, long storage, int mips, double x, double y, double z, double signalRange, double max_vehicle_communication) {
         this.name = name;
         this.pes = pes;
         this.ram = ram;
@@ -53,7 +49,7 @@ public class Host {
     public Host(LegacyConfiguration.HostEntity x) {
         mips = (int)x.getMips();
         storage = x.getStorage();
-        bw = (int)x.getBw();
+        bw = x.getBw();
         ram = x.getRam();
         pes = (int)x.getPes();
         name = x.getName();
@@ -161,7 +157,7 @@ public class Host {
         this.ram = ram;
     }
 
-    public int getBw() {
+    public double getBw() {
         return bw;
     }
 

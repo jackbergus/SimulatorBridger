@@ -29,7 +29,7 @@ import java.util.List;
 
 public class VM {
     public String name;
-    public long bw;
+    public double bw;
     public double mips;
     public int ram;
     public int pes;
@@ -45,7 +45,7 @@ public class VM {
 
     public VM() {}
 
-    public VM(String name, long bw, double mips, int ram, int pes, String cloudletPolicy, long storage) {
+    public VM(String name, double bw, double mips, int ram, int pes, String cloudletPolicy, long storage) {
         this.name = name;
         this.bw = bw;
         this.mips = mips;
@@ -125,11 +125,11 @@ public class VM {
         this.name = name;
     }
 
-    public long getBw() {
+    public double getBw() {
         return bw;
     }
 
-    public void setBw(long bw) {
+    public void setBw(double bw) {
         this.bw = bw;
     }
 

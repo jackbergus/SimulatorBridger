@@ -114,7 +114,7 @@ public abstract class OsmoticDatacenter extends Datacenter{
 		}
 	}	
 		
-	protected Host createHost(int hostId, int ram, long bw, long storage, long pes, double mips) {
+	protected Host createHost(int hostId, int ram, double bw, long storage, long pes, double mips) {
 		LinkedList<Pe> peList = new LinkedList<Pe>();
 		int peId=0;
 		for(int i=0;i<pes;i++) peList.add(new Pe(peId++,new PeProvisionerSimple(mips)));

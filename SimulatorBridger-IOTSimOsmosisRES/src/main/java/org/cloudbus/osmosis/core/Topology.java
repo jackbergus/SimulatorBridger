@@ -78,7 +78,7 @@ public class Topology {
 		}
 	}
 
-	public void addLink(int from, int to, long bw) {
+	public void addLink(int from, int to, double bw) {
 		NetworkNIC fromNode = nodesTable.get(from); 
 		NetworkNIC toNode = nodesTable.get(to); 
 			

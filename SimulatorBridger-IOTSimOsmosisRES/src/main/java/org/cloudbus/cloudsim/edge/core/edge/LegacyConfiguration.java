@@ -111,7 +111,7 @@ public class LegacyConfiguration {
 		int pes;
 		int ramSize;
 		int mips;
-		int bwSize;
+		double bwSize;
 		Location location;
 		double signalRange;
 		double max_vehicle_communication;
@@ -124,7 +124,7 @@ public class LegacyConfiguration {
 	    private long mips;
 	    private Integer ram;
 	    private Long storage;	  
-	    private long bw;
+	    private double bw;
 		private double max_vehicle_communication;
 	}
 	
@@ -135,7 +135,7 @@ public class LegacyConfiguration {
 		double mips;
 		int ram;
 		double storage;
-		private long bw;
+		private double bw;
 		String cloudletPolicy; 
 	}
 	
@@ -174,13 +174,13 @@ public class LegacyConfiguration {
 	public static class LinkEntity{
 	    private String source;
 	    private String destination;
-	    private long bw;
+	    private double bw;
 
 		public void initializeLink(Map<String, Integer> nameIdTable,
 								   Topology topology) {
 			String src = getSource();
 			String dst = getDestination();
-			long bw = getBw();
+			double bw = getBw();
 			int srcAddress = nameIdTable.get(src);
 			if(dst.equals("")){
 				System.out.println("Null!");
@@ -211,7 +211,7 @@ public class LegacyConfiguration {
 		String host;		
 		int mips;
 		int ram; // vm memory (MB)
-		long bw;
+		double bw;
 		int pesNumber; // number of cpus
 		String vmm; // VMM name
 		String cloudletSchedulerClassName;		

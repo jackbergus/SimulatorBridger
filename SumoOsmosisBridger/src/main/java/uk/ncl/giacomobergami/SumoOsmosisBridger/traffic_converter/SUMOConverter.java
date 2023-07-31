@@ -219,8 +219,21 @@ public class SUMOConverter extends TrafficConverter {
     public boolean runSimulator(long begin,
                              long end,
                              double step) {
-        var conf = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration.class, new File("clean_example/3_extIOTSim_configuration/iot_generators.yaml")).orElseThrow();
-        step = conf.match ?  conf.latency : step;
+        var conf1 = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration.class, new File("clean_example/3_extIOTSim_configuration/iot_generators.yaml")).orElseThrow();
+        var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
+
+        step = conf1.match ?  conf1.latency : step;
+
+        var detectorsPath = conf2.getSumo_detectors_file_path();
+        var vTypesPath = conf2.getSumo_vTypes_file_path();
+        var pyPath = conf2.getPython_filepath();
+        var path = pyPath + ' ' + conf1.stepSizeEditorPath + ' ' + detectorsPath + ' ' + vTypesPath + ' ' + step;
+        
+        try {
+            Runtime.getRuntime().exec(path);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         if (new File(concreteConf.trace_file).exists()) {
             logger.info("Skipping the sumo running: the trace_file already exists");
             return true;

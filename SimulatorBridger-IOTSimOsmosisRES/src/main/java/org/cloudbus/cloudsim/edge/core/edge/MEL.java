@@ -37,7 +37,7 @@ public class MEL extends Vm {
 	private double currentBw;
 	private static final int SIZE = 2048;
 
-	public MEL(int edgeDatacenterId, int id, int userId, double mips, int numberOfPes, int ram, long bw, String vmm,
+	public MEL(int edgeDatacenterId, int id, int userId, double mips, int numberOfPes, int ram, double bw, String vmm,
 			   CloudletScheduler cloudletScheduler) {
 		super(id, userId, mips, numberOfPes, ram, bw, SIZE, vmm, cloudletScheduler);
 		this.edgeDatacenterId = edgeDatacenterId;		

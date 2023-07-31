@@ -179,7 +179,7 @@ public class SDWANController extends SDNController {
 		for(LinkEntity linkEntity : linkEntites){									
 				String src = linkEntity.getSource();  
 				String dst = linkEntity.getDestination();				
-				long bw = linkEntity.getBw();
+				double bw = linkEntity.getBw();
 				int srcAddress = nameIdTable.get(src);
 				if(dst.equals("")){
 					System.out.println("Null!");			

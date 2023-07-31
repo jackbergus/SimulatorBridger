@@ -433,7 +433,7 @@ public class Flow {
 
 		previousTime = currentTime;
 
-		double completed = round(timeSpent * this.flowBandwidth);
+		double completed = timeSpent * this.flowBandwidth;
 
 		amountToBeProcessed = amountToBeProcessed - completed;
 		if (amountToBeProcessed <= 0){

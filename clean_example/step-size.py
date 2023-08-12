@@ -27,6 +27,10 @@ ET.ElementTree(root).write(newfile1)
 root = ET.parse(file2).getroot()
 
 for tau in root.iter('vType'):
+    if(re.search('tau="(.+?)"', ET.tostring(tau).decode("utf-8")) == None):
+        tau.set('tau', "1.0")
+
+for tau in root.iter('vType'):
     original = re.search('tau="(.+?)"', ET.tostring(tau).decode("utf-8"))
     default = float(original[1])
     temp = float(default * multiplier)

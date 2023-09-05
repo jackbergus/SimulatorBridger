@@ -114,8 +114,12 @@ public class Channel {
 		if(this.inTransmission.size() != 0){
 			this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
 		}
+
 		if(this.inTransmission.size() > 0) {
-			OsmoticBroker.updateEdgeTOCloudBandwidth(this.inTransmission.getFirst().getAppNameSrc(), (float) this.allocatedBandwidth);
+			var choice = "MEL";
+			var change = choice.equals("MEL") ? this.inTransmission.getFirst().getWorkflowTag().getIotDeviceFlow().getAppNameDest() : this.inTransmission.getFirst().getAppNameSrc();
+
+			OsmoticBroker.updateEdgeTOCloudBandwidth(change, (float) this.allocatedBandwidth);
 		}
 		return isChanged;
 	}

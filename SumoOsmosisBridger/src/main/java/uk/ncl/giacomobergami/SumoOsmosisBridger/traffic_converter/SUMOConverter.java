@@ -7,6 +7,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
+import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
 import uk.ncl.giacomobergami.traffic_converter.abstracted.TrafficConverter;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.netgen.NetworkGenerator;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.netgen.NetworkGeneratorFactory;
@@ -222,12 +223,14 @@ public class SUMOConverter extends TrafficConverter {
         var conf1 = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration.class, new File("clean_example/3_extIOTSim_configuration/iot_generators.yaml")).orElseThrow();
         var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
 
-        step = conf1.match ?  conf1.latency : step;
+        var latency = conf1.networkType.equals("custom") ? conf1.latency: NetworkTypingGeneratorFactory.generateFacade(conf1.networkType).getNTLat();
+        step = conf1.match ?  latency : step;
 
         var detectorsPath = conf2.getSumo_detectors_file_path();
         var vTypesPath = conf2.getSumo_vTypes_file_path();
+        var cfgFile = conf2.getSumo_configuration_file_path();
         var pyPath = conf2.getPython_filepath();
-        var path = pyPath + ' ' + conf1.stepSizeEditorPath + ' ' + detectorsPath + ' ' + vTypesPath + ' ' + step;
+        var path = pyPath + ' ' + conf1.stepSizeEditorPath + ' ' + detectorsPath + ' ' + vTypesPath + ' ' + cfgFile + ' ' + step;
 
         try {
             Runtime.getRuntime().exec(path);

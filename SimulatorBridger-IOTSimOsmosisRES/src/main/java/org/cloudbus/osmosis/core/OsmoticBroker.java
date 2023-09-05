@@ -269,11 +269,14 @@ public class OsmoticBroker extends DatacenterBroker {
 		float maxEdgeBW = (float) ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getFlowBandwidth();
 		int messageSize = (int) this.getAppById(1).getMELOutputSize();
 
-		edgeToCloudBandwidth.putIfAbsent(getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName(), maxEdgeBW);
+		var choice = "MEL";
+		var change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
+
+		edgeToCloudBandwidth.putIfAbsent(change, maxEdgeBW);
 		activePerSource.putIfAbsent(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName(), 0);
 		eventQueue.add(ev);
 
-		float bw = edgeToCloudBandwidth.get(getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName());
+		float bw = edgeToCloudBandwidth.get(change);
 		int limit = Integer.MAX_VALUE;
 		/*if(activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName()) < limit) {
 			limit = bw >= messageSize ? Integer.MAX_VALUE : 10;

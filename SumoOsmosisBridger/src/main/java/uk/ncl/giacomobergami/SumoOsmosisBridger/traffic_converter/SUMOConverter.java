@@ -230,7 +230,9 @@ public class SUMOConverter extends TrafficConverter {
         var vTypesPath = conf2.getSumo_vTypes_file_path();
         var cfgFile = conf2.getSumo_configuration_file_path();
         var pyPath = conf2.getPython_filepath();
-        var path = pyPath + ' ' + conf1.stepSizeEditorPath + ' ' + detectorsPath + ' ' + vTypesPath + ' ' + cfgFile + ' ' + step;
+        var lcm  = 1.59; // this is the lowest common multiple of the latency for 3G, 4G and 5G, or 0.212, 0.075 and 0.001
+        var last = conf1.match ? lcm : step;
+        var path = pyPath + ' ' + conf1.stepSizeEditorPath + ' ' + detectorsPath + ' ' + vTypesPath + ' ' + cfgFile + ' ' + last;
 
         try {
             Runtime.getRuntime().exec(path);

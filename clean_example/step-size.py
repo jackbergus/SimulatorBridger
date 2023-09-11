@@ -20,10 +20,13 @@ multiplier = float(sys.argv[4])
 while (multiplier < 1):
     multiplier *= 10
 
+#current freq is 1800 so divide by factor of 1.8
+factor = 1.8
+
 for detector in root.iter('e1Detector'):
     original = re.search('freq="(.+?)"', ET.tostring(detector).decode("utf-8"))
     default = float(original[1])
-    temp = float(default * multiplier)
+    temp = float(default / factor * multiplier)
     detector.set("freq", str(temp))
 
 ET.ElementTree(root).write(newfile1)

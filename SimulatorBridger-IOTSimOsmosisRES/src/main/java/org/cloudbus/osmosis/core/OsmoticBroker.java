@@ -88,6 +88,8 @@ public class OsmoticBroker extends DatacenterBroker {
 	public static void updateEdgeTOCloudBandwidth(String id, float bw) {
 		edgeToCloudBandwidth.replace(id, bw);
 	}
+	public static String choice = "MEL";
+	protected static String change;
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	public CentralAgent osmoticCentralAgent;
 	private AtomicInteger flowId;
@@ -269,38 +271,39 @@ public class OsmoticBroker extends DatacenterBroker {
 		float maxEdgeBW = (float) ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getFlowBandwidth();
 		int messageSize = (int) this.getAppById(1).getMELOutputSize();
 
-		var choice = "MEL";
-		var change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
+		change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
 
 		edgeToCloudBandwidth.putIfAbsent(change, maxEdgeBW);
-		activePerSource.putIfAbsent(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName(), 0);
+		activePerSource.putIfAbsent(change, 0);
 		eventQueue.add(ev);
 
 		float bw = edgeToCloudBandwidth.get(change);
-		int limit = Integer.MAX_VALUE;
+		int limit = 3; //Integer.MAX_VALUE;
 		/*if(activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName()) < limit) {
 			limit = bw >= messageSize ? Integer.MAX_VALUE : 10;
 		}*/
 
 		var toDelete = new TreeSet<SimEvent>();
 		for (var x : eventQueue) {
-			if (eventHashMap.values().stream().filter(v -> v.equals(((EdgeLet) x.getData()).getWorkflowTag().getSourceDCName())).count() < limit) {
-				eventHashMap.put(x, ((EdgeLet) x.getData()).getWorkflowTag().getSourceDCName());
+			var streamMEL = choice.equals("MEL") ? ((EdgeLet) x.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) x.getData()).getOsmesisAppId()).getMELName();
+			if (eventHashMap.values().stream().filter(v -> v.equals(streamMEL)).count() < limit) {
+				eventHashMap.put(x, streamMEL);
 				toDelete.add(x);
 			}
 		}
 		eventQueue.removeAll(toDelete);
 		toDelete.clear();
 
-		while(eventHashMap.size() > 0) {
+		while(!eventHashMap.isEmpty()) {
 			SimEvent newEv = eventHashMap.entrySet().iterator().next().getKey();
 			/*bw = edgeToCloudBandwidth.get(getAppById(((EdgeLet) newEv.getData()).getOsmesisAppId()).getMELName());
 			limit = 3;
 			if(activePerSource.get(((EdgeLet) newEv.getData()).getWorkflowTag().getSourceDCName()) < limit) {
 				limit = bw >= messageSize ? Integer.MAX_VALUE : 3;
 			}*/
-			eventHashMap.remove(newEv, ((EdgeLet) newEv.getData()).getWorkflowTag().getSourceDCName());
-			if (activePerSource.get(((EdgeLet) newEv.getData()).getWorkflowTag().getSourceDCName()) < limit) {
+			change = choice.equals("MEL") ? ((EdgeLet) newEv.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) newEv.getData()).getOsmesisAppId()).getMELName();
+			eventHashMap.remove(newEv, change);
+			if (activePerSource.get(change) < limit) {
 				askMelToSendDataToCloud(newEv);
 			} else {
 				waitQueue.add(newEv);
@@ -369,10 +372,12 @@ public class OsmoticBroker extends DatacenterBroker {
 			int melDataceneter = this.getDatacenterIdByVmId(sourceId);
 			int thisSource = ev.getSource();
 
-			int thisActive = activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName());
+			change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
+
+			int thisActive = activePerSource.get(change);
 			thisActive++;
 			String curMEl = ((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName();
-			activePerSource.put(curMEl, thisActive);
+			activePerSource.put(change, thisActive);
 			activeCount++;
 			comCount++;
 

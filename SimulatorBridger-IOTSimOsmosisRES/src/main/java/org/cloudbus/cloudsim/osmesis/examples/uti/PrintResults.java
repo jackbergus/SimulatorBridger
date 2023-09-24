@@ -50,6 +50,7 @@ public class PrintResults {
 	List<ActualPowerUtilizationHistoryEntry> puhe;
 	List<ActualHistoryEntry> ahe;
 	private List<EdgeConnectionsPerSimulationTime> connectionPerSimTime;
+	List<BandShareInfo> bsi;
 //	TreeMap<String, List<String>> app_to_path;
 
 	public void dumpCSV(File folder) {
@@ -66,6 +67,7 @@ public class PrintResults {
 		new CSVMediator<>(ActualPowerUtilizationHistoryEntry.class).writeAll(new File(folder, "PowerUtilisationHistory.csv"), puhe);
 		new CSVMediator<>(ActualHistoryEntry.class).writeAll(new File(folder, "HistoryEntry.csv"), ahe);
 		new CSVMediator<>(EdgeConnectionsPerSimulationTime.class).writeAll(new File(folder, "connectionPerSimTime.csv"), connectionPerSimTime);
+		new CSVMediator<>(BandShareInfo.class).writeAll(new File(folder, "bandwidthShareInfo.csv"), bsi);
 //		try {
 //			Files.writeString(new File(folder, "paths.json").toPath(), new Gson().toJson(app_to_path));
 //		} catch (IOException e) {
@@ -420,6 +422,54 @@ public class PrintResults {
 		}
 		public void addSwitchPowerConsumption(double energy) {
 			SwitchEnergyConsumed += energy;
+		}
+	}
+
+	public static class BandwidthInfo {
+		public String edgeName;
+		public String melName;
+		public String channelID;
+		public List<Double> bandWidthShare = new ArrayList<>();
+		public List<Double> timeStamp = new ArrayList<>();
+		//public Map<Double, Double> bwMap;
+		public BandwidthInfo(String edgeName, String melName, String channelID, Map<Double, Double> bwMap) {
+			this.edgeName = edgeName;
+			this.melName =	melName;
+			this.channelID = channelID;
+			//this.bwMap = bwMap;
+			for(int i = 0; i < bwMap.values().size(); i++) {
+                bandWidthShare.add((Double) bwMap.values().toArray()[i]);
+				timeStamp.add((Double) bwMap.keySet().toArray()[i]);
+			}
+		}
+	}
+
+	public static class BandShareInfo{
+		public String edgeName;
+		public String melName;
+		public String channelID;
+		public double bandWidthShare;
+		public double timeStamp;
+
+		public BandShareInfo(String edgeName, String melName, String channelID, double bandWidthShare, double timeStamp) {
+			this.edgeName = edgeName;
+			this.melName = melName;
+			this.channelID = channelID;
+			this.bandWidthShare = bandWidthShare;
+			this.timeStamp = timeStamp;
+		}
+	}
+	public void collectBandwidthInfo(List<BandwidthInfo> bandwidthInfoList) {
+		bsi = new ArrayList<>();
+		for(int i = 0; i < bandwidthInfoList.size(); i++) {
+			for (int j = 0; j < bandwidthInfoList.get(i).bandWidthShare.toArray().length; j++) {
+				String Edge = ((BandwidthInfo) bandwidthInfoList.toArray()[i]).edgeName;
+				String MEL = ((BandwidthInfo) bandwidthInfoList.toArray()[i]).melName;
+				String chID = ((BandwidthInfo) bandwidthInfoList.toArray()[i]).channelID;
+				double bw = (double) bandwidthInfoList.get(i).bandWidthShare.toArray()[j];
+				double ts = (double) bandwidthInfoList.get(i).timeStamp.toArray()[j];
+				bsi.add(new BandShareInfo(Edge, MEL, chID, bw, ts));
+			}
 		}
 	}
 }

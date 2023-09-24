@@ -109,13 +109,13 @@ public class Channel {
 			return false; //nothing changed
 		
 		boolean isChanged = this.updateFlowProcessing();
+		//boolean toChange = !isChanged && !this.completed.isEmpty();
+		//this.allocatedBandwidth = !toChange ? newBandwidth : this.allocatedBandwidth;
 		this.allocatedBandwidth = newBandwidth;
-		 
-		if(this.inTransmission.size() != 0){
-			this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
-		}
 
-		if(this.inTransmission.size() > 0) {
+		this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
+
+		if(!this.inTransmission.isEmpty()) {
 			var choice = "MEL";
 			var change = choice.equals("MEL") ? this.inTransmission.getFirst().getWorkflowTag().getIotDeviceFlow().getAppNameDest() : this.inTransmission.getFirst().getAppNameSrc();
 
@@ -123,11 +123,15 @@ public class Channel {
 		}
 		return isChanged;
 	}
-	
+
+	public Map<Double, Double> getBwChangesLogMap() {
+		return bwChangesLogMap;
+	}
+
 	public double getAllocatedBandwidth() {
 		return allocatedBandwidth;
 	}
-	
+
 	private double getAllocatedBandwidthPerFlow() {
 		if(inTransmission.size() == 0) {
 			return getAllocatedBandwidth();

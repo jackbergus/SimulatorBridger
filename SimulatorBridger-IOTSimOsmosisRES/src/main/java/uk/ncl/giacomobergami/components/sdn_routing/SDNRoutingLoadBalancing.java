@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 
 
-import jdk.jfr.Percentage;
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
 import org.cloudbus.cloudsim.sdn.SDNHost;
@@ -95,7 +94,7 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 		}
 		return minIndex;
 	}
-	protected List<NetworkNIC> biuldRoute(int biultRoute[], NetworkNIC src, NetworkNIC dest,Flow pkt){
+	protected List<NetworkNIC> buildRoute(int biultRoute[], NetworkNIC src, NetworkNIC dest, Flow pkt){
 		List<NetworkNIC> nodeLists = new ArrayList<>();
 		List<Link> linkList = new ArrayList<>();
 
@@ -172,7 +171,7 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 			} else {  
 				numberChannel++; // 1 for exisiting one , and one for this one  
 			}
-			double currentBw = l.getBw()/numberChannel;  				
+			double currentBw = l.getBw()/numberChannel;
 			if(currentBw > bw){
 				// link bw does not change, instead you need to get the bw and number of channel on the link			
 				bw = currentBw;  				
@@ -252,7 +251,7 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 			}
 		}
 
-		List<NetworkNIC> routeBuilt = biuldRoute(previousNode, srcHost, destHost, pkt);
+		List<NetworkNIC> routeBuilt = buildRoute(previousNode, srcHost, destHost, pkt);
 		this.nodeGraphDistance = null;
 		this.nodeGraphBandwidth = null;
 		return routeBuilt;		

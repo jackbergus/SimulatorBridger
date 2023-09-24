@@ -62,6 +62,7 @@ public class OsmoticWrapper {
     private boolean finished;
     private double runTime;
     List<OsmoticAppDescription> appList;
+    List<PrintResults.BandwidthInfo> bandwidthInfoList;
 
 
 
@@ -150,7 +151,6 @@ public class OsmoticWrapper {
 
         OsmosisOrchestrator conductor = new OsmosisOrchestrator();
         appList = OsmoticAppsParser.legacyAppParser(conf.osmesisAppFile);
-
         List<SDNController> controllers = new ArrayList<>();
         for(OsmoticDatacenter osmesisDC : topologyBuilder.getOsmesisDatacentres()){
             osmoticBroker.submitVmList(osmesisDC.getVmList(), osmesisDC.getId());
@@ -273,10 +273,11 @@ public class OsmoticWrapper {
     public void log(GlobalConfigurationSettings conf) {
         if (finished) {
             LogUtil.logger.trace("Simulation finished...");
+            bandwidthInfoList = OsmosisOrchestrator.getBandwidthShareInfo();
             PrintResults pr = new PrintResults();
             pr.collectTrustworthyBatteryData(osmoticBroker.getDevices());
             pr.collectNetworkData(appList, osmoticBroker);
-
+            pr.collectBandwidthInfo(bandwidthInfoList);
 
             for(OsmoticDatacenter osmesisDC : conf.conf.osmesisDatacentres){
                 pr.collectDataCenterData(osmesisDC.getName(),

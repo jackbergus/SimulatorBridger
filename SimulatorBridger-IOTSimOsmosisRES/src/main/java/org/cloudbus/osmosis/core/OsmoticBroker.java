@@ -268,7 +268,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		edgeLet.getWorkflowTag(). setFinishTime(MainEventManager.clock());
 	}
 	public void transferEvents(SimEvent ev) {
-		float maxEdgeBW = (float) ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getFlowBandwidth();
+		float maxEdgeBW = 100; //(float) ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getFlowBandwidth();
 		int messageSize = (int) this.getAppById(1).getMELOutputSize();
 
 		change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
@@ -278,7 +278,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		eventQueue.add(ev);
 
 		float bw = edgeToCloudBandwidth.get(change);
-		int limit = 3; //Integer.MAX_VALUE;
+		int limit = 3;//Integer.MAX_VALUE;
 		/*if(activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName()) < limit) {
 			limit = bw >= messageSize ? Integer.MAX_VALUE : 10;
 		}*/
@@ -369,7 +369,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			int sourceId = edgeLet.getVmId(); // MEL or VM
 			int destId = this.getVmIdByName(app.getVmName()); // MEL or VM
 			int id = flowId.getAndIncrement();
-			int melDataceneter = this.getDatacenterIdByVmId(sourceId);
+			int melDatacenter = this.getDatacenterIdByVmId(sourceId);
 			int thisSource = ev.getSource();
 
 			change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
@@ -388,7 +388,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			flow.setOsmesisAppId(osmesisAppId);
 			flow.setWorkflowTag(edgeLet.getWorkflowTag());
 			flow.getWorkflowTag().setEdgeToCloudFlow(flow);
-			sendNow(melDataceneter, OsmoticTags.BUILD_ROUTE, flow);
+			sendNow(melDatacenter, OsmoticTags.BUILD_ROUTE, flow);
 	}
 
 	private OsmoticAppDescription getAppById(int osmesisAppId) {

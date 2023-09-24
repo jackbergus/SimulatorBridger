@@ -11,12 +11,8 @@
 
 package org.cloudbus.osmosis.core;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
-import com.sun.tools.javac.Main;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.MainEventManager;
@@ -24,6 +20,7 @@ import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.core.predicates.PredicateType;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
+import org.cloudbus.cloudsim.osmesis.examples.uti.PrintResults;
 import org.cloudbus.cloudsim.sdn.Channel;
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
@@ -42,11 +39,20 @@ public class OsmosisOrchestrator extends SimEntity {
 	private List<CloudDatacenter> datacentres;
     private List<SDNController> controllers;
 
+	private static List<PrintResults.BandwidthInfo> bandwidthShareInfo = new ArrayList<>();
+
 	protected Hashtable<String, Channel> channelTable;
 	
 	private List<Channel> channelsHistory = new ArrayList<>();
-	
-    public void setDatacenters(List<CloudDatacenter> datacentres){
+
+	public static void setBandwidthShareInfo(List<PrintResults.BandwidthInfo> bandwidthInfo) {
+		bandwidthShareInfo = bandwidthInfo;
+	}
+	public static List<PrintResults.BandwidthInfo> getBandwidthShareInfo() {
+		return bandwidthShareInfo;
+	}
+
+	public void setDatacenters(List<CloudDatacenter> datacentres){
     	this.datacentres = datacentres;
 	
     }
@@ -107,7 +113,7 @@ public class OsmosisOrchestrator extends SimEntity {
 		flowList.add(flow);
 		flow.setStartTime(MainEventManager.clock());
 		int flowId = flow.getFlowId();			
-		updateFlowProcessing();		
+		updateFlowProcessing();
 		Channel channel = flow.getChannel(); 
 		int src = flow.getOrigin(); 
 		int dst = flow.getDestination();
@@ -135,7 +141,7 @@ public class OsmosisOrchestrator extends SimEntity {
 		}
 	}
 	
-	public boolean updateFlowProcessing() {		
+	public boolean updateFlowProcessing() {
 		boolean needSendEvent = false;			
 		List<Channel> completeChannels = new ArrayList<>(channelTable.size());
 		for(Channel ch:channelTable.values()){
@@ -144,7 +150,7 @@ public class OsmosisOrchestrator extends SimEntity {
 			completeChannels.add(ch);
 		}
 		
-		if(completeChannels.size() != 0) {
+		if(!completeChannels.isEmpty()) {
 			updateChannel();
 			processCompleteFlows(completeChannels);		
 		}
@@ -156,6 +162,10 @@ public class OsmosisOrchestrator extends SimEntity {
 		for(Channel ch:channels) {
 			double bw = ch.getAllocatedBandwidth();
 			for (Flow flow : ch.getFinishedFlows()){
+				String channelID = "channelID: " + String.valueOf(ch.getChId());
+				Map<Double, Double> bwMap = ch.getBwChangesLogMap();
+				var tempInfo = new PrintResults.BandwidthInfo(flow.getWorkflowTag().getSourceDCName(), flow.getWorkflowTag().getIotDeviceFlow().getAppNameDest(), channelID, bwMap);
+				bandwidthShareInfo.add(tempInfo);
 				flow.updateEdgeToWANBW(bw);
 				removeCompletedFlows(flow);
 				flow.setTransmissionTime(MainEventManager.clock());
@@ -187,7 +197,7 @@ public class OsmosisOrchestrator extends SimEntity {
 		Channel data = channelTable.get("232-8-24");
 		Channel ch = this.channelTable.remove(key);		
 		ch.terminate();
-		adjustAllChannels();	
+		adjustAllChannels();
 		return ch;
 	}
 		

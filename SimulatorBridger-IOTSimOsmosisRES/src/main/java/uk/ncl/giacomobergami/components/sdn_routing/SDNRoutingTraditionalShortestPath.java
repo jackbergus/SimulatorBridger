@@ -85,11 +85,12 @@ public class SDNRoutingTraditionalShortestPath extends SDNRoutingPolicy {
 		}
 		return minIndex;
 	}
-	protected List<NetworkNIC> biuldRoute(int biultRoute[], NetworkNIC src, NetworkNIC dest,Flow pkt){
+	protected List<NetworkNIC> buildRoute(int builtRoute[], NetworkNIC src, NetworkNIC dest,Flow pkt){
 		List<NetworkNIC> nodeLists = new ArrayList<>();
 		List<Link> linkList = new ArrayList<>();
 
 		NetworkNIC currentNode = dest;
+
 		NetworkNIC nextNode = null;
 
 		boolean routeBuilt = false;
@@ -103,7 +104,7 @@ public class SDNRoutingTraditionalShortestPath extends SDNRoutingPolicy {
 			if(currentNode.equals(src)){
 				routeBuilt = true;			
 			}
-			int nodeIndex = biultRoute[nodeToInt.get(currentNode)];
+			int nodeIndex = builtRoute[nodeToInt.get(currentNode)];
 			nextNode = intToNode.get(nodeIndex);
 			link = selectedLink.get(currentNode, nextNode);
 			//System.out.println(link.);
@@ -183,7 +184,7 @@ public class SDNRoutingTraditionalShortestPath extends SDNRoutingPolicy {
 				}		
 			}
 		}
-		List<NetworkNIC> routeBuilt = biuldRoute(previousNode, srcHost, destHost, pkt);
+		List<NetworkNIC> routeBuilt = buildRoute(previousNode, srcHost, destHost, pkt);
 //		System.out.println(routeBuilt);
 		return routeBuilt;		
 	}

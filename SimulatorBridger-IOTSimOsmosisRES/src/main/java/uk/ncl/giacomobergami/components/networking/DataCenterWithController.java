@@ -30,6 +30,8 @@ import org.cloudbus.osmosis.core.EdgeSDNController;
 import java.util.List;
 
 public class DataCenterWithController {
+    public static String limiting;
+    public static int communication_limit;
     public double scheduling_interval;
     public String datacenter_name;
     public String datacenter_type;
@@ -123,6 +125,22 @@ public class DataCenterWithController {
                 datacenter_costPerMem,
                 datacenter_costPerStorage,
                 datacenter_costPerBw);
+    }
+
+    public static String getLimiting() {
+        return limiting;
+    }
+
+    public void setLimiting(String limiting) {
+        this.limiting = limiting;
+    }
+
+    public static int getCommunication_limit() {
+        return communication_limit;
+    }
+
+    public void setCommunication_limit(int communication_limit) {
+        DataCenterWithController.communication_limit = communication_limit;
     }
 
     public double getScheduling_interval() {

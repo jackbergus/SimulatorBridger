@@ -28,6 +28,7 @@ import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
+import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 
 import static org.cloudbus.cloudsim.core.CloudSimTags.MAPE_WAKEUP_FOR_COMMUNICATION;
@@ -88,7 +89,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	public static void updateEdgeTOCloudBandwidth(String id, float bw) {
 		edgeToCloudBandwidth.replace(id, bw);
 	}
-	public static String choice = "MEL";
+	public static String choice = DataCenterWithController.getLimiting();
 	protected static String change;
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	public CentralAgent osmoticCentralAgent;
@@ -278,7 +279,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		eventQueue.add(ev);
 
 		float bw = edgeToCloudBandwidth.get(change);
-		int limit = 3;//Integer.MAX_VALUE;
+		int limit = DataCenterWithController.getCommunication_limit() == 0 ? Integer.MAX_VALUE : DataCenterWithController.getCommunication_limit();
 		/*if(activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName()) < limit) {
 			limit = bw >= messageSize ? Integer.MAX_VALUE : 10;
 		}*/

@@ -13,6 +13,7 @@ import java.util.*;
 import org.cloudbus.osmosis.core.Flow;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.osmosis.core.OsmoticBroker;
+import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
 
 /** 
  *   
@@ -116,7 +117,7 @@ public class Channel {
 		this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
 
 		if(!this.inTransmission.isEmpty()) {
-			var choice = "MEL";
+			var choice = DataCenterWithController.getLimiting();
 			var change = choice.equals("MEL") ? this.inTransmission.getFirst().getWorkflowTag().getIotDeviceFlow().getAppNameDest() : this.inTransmission.getFirst().getAppNameSrc();
 
 			OsmoticBroker.updateEdgeTOCloudBandwidth(change, (float) this.allocatedBandwidth);

@@ -25,8 +25,8 @@ hosts_and_vms:
   vm_cloudletPolicy:              "uk.ncl.giacomobergami.components.cloudlet_scheduler.CloudletSchedulerTimeShared"
   vm_storage:                     10000
 network_configuration:
-  limiting:                       "MEL"          #limits either per "Edge", or per "MEL"
-  communication_limit:            3              #integer value; a limit of 0 means no limit is used, as does Integer.MAX_VALUE
+  limiting:                       "MEL"          #limits either per "edge", or per "MEL"
+  communication_limit:            0             #integer value; a limit of 0 means no limit is used, as does Integer.MAX_VALUE
   scheduling_interval:            1.0
   datacenter_name:                                #defined dynamically
   datacenter_type:                "edge"

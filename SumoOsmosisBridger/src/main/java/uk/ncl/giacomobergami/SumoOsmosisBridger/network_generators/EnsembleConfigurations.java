@@ -150,7 +150,7 @@ public class EnsembleConfigurations {
         public double global_simulation_terminate;
         public String start_time = null;
         public double start_vehicle_time;               // 0.0
-        public double simulation_step = 1.0;            // 1.0
+        public double simulation_step;            // 1.0
         public double end_vehicle_time;                 // 100.0
         public String iots;                             // /home/giacomo/IdeaProjects/SimulatorBridger/stats/test_vehicle.json
         public String iot_generators;                   // /home/giacomo/IdeaProjects/SimulatorBridger/iot_generators.yaml

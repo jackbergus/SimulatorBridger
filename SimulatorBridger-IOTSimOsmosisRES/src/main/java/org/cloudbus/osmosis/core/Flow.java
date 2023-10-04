@@ -512,7 +512,9 @@ public class Flow {
 	}
 
 	///////////////////////////////////////////////////
-	public double getEdgeToWANBW() { return edgeToWANBW; }
+	public double getEdgeToWANBW() {
+		return edgeToWANBW;
+	}
 
 	public void updateEdgeToWANBW(double edgeToWANBW) {
 		this.edgeToWANBW = edgeToWANBW;

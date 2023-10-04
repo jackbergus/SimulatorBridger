@@ -110,13 +110,13 @@ public class Channel {
 			return false; //nothing changed
 		
 		boolean isChanged = this.updateFlowProcessing();
-		//boolean toChange = !isChanged && !this.completed.isEmpty();
-		//this.allocatedBandwidth = !toChange ? newBandwidth : this.allocatedBandwidth;
+
 		this.allocatedBandwidth = newBandwidth;
+		var name = this.nodes.toArray()[1];
 
 		this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
-
 		if(!this.inTransmission.isEmpty()) {
+			//this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
 			var choice = DataCenterWithController.getLimiting();
 			var change = choice.equals("MEL") ? this.inTransmission.getFirst().getWorkflowTag().getIotDeviceFlow().getAppNameDest() : this.inTransmission.getFirst().getAppNameSrc();
 

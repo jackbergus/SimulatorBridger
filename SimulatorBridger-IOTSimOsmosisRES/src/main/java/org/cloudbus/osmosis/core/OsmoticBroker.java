@@ -297,10 +297,10 @@ public class OsmoticBroker extends DatacenterBroker {
 
 		while(!eventHashMap.isEmpty()) {
 			SimEvent newEv = eventHashMap.entrySet().iterator().next().getKey();
-			/*bw = edgeToCloudBandwidth.get(getAppById(((EdgeLet) newEv.getData()).getOsmesisAppId()).getMELName());
-			limit = 3;
-			if(activePerSource.get(((EdgeLet) newEv.getData()).getWorkflowTag().getSourceDCName()) < limit) {
-				limit = bw >= messageSize ? Integer.MAX_VALUE : 3;
+			var dest = ((EdgeLet) newEv.getData()).getWorkflowTag().getEdgeLet().getWorkflowTag().getIotDeviceFlow().getAppNameDest();
+			bw = edgeToCloudBandwidth.get(dest);
+			/*if(bw > (float) messageSize / 2) {
+				limit = 1;
 			}*/
 			change = choice.equals("MEL") ? ((EdgeLet) newEv.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) newEv.getData()).getOsmesisAppId()).getMELName();
 			eventHashMap.remove(newEv, change);

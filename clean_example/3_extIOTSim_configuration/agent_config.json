@@ -3,7 +3,7 @@
   "DeviceAgentClassName": "uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.device_agent.DeviceAgentNearestScanner",
   "CentralAgentClassName": "uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.central_agent.NearestCentralAgent",
   "AgentMessageClassName": "uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.MessageWithPayload",
-  "MAPEInterval": 0.8,
+  "MAPEInterval": 0.0002,
   "TopologyLinks": [
   ]
 }

@@ -309,17 +309,18 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 			OsmoticAppDescription app =null;
 			if (ev != null) {
 				var obj = ev.getData();
-				if (obj instanceof OsmoticAppDescription) {
+				/*if (obj instanceof OsmoticAppDescription) {
 					app = ((OsmoticAppDescription)obj);
 					appId = app.getAppID();
-				} else if (obj instanceof Flow) {
+				} else*/ if (obj instanceof Flow) {
 					app = ((Flow)obj).getApp();
 					appId = app.getAppID();
 				}
 			}
-			if (app != null)
+			if (app != null) { // added parenthesis
 				app.setIoTBatteryConsumption(this.battery.getBatteryTotalConsumption());
-			isCommunicating = true;
+			        isCommunicating = true;
+			}	// added parenthesis
 		}
 		double time = ev == null ? MainEventManager.clock() : ev.eventTime();
 		consumptionInTime.put(time, this.battery.getBatteryTotalConsumption());

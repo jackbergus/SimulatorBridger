@@ -298,7 +298,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		while(!eventHashMap.isEmpty()) {
 			SimEvent newEv = eventHashMap.entrySet().iterator().next().getKey();
 			var dest = ((EdgeLet) newEv.getData()).getWorkflowTag().getEdgeLet().getWorkflowTag().getIotDeviceFlow().getAppNameDest();
-			bw = edgeToCloudBandwidth.get(dest);
+			//bw = edgeToCloudBandwidth.get(dest);
 			/*if(bw > (float) messageSize / 2) {
 				limit = 1;
 			}*/

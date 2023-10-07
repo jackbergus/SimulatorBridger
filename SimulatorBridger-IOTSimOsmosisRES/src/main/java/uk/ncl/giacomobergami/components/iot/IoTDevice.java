@@ -62,6 +62,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	private TreeMap<Double, Long> packetsSentInTime = new TreeMap<>();
 	private TreeMap<Double, Integer> actionToFlowId = new TreeMap<>();
 	private HashMap<Integer, Double> flowIdCreationTime = new HashMap<>();
+	private HashSet<Integer> AppIDs = new HashSet<>();
 
 	public Map<Double, Double> getTrustworthyConsumption() { return consumptionInTime; }
 
@@ -299,13 +300,6 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 					}
 				doIncrementPacketSent = increment > 0;
 			}
-			isDrained = this.updateBatteryBySensing();
-			if (!isDrained) {
-				if (doIncrementPacketSent) {
-					for (int i = 0; i<increment; i++)
-						isDrained |= this.updateBatteryByTransmission();
-				}
-			}
 			OsmoticAppDescription app =null;
 			if (ev != null) {
 				var obj = ev.getData();
@@ -317,15 +311,27 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 					appId = app.getAppID();
 				}
 			}
+			isDrained = this.updateBatteryBySensing();
+			if (!isDrained && ev.eventTime() != 0) {
+				if (doIncrementPacketSent && (!AppIDs.contains((appId)))) {
+					for (int i = 0; i<increment; i++)
+						isDrained |= this.updateBatteryByTransmission();
+				}
+			}
 			if (app != null)
 				app.setIoTBatteryConsumption(this.battery.getBatteryTotalConsumption());
 			isCommunicating = true;
 		}
 		double time = ev == null ? MainEventManager.clock() : ev.eventTime();
-		consumptionInTime.put(time, this.battery.getBatteryTotalConsumption());
-		if (doIncrementPacketSent && isCommunicating && (!isDrained)) totalPacketsBeingSent+=increment;
+
+		if (time != 0 && doIncrementPacketSent && isCommunicating && (!isDrained) && (!AppIDs.contains((appId)))) {
+			totalPacketsBeingSent += increment;
+			consumptionInTime.put(time, this.battery.getBatteryTotalConsumption());
+			actionToFlowId.put(time, appId);
+		}
 		packetsSentInTime.put(time, totalPacketsBeingSent);
-		actionToFlowId.put(time, appId);
+
+		AppIDs.add(appId);
 		return isDrained;
 	}
 
@@ -338,5 +344,9 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 
 	public OsmoticRoutingTable getRoutingTable() {
 		return routingTable;
+	}
+
+	public HashSet<Integer> getAppIDs() {
+		return AppIDs;
 	}
 }

@@ -175,7 +175,7 @@ public class OsmosisOrchestrator extends SimEntity {
 	
 	protected void removeCompletedFlows(Flow flow ){				
 		flow.setFinishTime(MainEventManager.clock());
-		String curMEl = OsmoticBroker.choice.equals("MEL") ? flow.getWorkflowTag().getIotDeviceFlow().getAppNameDest() : flow.getWorkflowTag().getSourceDCName();
+		String curMEl = OsmoticBroker.choice.equals("MEL") ? flow.getWorkflowTag().getIotDeviceFlow().getAppNameDest() : flow.getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
 		OsmoticBroker.activePerSource.put(curMEl, OsmoticBroker.activePerSource.get(curMEl) - 1);
 		sendNow(OsmoticBroker.brokerID, OsmoticTags.Transmission_SDWAN_ACK, flow);
 		if(OsmoticBroker.getQueueSize() != 0 && OsmoticBroker.getEventHashMapSize() == 0) {
@@ -186,7 +186,7 @@ public class OsmosisOrchestrator extends SimEntity {
 		}
 		if(OsmoticBroker.getEventHashMapSize() != 0) {
 			SimEvent ev2 = OsmoticBroker.getEventHashMap().entrySet().iterator().next().getKey();
-			String curMEL2 = OsmoticBroker.choice.equals("MEL") ? ((EdgeLet) ev2.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : ((EdgeLet) ev2.getData()).getWorkflowTag().getSourceDCName();
+			String curMEL2 = OsmoticBroker.choice.equals("MEL") ? ((EdgeLet) ev2.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : ((EdgeLet) ev2.getData()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
 			OsmoticBroker.getEventHashMap().remove(ev2, curMEL2);
 			Cloudlet cl = (Cloudlet) ev2.getData();
 			sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);

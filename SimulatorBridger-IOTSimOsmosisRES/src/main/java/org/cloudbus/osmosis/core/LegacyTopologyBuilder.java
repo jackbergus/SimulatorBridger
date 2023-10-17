@@ -68,7 +68,9 @@ public class LegacyTopologyBuilder {
 	}
 
 	public static OsmoticBroker newBroker() {
-		return new OsmoticBroker("OsmesisBroker", edgeLetId, flowId);
+		// TODO: make this as a singleton, so to return only the currently available instance, while ensuring uniqueness
+        return OsmoticBroker.getInstance("OsmesisBroker", edgeLetId, flowId);
+		//new OsmoticBroker("OsmesisBroker", edgeLetId, flowId);
 	}
 
 	public LegacyTopologyBuilder buildTopology(File filename) {

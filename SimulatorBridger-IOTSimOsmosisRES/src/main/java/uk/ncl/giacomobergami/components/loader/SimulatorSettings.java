@@ -23,6 +23,7 @@ public class SimulatorSettings {
     }
 
     public OsmoticBroker newBroker(String name) {
-        return new OsmoticBroker(name, edgeLetId, flowId);
+        // TODO: make this as a singleton, so to return only the currently available instance, while ensuring uniqueness
+        return OsmoticBroker.getInstance(name, edgeLetId, flowId);
     }
 }

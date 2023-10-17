@@ -1,11 +1,11 @@
 
 trace_file: "clean_example/1_sumo_output/sumo_trace_TAVF.xml"
 logger_file: "clean_example/1_sumo_output/sumo_log.txt"
-sumo_program: "C:/Program Files (x86)/Eclipse/Sumo/bin/sumo.exe"                           #The path via which run the program, OS dependant!
-sumo_configuration_file_path: "C:/Users/rohin/Sumo/Bologna-Reham/run.sumocfg"              #The path where the SUMO simulation is run.
-sumo_detectors_file_path: "C:/Users/rohin/Sumo/Bologna-Reham/acosta_detectors.add.xml"     #The path to the SUMO detectors file, this file has a "freq" value which needs to a multiple of the step-size
-sumo_vTypes_file_path: "C:/Users/rohin/Sumo/Bologna-Reham/acosta_vtypes.add.xml"           #The path to the SUMO vTypes file, this file needs a "tau" value above or equal to the step-size
-python_filepath: "C:/Program Files/Python311/python.exe"                                   #The path to the devices python executable
+sumo_program: "C:/Users/b6047637/Sumo/bin/sumo.exe"                                                                     #The path via which run the program, OS dependant!
+sumo_configuration_file_path: "C:/Users/b6047637/Sumo-Results/Bologna-Reham/acosta/run_simulation.sumocfg"              #The path where the SUMO simulation is run.
+sumo_detectors_file_path: "C:/Users/b6047637/Sumo-Results/Bologna-Reham/acosta/acosta_detectors.add.xml"                #The path to the SUMO  file with a "freq" value which needs to a multiple of the step-size, see sumo_log.txt
+sumo_vTypes_file_path: "C:/Users/b6047637/Sumo-Results/Bologna-Reham/acosta/acosta_vtypes.add.xml"                      #The path to the SUMO file which needs a "tau" value above or equal to the step-size, see sumo_log.txt
+python_filepath: "C:/Users/b6047637/AppData/Local/Programs/Python/Python311/python.exe"                                 #The devices python path, currently using python 3.11
 default_rsu_communication_radius: 100.0
 default_max_vehicle_communication:  15
 generateRSUAdjacencyList: "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_orchestrator.TopKConnections"

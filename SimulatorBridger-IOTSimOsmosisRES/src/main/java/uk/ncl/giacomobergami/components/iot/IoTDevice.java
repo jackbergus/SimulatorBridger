@@ -300,6 +300,9 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 					}
 				doIncrementPacketSent = increment > 0;
 			}
+			if(ev.getSource() == 2) { //source ID 2 is the ID for OsmesisBroker
+				doIncrementPacketSent = OsmoticBroker.getInstance("OsmesisBroker", new AtomicInteger(), new AtomicInteger()).resolveEdgeDeviceFromId(((OsmoticAppDescription) ev.getData()).getMELName().substring(1)) == null ? false : doIncrementPacketSent;
+			}
 			OsmoticAppDescription app =null;
 			if (ev != null) {
 				var obj = ev.getData();
@@ -312,7 +315,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 				}
 			}
 			isDrained = this.updateBatteryBySensing();
-			if (!isDrained && ev.eventTime() != 0) {
+			if (!isDrained) {
 				if (doIncrementPacketSent && (!AppIDs.contains((appId)))) {
 					for (int i = 0; i<increment; i++)
 						isDrained |= this.updateBatteryByTransmission();
@@ -324,7 +327,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		}
 		double time = ev == null ? MainEventManager.clock() : ev.eventTime();
 
-		if (time != 0 && doIncrementPacketSent && isCommunicating && (!isDrained) && (!AppIDs.contains((appId)))) {
+		if (doIncrementPacketSent && isCommunicating && (!isDrained) && (!AppIDs.contains((appId)))) {
 			totalPacketsBeingSent += increment;
 			consumptionInTime.put(time, this.battery.getBatteryTotalConsumption());
 			actionToFlowId.put(time, appId);

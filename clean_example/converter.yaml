@@ -2,7 +2,7 @@ clazzPath:                  "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_co
 YAMLConverterConfiguration: "clean_example/sumo.yaml"    # Simulator Configuration for the Class
 begin: 0                                                                                               # Start simulator time
 end: 25                                                                                      # End simulator time
-step: 0.001 #1.0 #may be defined in "clean_example/3_extIOTSim_configuration/iot_generators.yaml" if match is "true"                                                                                           # Simulation granularity
+step: 0.075 #1.0 #may be defined in "clean_example/3_extIOTSim_configuration/iot_generators.yaml" if match is "true"                                                                                           # Simulation granularity
 
 ## Output
 RSUCsvFile:         #dynamically defined

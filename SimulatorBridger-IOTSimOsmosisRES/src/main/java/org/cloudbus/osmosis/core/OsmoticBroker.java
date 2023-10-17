@@ -97,7 +97,9 @@ public class OsmoticBroker extends DatacenterBroker {
 	private IoTEntityGenerator ioTEntityGenerator;
 	public static double deltaVehUpdate;
 
-	public OsmoticBroker(String name,
+	private static OsmoticBroker OBINSTANCE;
+
+	private OsmoticBroker(String name,
 						 AtomicInteger edgeLetId,
 						 AtomicInteger flowId) {
 		super(name);
@@ -106,6 +108,15 @@ public class OsmoticBroker extends DatacenterBroker {
 		this.appList = new ArrayList<>();
 		brokerID = this.getId();
 		isWakeupStartSet = false;
+	}
+
+	public static OsmoticBroker getInstance(String name,
+											AtomicInteger edgeLetId,
+											AtomicInteger flowId) {
+		if (OBINSTANCE == null) {
+			OBINSTANCE = new OsmoticBroker(name, edgeLetId, flowId);
+		}
+		return OBINSTANCE;
 	}
 
 	@Override

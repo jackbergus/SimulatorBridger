@@ -22,12 +22,14 @@ import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.cloudbus.osmosis.core.OsmoticTags;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.PayloadForIoTAgent;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.MessageWithPayload;
+import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
+import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.gir.SquaredCartesianDistanceFunction;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import java.io.File;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
@@ -44,6 +46,10 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
     }
 
     protected List<ImmutablePair<EdgeDataCenter, EdgeDevice>> ls = Collections.emptyList();
+    private final File converter_file = new File("clean_example/converter.yaml");
+    private final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+    double beginSUMO = time_conf.get().getBegin();
+    double endSUMO = time_conf.get().getEnd();
 
     @Override
     public void monitor() {
@@ -54,8 +60,10 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
 
         // Monitoring the neighbouring nodes
         var iot = getIoTDevice();
+        HashSet<Double> setWUT = IoTEntityGenerator.getSetWUT();
+        double currentTime = (double) Math.round(MainEventManager.clock() * 1000) /1000;
         // Returning if the agent, at this current time, is not scheduled for transmission
-//        if (!iot.transmit) return;
+        if (!iot.transmit || !setWUT.contains(currentTime) ||currentTime > endSUMO) return;
 
         ls = AgentBroker
                 .getInstance()
@@ -112,7 +120,9 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
             } else {
                 // The device is moving but not communicating
                 getIoTDevice().schedule(getIoTDevice().getId(), MainEventManager.clock(), MOVING, null);
-                getIoTDevice().schedule(OsmoticBroker.brokerID, MainEventManager.clock()+OsmoticBroker.getDeltaVehUpdate(), MAPE_WAKEUP_FOR_COMMUNICATION, null);
+                if(MainEventManager.clock() + OsmoticBroker.getDeltaVehUpdate() > endSUMO) {
+                    getIoTDevice().schedule(OsmoticBroker.brokerID, MainEventManager.clock() + OsmoticBroker.getDeltaVehUpdate(), MAPE_WAKEUP_FOR_COMMUNICATION, null);
+                }
             }
         }
 

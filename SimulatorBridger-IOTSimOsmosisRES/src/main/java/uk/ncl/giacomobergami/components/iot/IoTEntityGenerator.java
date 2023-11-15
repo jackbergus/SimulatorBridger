@@ -7,6 +7,7 @@ import uk.ncl.giacomobergami.utils.annotations.Output;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadFromVehicularProgram;
 import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
 
 import java.io.*;
@@ -18,7 +19,11 @@ import java.util.stream.Collectors;
 public class IoTEntityGenerator {
     final TreeMap<String, IoT> timed_iots;
     final IoTGlobalConfiguration conf;
+    static final HashSet<Double> setWUT = new HashSet<>();
 
+    public static HashSet<Double> getSetWUT() {
+        return setWUT;
+    }
 
     public static class IoTGlobalConfiguration {
         public String networkType;
@@ -65,23 +70,44 @@ public class IoTEntityGenerator {
     }
 
     public Collection<Double> collectionOfWakeUpTimes() {
-        HashSet<Double> set = new HashSet<>();
-        for (var x : timed_iots.values()) {
-            x.dynamicInformation.keySet().stream().min(Comparator.naturalOrder()).ifPresent(set::add);
-            set.add(x.program.startCommunicatingAtSimulationTime);
+        File converter_file = new File("clean_example/converter.yaml");
+        Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+        double begin = time_conf.get().getBegin();
+        double end = time_conf.get().getEnd();
+        double latency = time_conf.get().getStep();
+        latency = Math.max(latency, 0.01);
+
+        for(double i = begin; i <= end ; i = i + latency) {
+            setWUT.add((double)Math.round(i * 1000)/1000);
         }
-        return set;
+
+        if(latency == 0.01) {
+            for (var x : timed_iots.values()) {
+                //x.dynamicInformation.keySet().stream().min(Comparator.naturalOrder()).ifPresent(set::add);
+                for (var j = Collections.min(x.dynamicInformation.keySet()); j <= Collections.max(x.dynamicInformation.keySet()); j = j + latency) {
+                    setWUT.add((double) Math.round(j * 1000) / 1000);
+                }//patch missing wake up times
+                setWUT.add(x.program.startCommunicatingAtSimulationTime);
+            }
+        }
+
+        return setWUT;
     }
 
     public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
                                 @Input double simTimeLow,
                                 @Input double simTimeUp) {
+        simTimeLow = (double) Math.round(simTimeLow * 1000) /1000;
+        simTimeUp = (double) Math.round(simTimeUp * 1000) /1000;
+        File converter_file = new File("clean_example/converter.yaml");
+        Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+        double begin = time_conf.get().getBegin();
         var ls = timed_iots.get(toUpdateWithTime.getName());
-        if ((simTimeLow >= ls.program.startCommunicatingAtSimulationTime)) {
+        if ((simTimeLow >= begin)) { //ls.program.startCommunicatingAtSimulationTime)) {
             var times = new TreeSet<>(ls.dynamicInformation.keySet());
-            if (simTimeUp > times.last())  {
+            /*(simTimeUp > times.last())  {
                 toUpdateWithTime.transmit = false;
-            } else {
+            } else*/ {
                 Double expectedLow = times.contains(simTimeLow) ? ((Double) simTimeLow) : times.lower(simTimeLow);
                 var dist = simTimeUp - simTimeLow;
                 if ((expectedLow != null) && (expectedLow <= simTimeUp)) {

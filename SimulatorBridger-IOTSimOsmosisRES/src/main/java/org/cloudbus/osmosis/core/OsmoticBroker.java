@@ -11,6 +11,7 @@
 
 package org.cloudbus.osmosis.core;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -30,6 +31,8 @@ import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
 import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
+import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import static org.cloudbus.cloudsim.core.CloudSimTags.MAPE_WAKEUP_FOR_COMMUNICATION;
 import static org.cloudbus.osmosis.core.OsmoticTags.GENERATE_OSMESIS_WITH_RESOLUTION;
@@ -91,6 +94,10 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 	public static String choice = DataCenterWithController.getLimiting();
 	protected static String change;
+	private File converter_file = new File("clean_example/converter.yaml");
+	private final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+	double beginSUMO = time_conf.get().getBegin();
+	double endSUMO = time_conf.get().getEnd();
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	public CentralAgent osmoticCentralAgent;
 	private AtomicInteger flowId;
@@ -134,7 +141,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			for (Double forcedWakeUpTime :
 					ioTEntityGenerator.collectionOfWakeUpTimes()) {
 				double time = forcedWakeUpTime - chron;
-				if (time > 0.0) {
+				if (time > 0.0 && chron + getDeltaVehUpdate() <= endSUMO) {
 					schedule(OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);
 				}
 			}

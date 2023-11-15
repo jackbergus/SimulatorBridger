@@ -24,9 +24,12 @@ import org.cloudbus.cloudsim.edge.iot.network.EdgeNetworkInfo;
 import org.cloudbus.cloudsim.edge.utils.LogUtil;
 import org.cloudbus.osmosis.core.*;
 import uk.ncl.giacomobergami.components.iot_protocol.IoTProtocolGeneratorFactory;
+import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
 import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
+import java.io.File;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -283,6 +286,16 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		int appId = -1;
 		boolean doIncrementPacketSent = flowId != -1;
 		int increment = 1;
+		File converter_file = new File("clean_example/converter.yaml");
+		Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+		double beginSUMO = time_conf.get().getBegin();
+		double endSUMO = time_conf.get().getEnd();
+
+		if(MainEventManager.clock() > endSUMO) {
+			MainEventManager.cancelAll(getId(), MainEventManager.SIM_ANY);
+			return true;
+		}
+
 		if (this.flowList.isEmpty()) {
 			// If there is no flow, then the device is not communicating, and therefore the battery should be
 			// updated as only in sensing

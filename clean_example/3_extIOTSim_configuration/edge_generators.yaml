@@ -41,4 +41,4 @@ network_configuration:
   datacenter_costPerBw:           0.0
   controller_name:                                #defined dynamically "edge1_sdn1"
   controller_trafficPolicy:       "uk.ncl.giacomobergami.components.sdn_traffic.SDNTrafficPolicyFairShare"
-  controller_routingPolicy:       "uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingTraditionalShortestPath" #"uk.ncl.giacomobergami.components.sdn_routing.MaximumFlowRoutingPolicy"
+  controller_routingPolicy:       "uk.ncl.giacomobergami.components.sdn_routing.MaximumFlowRoutingPolicy" #"uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingTraditionalShortestPath"

@@ -40,4 +40,4 @@ network_configuration:
   datacenter_costPerBw:           0.0
   controller_name:                ""            #dynamic setting, the controller name associated to each cloud network
   controller_trafficPolicy:       "uk.ncl.giacomobergami.components.sdn_traffic.SDNTrafficPolicyFairShare"
-  controller_routingPolicy:       "uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingTraditionalShortestPath" #"uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingLoadBalancing"
+  controller_routingPolicy:       "uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingLoadBalancing" #"uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingTraditionalShortestPath"

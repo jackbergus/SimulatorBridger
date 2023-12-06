@@ -15,6 +15,13 @@ public class Union2<K,V> {
         return val2;
     }
 
+    public void setVal1(K val1) {
+        this.val1 = val1;
+    }
+    public void setVal2(V val2) {
+        this.val2 = val2;
+    }
+
     public static <K, V> Union2<K, V> left(K left) {
         Union2<K, V> var = new Union2<>();
         var.val1 = left;
@@ -31,5 +38,5 @@ public class Union2<K,V> {
         return var;
     }
 
-    private Union2() {}
+    public Union2() {}
 }

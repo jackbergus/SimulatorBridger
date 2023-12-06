@@ -69,6 +69,8 @@ public class IoTProgram implements SimulationProgram {
     public final TreeMap<Double, ProgramDetails> pathingAtEachSimulationTime;
     public ImmutablePair<ImmutablePair<Double, List<String>>, List<ClusterDifference<String>>> clusterConnection;
     public double startCommunicatingAtSimulationTime = Double.MAX_VALUE;
+    public double minTime = 0;
+    public double maxTime = 0;
 
     public TreeMap<Double, ProgramDetails> getPathingAtEachSimulationTime() {
         return pathingAtEachSimulationTime;
@@ -88,6 +90,19 @@ public class IoTProgram implements SimulationProgram {
 
     public void setStartCommunicatingAtSimulationTime(double startCommunicatingAtSimulationTime) {
         this.startCommunicatingAtSimulationTime = startCommunicatingAtSimulationTime;
+    }
+
+    public double getMinTime() {
+        return minTime;
+    }
+    public void setMinTime(double minStartTime) {
+        this.minTime = minStartTime;
+    }
+    public double getMaxTime() {
+        return maxTime;
+    }
+    public void setMaxTime(double maxTime) {
+        this.maxTime = maxTime;
     }
 
     public IoTProgram(ImmutablePair<ImmutablePair<Double, List<String>>, List<ClusterDifference<String>>> clusterConnection) {

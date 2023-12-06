@@ -21,11 +21,15 @@
 
 package uk.ncl.giacomobergami.traffic_orchestrator;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.fasterxml.jackson.dataformat.csv.CsvWriteException;
 import com.google.common.collect.Multimaps;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 import io.jenetics.ext.moea.Pareto;
+import io.vavr.control.Try;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -51,6 +55,8 @@ import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoTProgram;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.ReconstructNetworkInformation;
+
+import com.opencsv.CSVWriter;
 
 import java.io.*;
 import java.lang.reflect.Type;
@@ -117,6 +123,51 @@ public class PreSimulatorEstimator {
         return false;
     }
 
+    protected void write_large_json(File folder, String filename, Object writable){
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        if (folder.exists() && folder.isDirectory()) {
+            ObjectWriter objectWriter = new ObjectMapper().writer().withDefaultPrettyPrinter();
+            Try.withResources(() -> new FileWriter(filename))
+                    .of(fileWriter -> Try.withResources(() -> objectWriter.writeValues(fileWriter))
+                            .of(sequenceWriter -> sequenceWriter.write(writable)))
+                    .get();
+        }
+    }
+
+    protected boolean write_csv(File folder, String filename, Object writable) throws IOException {
+        if (!folder.exists()) {
+            folder.mkdirs();
+        }
+        if (folder.exists() && folder.isDirectory()) {
+            toCSV(writable, filename);
+            return true;
+        }
+        return false;
+    }
+
+    private static void toCSV(Object object, String filePath) throws IOException {
+        try(CSVWriter writer = new CSVWriter(new FileWriter(filePath))) {
+            String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime"};
+            writer.writeNext(headers);
+            for(int i = 0; i < ((HashMap)object).values().size(); i++){
+                for (int j = 0; j < ((IoT)((HashMap)object).values().toArray()[i]).getDynamicInformation().values().size(); j++) {
+                    String[] data = getStrings((HashMap)object, i, j);
+                    writer.writeNext(data);
+                }
+            }
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String[] getStrings(HashMap object, int i, int j) {
+        TimedIoT vehicle = (TimedIoT) ((IoT) object.values().toArray()[i]).getDynamicInformation().values().toArray()[j];
+        String[] data = {String.valueOf(vehicle.getId()), String.valueOf(vehicle.getX()), String.valueOf(vehicle.getY()), String.valueOf(vehicle.getAngle()), String.valueOf(vehicle.getType()), String.valueOf(vehicle.getSpeed()), String.valueOf(vehicle.getPos()), String.valueOf(vehicle.getLane()), String.valueOf(vehicle.getSlope()), String.valueOf(vehicle.getSimtime())};
+        return data;
+    }
+
     protected ReconstructNetworkInformation readEdges() {
         return ReconstructNetworkInformation.fromFiles(new File(conf2.RSUCsvFile+"_timed_scc.json").getAbsoluteFile(),
                 new File(conf2.RSUCsvFile+"_neighboursChange.json").getAbsoluteFile(),
@@ -153,7 +204,7 @@ public class PreSimulatorEstimator {
         HashMap<Double, ArrayList<LocalTimeOptimizationProblem.Solution>> simulationSolutions = new HashMap<>();
         var vehSet = readIoT().entrySet();
         if (vehSet.isEmpty()) {
-            logger.warn("WARNING: vechicles are empty!");
+            logger.warn("WARNING: vehicles are empty!");
             return;
         }
         for (var simTimeToVehicles : vehSet) {
@@ -280,13 +331,13 @@ public class PreSimulatorEstimator {
     public void serializeAll() {
         logger.trace("Serializing data...");
         logger.trace(" * solver_time ");
-        write_json(statsFolder, new File(statsFolder.getAbsoluteFile(), "solver_time.json").toString(), problemSolvingTime);
+        write_json(statsFolder, new File(statsFolder.getAbsoluteFile(),"solver_time.json").toString(), problemSolvingTime);
 
         logger.trace(" * candidate solution ");
-        write_json(statsFolder, new File(statsFolder.getAbsoluteFile(),"candidate.json").toString(), candidate);
+        write_large_json(statsFolder, new File(statsFolder.getAbsoluteFile(),"candidate.json").toString(), candidate);
 
         logger.trace(" * reconstructed vehicles ");
-        write_json(statsFolder, conf.vehiclejsonFile, reconstructVehicles);
+        write_large_json(statsFolder, conf.vehiclejsonFile, reconstructVehicles);
 
         logger.trace(" * RSU Programs ");
         write_json(statsFolder, conf.RSUJsonFile, timeEvolvingEdges.getEdgeNodeForReconstruction());

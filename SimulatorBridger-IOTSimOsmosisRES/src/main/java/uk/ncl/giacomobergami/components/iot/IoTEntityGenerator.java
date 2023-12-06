@@ -450,7 +450,7 @@ public class IoTEntityGenerator {
                     if (toUpdateWithTime.getName().equals("0") && ((simTimeLow - Math.floor(simTimeLow) <= 0.1))) {
                         System.out.println(simTimeLow+" time: " +toUpdateWithTime.mobility.range.beginX+"->"+toUpdateWithTime.mobility.location.x+", "+toUpdateWithTime.mobility.range.beginY+"->"+toUpdateWithTime.mobility.location.y);
                     }
-                    double expectedUp = simTimeUp + dist;
+                    Double expectedUp = simTimeUp + dist;
                     //expectedUp = times.contains(expectedUp) ? expectedUp : times.lower(expectedUp);
                     expectedUp = (double) Math.round(Math.floor(expectedUp / lat) * lat * 1000) /1000;
                     expObj = ls.dynamicInformation.get(expectedUp);

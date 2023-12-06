@@ -1,11 +1,11 @@
-bw:                     10000 #to use this value change networkType to "custom"
+bw:                     10000 # to use this value change networkType to "custom"
 max_battery_capacity:   100.0
 battery_sensing_rate:     0.01
 battery_sending_rate:     1.0
-signalRange:            100.0 #to use this value change networkType to "custom"
-latency:                0.123 #to use this value change networkType to "custom"
-match:                  true #true to match the simulation step size to the network latency value
+signalRange:            100.0 # to use this value change networkType to "custom"
+latency:                0.123 # to use this value change networkType to "custom"
+match:                  true  # true to match the simulation step size to the network latency value
 ioTClassName:           "uk.ncl.giacomobergami.components.iot.CarSensor"
 communicationProtocol:  "uk.ncl.giacomobergami.components.iot_protocol.XMPPProtocol"
-networkType:            "uk.ncl.giacomobergami.components.network_type.cellular_5G"
+networkType:            "uk.ncl.giacomobergami.components.network_type.cellular_4G"
 stepSizeEditorPath:     "clean_example/step-size.py"

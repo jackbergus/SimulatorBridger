@@ -157,7 +157,9 @@ public class IoTEntityGenerator {
                                     String spTAG = reader.nextName();
                                     check = reader.peek();
                                     TimedIoT spIoT;
-                                    TimedEdge spEdge;
+                                    TimedEdge spEdge = null;
+                                    TimedEdge spEdge2 = null;
+                                    TimedEdge spEdge3 = null;
                                     if (Objects.equals(check.name(), "NULL")) {
                                         spIoT = null;
                                         reader.nextNull();
@@ -215,11 +217,77 @@ public class IoTEntityGenerator {
                                         firstTag = reader.nextName();
                                         firstBool = reader.nextBoolean();
                                         reader.endObject();
-                                        reader.endArray();
-                                        Union2<TimedIoT, TimedEdge> temp = new Union2<>();
-                                        temp.setVal1(spIoT);
-                                        temp.setVal2(spEdge);
-                                        shortest_path.add(temp);
+                                        check = reader.peek();
+                                        if (Objects.equals(check.name(), "END_ARRAY")) {
+                                            reader.endArray();
+                                        } else {
+                                            reader.beginObject();
+                                            val1Tag = reader.nextName();
+                                            reader.nextNull();
+                                            val2Tag = reader.nextName();
+                                            reader.beginObject();
+                                            xTag = reader.nextName();
+                                            x = parseDouble(reader.nextString());
+                                            yTag = reader.nextName();
+                                            y = parseDouble(reader.nextString());
+                                            simTimeTag = reader.nextName();
+                                            simTime = parseDouble(reader.nextString());
+                                            commRadTag = reader.nextName();
+                                            commRad = parseDouble(reader.nextString());
+                                            maxVehComTag = reader.nextName();
+                                            maxVehCom = parseDouble(reader.nextString());
+                                            idTag = reader.nextName();
+                                            id = reader.nextString();
+                                            spEdge2 = new TimedEdge(id, x, y, commRad, maxVehCom, simTime);
+                                            reader.endObject();
+                                            firstTag = reader.nextName();
+                                            firstBool = reader.nextBoolean();
+                                            reader.endObject();
+                                            check = reader.peek();
+                                            if (Objects.equals(check.name(), "END_ARRAY")) {
+                                                reader.endArray();
+                                            } else {
+                                                reader.beginObject();
+                                                val1Tag = reader.nextName();
+                                                reader.nextNull();
+                                                val2Tag = reader.nextName();
+                                                reader.beginObject();
+                                                xTag = reader.nextName();
+                                                x = parseDouble(reader.nextString());
+                                                yTag = reader.nextName();
+                                                y = parseDouble(reader.nextString());
+                                                simTimeTag = reader.nextName();
+                                                simTime = parseDouble(reader.nextString());
+                                                commRadTag = reader.nextName();
+                                                commRad = parseDouble(reader.nextString());
+                                                maxVehComTag = reader.nextName();
+                                                maxVehCom = parseDouble(reader.nextString());
+                                                idTag = reader.nextName();
+                                                id = reader.nextString();
+                                                spEdge3 = new TimedEdge(id, x, y, commRad, maxVehCom, simTime);
+                                                reader.endObject();
+                                                firstTag = reader.nextName();
+                                                firstBool = reader.nextBoolean();
+                                                reader.endObject();
+                                                reader.endArray();
+                                            }
+                                        }
+                                        Union2<TimedIoT, TimedEdge> temp1 = new Union2<>();
+                                        temp1.setVal1(spIoT);
+                                        temp1.setVal2(spEdge);
+                                        shortest_path.add(temp1);
+                                        if(spEdge2 != null) {
+                                            Union2<TimedIoT, TimedEdge> temp2 = new Union2<>();
+                                            temp2.setVal1(spIoT);
+                                            temp2.setVal2(spEdge2);
+                                            shortest_path.add(temp2);
+                                        }
+                                        if(spEdge3 != null) {
+                                            Union2<TimedIoT, TimedEdge> temp3 = new Union2<>();
+                                            temp3.setVal1(spIoT);
+                                            temp3.setVal2(spEdge3);
+                                            shortest_path.add(temp3);
+                                        }
                                     }
                                     String iSPTag = reader.nextName();
                                     isStartingProgram = reader.nextBoolean();
@@ -362,14 +430,19 @@ public class IoTEntityGenerator {
             /*(simTimeUp > times.last())  {
                 toUpdateWithTime.transmit = false;
             } else*/ {
-                double expectedLow = Math.min(simTimeLow, ls.program.getMaxTime());
+                Double expectedLow = Math.min(simTimeLow, ls.program.getMaxTime());
                 expectedLow = (double) Math.round(Math.floor(expectedLow / lat) * lat * 1000) /1000;//times.contains(simTimeLow) ? ((Double) simTimeLow) : times.lower(simTimeLow);
                 double dist = simTimeUp - simTimeLow;
                 double lowTime = Math.floor(ls.program.getMinTime() / lat) * lat;
-                if (simTimeLow >= lowTime && expectedLow <= simTimeUp && expectedLow >= ls.program.startCommunicatingAtSimulationTime) {
+                var expObj = ls.dynamicInformation.get(expectedLow);
+                if(expObj == null) {
+                    var times = new TreeSet<>(ls.dynamicInformation.keySet());
+                    expectedLow = times.contains(simTimeLow) ? ((Double) simTimeLow) : times.lower(simTimeLow);
+                    expObj = ls.dynamicInformation.get(expectedLow);
+                }
+                if (simTimeLow >= lowTime && expectedLow != null && expObj != null) {
                     toUpdateWithTime.transmit = true;
 //                System.out.println(toUpdateWithTime.getName()+" Transmitting at "+expectedLow);
-                    var expObj = ls.dynamicInformation.get(expectedLow);
                     toUpdateWithTime.mobility.range.beginX = (int) (toUpdateWithTime.mobility.location.x = expObj.x);
                     toUpdateWithTime.mobility.range.beginY = (int) (toUpdateWithTime.mobility.location.y = expObj.y);
                     toUpdateWithTime.mobility.location.y = ls.dynamicInformation.get(expectedLow).y;
@@ -380,9 +453,15 @@ public class IoTEntityGenerator {
                     double expectedUp = simTimeUp + dist;
                     //expectedUp = times.contains(expectedUp) ? expectedUp : times.lower(expectedUp);
                     expectedUp = (double) Math.round(Math.floor(expectedUp / lat) * lat * 1000) /1000;
-                    if (expectedUp <= end) {
-                        expectedUp = expectedUp == end ? end - lat : expectedUp;//(expectedUp != null) {
+                    expObj = ls.dynamicInformation.get(expectedUp);
+                    if(expObj == null) {
+                        var times = new TreeSet<>(ls.dynamicInformation.keySet());
+                        expectedUp = times.contains(expectedUp) ? expectedUp : times.lower(expectedUp);
                         expObj = ls.dynamicInformation.get(expectedUp);
+                    }
+                    if (expectedUp <= end && expObj != null) {
+                        //expectedUp = expectedUp == end ? end - lat : expectedUp;//(expectedUp != null) {
+                        //expObj = ls.dynamicInformation.get(expectedUp);
                         toUpdateWithTime.mobility.range.endX = (int) expObj.x;
                         toUpdateWithTime.mobility.range.endY = (int) expObj.y;
                     }

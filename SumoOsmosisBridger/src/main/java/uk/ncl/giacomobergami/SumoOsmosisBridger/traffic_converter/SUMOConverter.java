@@ -6,6 +6,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
+import org.xml.sax.helpers.DefaultHandler;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
 import uk.ncl.giacomobergami.traffic_converter.abstracted.TrafficConverter;
@@ -21,9 +22,7 @@ import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 import uk.ncl.giacomobergami.utils.structures.StraightforwardAdjacencyList;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.*;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
 import java.nio.file.Paths;
@@ -123,7 +122,29 @@ public class SUMOConverter extends TrafficConverter {
             e.printStackTrace();
             return false;
         }
-        NodeList timestamp_eval;
+
+
+        SAXParserFactory factory = SAXParserFactory.newInstance();
+        SAXParser saxParser;
+        try {
+            saxParser = factory.newSAXParser();
+        } catch (ParserConfigurationException e) {
+            throw new RuntimeException(e);
+        } catch (SAXException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            saxParser.parse(trajectory_python, new SUMODataParser(temporalOrdering, timedIoTDevices));
+        } catch (SAXException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+        temporalOrdering = SUMODataParser.getTemporalOrdering();
+        timedIoTDevices = SUMODataParser.getTimedIoTDevices();
+
+       /* NodeList timestamp_eval;
         try {
             timestamp_eval = XPathUtil.evaluateNodeList(trace_document, "/fcd-export/timestep");
         } catch (XPathExpressionException e) {
@@ -157,7 +178,7 @@ public class SUMOConverter extends TrafficConverter {
                     ls.add(rec);
                 }
             }
-        }
+        }*/
 
         NodeList traffic_lights = null;
         try {

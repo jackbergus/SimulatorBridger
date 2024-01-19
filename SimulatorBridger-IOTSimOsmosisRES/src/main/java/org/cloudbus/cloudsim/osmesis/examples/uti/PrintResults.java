@@ -91,6 +91,22 @@ public class PrintResults {
 		INSERTAppList(conn, appList);
 		emptyTABLE(conn, "osmoticAppsStats");
 		INSERTOsmoticAppsStats(conn, osmoticAppsStats);
+		emptyTABLE(conn, "overallAppResults");
+		INSERTOverallAppResults(conn, overallAppResults);
+		emptyTABLE(conn, "dataCenterEnergyConsumption");
+		INSERTDataCenterEnergyConsumption(conn, dataCenterEnergyConsumption);
+		emptyTABLE(conn, "HostPowerConsumption");
+		INSERTHostPowerConsumption(conn, hpc);
+		emptyTABLE(conn, "SwitchPowerConsumption");
+		INSERTSwitchPowerConsumption(conn, spc);
+		emptyTABLE(conn, "PowerUtilisationHistory");
+		INSERTPowerUtilisationHistory(conn, puhe);
+		emptyTABLE(conn, "HistoryEntry");
+		INSERTHistoryEntry(conn, ahe);
+		emptyTABLE(conn, "connectionPerSimTime");
+		INSERTConnectionPerSimTime(conn, connectionPerSimTime);
+		emptyTABLE(conn, "bandwidthShareInfo");
+		INSERTBandwidthShareInfo(conn, bsi);
 		conn.close();
 	}
 
@@ -179,7 +195,6 @@ public class PrintResults {
 		int noEntries = ((ArrayList) writable).size();
 		for (int i = 0; i < noEntries; i++) {
 			PrintOsmosisAppFromTags entry = (PrintOsmosisAppFromTags) ((ArrayList) writable).get(i);
-			String EdgeLetsfromList = "";
 			PreparedStatement insertStmt = StartINSERTtoTable(conn, "osmoticAppsStats(unique_entry_id,appid,appname,cloudletmisize,cloudletproccessingtimebyvm" +
 					",datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel" +
 					",edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime," +
@@ -211,6 +226,191 @@ public class PrintResults {
 			int path_dst = INSERTString(insertStmt, 25, entry.path_dst);
 			int path_src = INSERTString(insertStmt, 26, entry.path_src);
 			int edgetowanbw = INSERTDouble(insertStmt, 27, entry.zEdgeToWANBW);
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTOverallAppResults(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "overallAppResults") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			OsmesisOverallAppsResults entry = (OsmesisOverallAppsResults) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "overallAppResults(unique_entry_id,appname,endtime," +
+					"iotdevicebatteryconsumption,iotdevicedrained,simluationtime,starttime,totalcloudletsizes,totaledgeletsizes," +
+					"totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int appname = INSERTString(insertStmt, 2, entry.App_Name);
+			int endtime = INSERTDouble(insertStmt, 3, entry.EndTime);
+			int iotdevicebatteryconsumption = INSERTDouble(insertStmt, 4, entry.IoTDeviceBatteryConsumption);
+			int iotdevicedrained = INSERTString(insertStmt, 5, entry.IoTDeviceDrained);
+			int simluationtime = INSERTDouble(insertStmt, 6, entry.SimluationTime);
+			int starttime = INSERTDouble(insertStmt, 7, entry.StartTime);
+			int totalcloudletsizes = INSERTInt(insertStmt, 8, (int) entry.TotalCloudLetSizes);
+			int totaledgeletsizes = INSERTInt(insertStmt, 9, (int) entry.TotalEdgeLetSizes);
+			int totaliotgenerateddata = INSERTInt(insertStmt, 10, (int) entry.TotalIoTGeneratedData);
+			int totalmelgenerateddata = INSERTInt(insertStmt, 11, (int) entry.TotalMELGeneratedData);
+			int apptotalrunningtime = INSERTDouble(insertStmt, 12, entry.appTotalRunningTime);
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTDataCenterEnergyConsumption(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "dataCenterEnergyConsumption") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			EnergyConsumption entry = (EnergyConsumption) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "dataCenterEnergyConsumption(unique_entry_id,hostenergyconsumed,switchenergyconsumed,totalenergyconsumed,dcname,finishtime)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int hostenergyconsumed = INSERTDouble(insertStmt, 2, entry.HostEnergyConsumed);
+			int switchenergyconsumed = INSERTDouble(insertStmt, 3, entry.SwitchEnergyConsumed);
+			int totalenergyconsumed = INSERTDouble(insertStmt, 4, entry.TotalEnergyConsumed);
+			int dcname = INSERTString(insertStmt, 5, entry.dcName);
+			int finishtime = INSERTDouble(insertStmt, 6, entry.finishTime);
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTHostPowerConsumption(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "HostPowerConsumption") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			PowerConsumption entry = (PowerConsumption) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "HostPowerConsumption(unique_entry_id,dcname,energy,hpc_name)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int dcname = INSERTString(insertStmt, 2, entry.dcName);
+			int energy = INSERTDouble(insertStmt, 3, entry.energy);
+			int hpc_name = INSERTString(insertStmt, 4, entry.name);
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTSwitchPowerConsumption(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "SwitchPowerConsumption") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			PowerConsumption entry = (PowerConsumption) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "SwitchPowerConsumption(unique_entry_id,dcname,energy,spc_name)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int dcname = INSERTString(insertStmt, 2, entry.dcName);
+			int energy = INSERTDouble(insertStmt, 3, entry.energy);
+			int spc_name = INSERTString(insertStmt, 4, entry.name);
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTPowerUtilisationHistory(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "PowerUtilisationHistory") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			ActualPowerUtilizationHistoryEntry entry = (ActualPowerUtilizationHistoryEntry) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "PowerUtilisationHistory(unique_entry_id,dcname, puh_name, starttime, usedmips)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int dcname = INSERTString(insertStmt, 2, entry.dcName);
+			int puh_name = INSERTString(insertStmt, 3, entry.name);
+			int starttime = INSERTDouble(insertStmt, 4, entry.startTime);
+			int usedmips = INSERTDouble(insertStmt, 5, entry.usedMips);
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTHistoryEntry(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "HistoryEntry") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			ActualHistoryEntry entry = (ActualHistoryEntry) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "HistoryEntry(unique_entry_id,numactiveports, starttime)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int numactiveports = INSERTInt(insertStmt, 2, (int) entry.numActivePorts);
+			int starttime = INSERTDouble(insertStmt, 3, entry.startTime);
+
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTConnectionPerSimTime(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "ConnectionPerSimTime") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			EdgeConnectionsPerSimulationTime entry = (EdgeConnectionsPerSimulationTime) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "ConnectionPerSimTime(unique_entry_id,iotdevices, edgehost, cps_time)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int iotdevices = INSERTInt(insertStmt, 2, entry.IoTDevices);
+			int edgehost = INSERTString(insertStmt, 3, entry.edge_host);
+			int cps_time = INSERTDouble(insertStmt, 4, entry.time);
+
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTBandwidthShareInfo(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "bandwidthShareInfo") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			BandShareInfo entry = (BandShareInfo) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "bandwidthShareInfo(unique_entry_id,bandwidthshare, channelid, edgename, melname, timestamp)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int bandwidthshare = INSERTDouble(insertStmt, 2, entry.bandWidthShare);
+			int channelid = INSERTString(insertStmt, 3, entry.channelID);
+			int edgename = INSERTString(insertStmt, 4, entry.edgeName);
+			int melname = INSERTString(insertStmt, 5, entry.melName);
+			int timestamp = INSERTDouble(insertStmt, 6, entry.timeStamp);
+
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;

@@ -26,6 +26,7 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.OrchestratorConfiguration;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import java.io.File;
+import java.sql.SQLException;
 import java.util.Optional;
 
 public class CentralAgentPlannerRunner {
@@ -33,7 +34,7 @@ public class CentralAgentPlannerRunner {
     private static PreSimulatorEstimator obj;
 
     public static PreSimulatorEstimator generateFacade(OrchestratorConfiguration conf,
-                                                       TrafficConfiguration conf2) {
+                                                       TrafficConfiguration conf2) throws SQLException {
         if (obj == null) {
             obj = new PreSimulatorEstimator(conf, conf2);
         }
@@ -45,9 +46,18 @@ public class CentralAgentPlannerRunner {
         Optional<OrchestratorConfiguration> conf = YAML.parse(OrchestratorConfiguration.class, new File(conf2));
         Optional<TrafficConfiguration> conf3 = YAML.parse(TrafficConfiguration.class, new File(conf1));
         conf.ifPresent(x -> conf3.ifPresent(y -> {
-            PreSimulatorEstimator conv = generateFacade(x, y);
+            PreSimulatorEstimator conv = null;
+            try {
+                conv = generateFacade(x, y);
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
             conv.run();
-            conv.serializeAll();
+            try {
+                conv.serializeAll();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }));
     }
 

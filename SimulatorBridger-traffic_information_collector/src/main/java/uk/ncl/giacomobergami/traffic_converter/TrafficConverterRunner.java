@@ -7,6 +7,7 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.sql.SQLException;
 import java.util.Optional;
 
 public class TrafficConverterRunner {
@@ -26,7 +27,11 @@ public class TrafficConverterRunner {
         Optional<TrafficConfiguration> conf = YAML.parse(TrafficConfiguration.class, new File(configuration));
         conf.ifPresent(x -> {
             TrafficConverter conv = generateFacade(x);
-            conv.run();
+            try {
+                conv.run();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         });
     }
 

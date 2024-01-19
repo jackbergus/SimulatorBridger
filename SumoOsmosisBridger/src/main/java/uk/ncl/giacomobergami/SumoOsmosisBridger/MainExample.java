@@ -2,6 +2,7 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.postgresql.ds.PGSimpleDataSource;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.traffic_converter.TrafficConverterRunner;
@@ -12,7 +13,9 @@ import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.pipeline_confs.OrchestratorConfiguration;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
+import javax.sql.DataSource;
 import java.io.File;
+import java.sql.*;
 import java.util.Optional;
 
 public class MainExample {
@@ -57,7 +60,11 @@ public class MainExample {
             y.RSUCsvFile = new File(output_folder_1, converter_out_RSUCsvFile).getAbsolutePath();
             y.VehicleCsvFile = new File(output_folder_1, converter_out_VehicleCsvFile).getAbsolutePath();
             TrafficConverter conv1 = TrafficConverterRunner.generateFacade(y);
-            conv1.run();
+            try {
+                conv1.run();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
             var orchestrator_file = new File(finalOrchestrator).getAbsoluteFile();
             Optional<OrchestratorConfiguration> conf2 = YAML.parse(OrchestratorConfiguration.class, orchestrator_file);
 
@@ -73,9 +80,18 @@ public class MainExample {
                 x.vehiclejsonFile = new File(output_folder_2, orchestrator_out_vehiclejsonFile).getAbsolutePath();
                 x.output_stats_folder = new File(output_folder_2, orchestrator_out_output_stats_folder).getAbsolutePath();
                 x.experiment_name = orchestrator_out_output_experiment_name;
-                PreSimulatorEstimator conv2 = CentralAgentPlannerRunner.generateFacade(x, y);
+                PreSimulatorEstimator conv2 = null;
+                try {
+                    conv2 = CentralAgentPlannerRunner.generateFacade(x, y);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
                 conv2.run();
-                conv2.serializeAll();
+                try {
+                    conv2.serializeAll();
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
 
                 var maxAcceptableVehiclesPerEdgeNode = x.reset_max_vehicle_communication;
                 var maxCommunicationRadiusPerEdgeNode = x.reset_rsu_communication_radius;

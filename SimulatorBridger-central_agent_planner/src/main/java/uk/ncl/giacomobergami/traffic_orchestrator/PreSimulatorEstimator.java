@@ -33,6 +33,7 @@ import io.vavr.control.Try;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.postgresql.ds.PGSimpleDataSource;
 import uk.ncl.giacomobergami.traffic_orchestrator.solver.CandidateSolutionParameters;
 import uk.ncl.giacomobergami.traffic_orchestrator.solver.LocalTimeOptimizationProblem;
 import uk.ncl.giacomobergami.traffic_orchestrator.solver.TemporalNetworkingRanking;
@@ -55,16 +56,20 @@ import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoTProgram;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.ReconstructNetworkInformation;
-
+import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 import com.opencsv.CSVWriter;
 
+import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.sql.*;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class PreSimulatorEstimator {
 
@@ -84,7 +89,7 @@ public class PreSimulatorEstimator {
     List<String> tls_s;
     HashMap<Double, HashMap<String, Integer>> belongingMap;
 
-    public PreSimulatorEstimator(OrchestratorConfiguration conf, TrafficConfiguration conf2) {
+    public PreSimulatorEstimator(OrchestratorConfiguration conf, TrafficConfiguration conf2) throws SQLException {
         logger.info("=== CENTRAL AGENT PLANNER ===");
         logger.trace("CENTRAL AGENT PLANNER: init");
         this.conf = conf;
@@ -106,6 +111,35 @@ public class PreSimulatorEstimator {
         tls_s = null;
         belongingMap = new HashMap<>();
     }
+
+    /*PreparedStatement stmt;
+            try {
+        stmt = conn.prepareStatement("SELECT * FROM accounts");
+    } catch (SQLException e) {
+        throw new RuntimeException(e);
+    }
+
+    ResultSet rs;
+            try {
+        rs = stmt.executeQuery();
+    } catch (SQLException e) {
+        throw new RuntimeException(e);
+    }
+
+            while (true)
+
+    {
+        try {
+            if (!rs.next()) break;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            System.out.printf("id:%d username %s password:%s%n", rs.getLong("user_id"), rs.getString("username"), rs.getString("password"));
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }*/
 
     protected boolean write_json(File folder, String filename, Object writable)  {
         if (!folder.exists()) {
@@ -226,9 +260,9 @@ public class PreSimulatorEstimator {
                         bmT.put(x, sccId);
                 }
             }
-            simTimeToVehicles.getValue().forEach(x -> vehId.add(x.id));
-            var currTime = simTimeToVehicles.getKey();
-            List<TimedIoT> vehs2 = simTimeToVehicles.getValue();
+           simTimeToVehicles.getValue().forEach(x -> vehId.add(x.id));
+           var currTime = simTimeToVehicles.getKey();
+           List<TimedIoT> vehs2 = simTimeToVehicles.getValue();
            for (var tv : vehs2) {
                if (!reconstructVehicles.containsKey(tv.id)) {
                    reconstructVehicles.put(tv.id, new IoT());
@@ -284,9 +318,10 @@ public class PreSimulatorEstimator {
             } else {
                 TemporalNetworkingRanking.nonclairvoyantBestNetworking(simulationSolutions, temporalOrdering, veh_s, bestResultScore, candidate, conf.removal, conf.addition, comparator);
             }
-            candidate.networkingRankingTime = (System.currentTimeMillis()- timedBegin);
+            candidate.networkingRankingTime = (System.currentTimeMillis() - timedBegin);
 
             // SETTING UP THE VEHICULAR PROGRAMS
+            double minStartTime = Collections.min(candidate.getBestResult().keySet());
             for (var veh : vehId) {
                 var vehProgram = new IoTProgram(candidate.delta_associations.get(veh));
                 for (var entry : candidate.bestResult.entrySet()) {
@@ -328,7 +363,7 @@ public class PreSimulatorEstimator {
         }
     }
 
-    public void serializeAll() {
+    public void serializeAll() throws SQLException {
         logger.trace("Serializing data...");
         logger.trace(" * solver_time ");
         write_json(statsFolder, new File(statsFolder.getAbsoluteFile(),"solver_time.json").toString(), problemSolvingTime);

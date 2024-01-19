@@ -215,6 +215,10 @@ public class SUMOConverter extends TrafficConverter {
         return timedIoTDevices.get(tick);
     }
 
+    protected HashMap<Double, List<TimedIoT>> getAllTimedIoT() {
+        return timedIoTDevices;
+    }
+
     @Override
     protected StraightforwardAdjacencyList<String> getTimedEdgeNetwork(Double tick) {
         return connectionPath;

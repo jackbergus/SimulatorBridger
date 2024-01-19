@@ -7,5 +7,5 @@ latency:                0.123 # to use this value change networkType to "custom"
 match:                  true  # true to match the simulation step size to the network latency value
 ioTClassName:           "uk.ncl.giacomobergami.components.iot.CarSensor"
 communicationProtocol:  "uk.ncl.giacomobergami.components.iot_protocol.XMPPProtocol"
-networkType:            "uk.ncl.giacomobergami.components.network_type.cellular_5G"
+networkType:            "uk.ncl.giacomobergami.components.network_type.cellular_3G"
 stepSizeEditorPath:     "clean_example/step-size.py"

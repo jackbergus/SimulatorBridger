@@ -68,7 +68,7 @@ public class IoTEntityGenerator {
             conf = YAML.parse(IoTGlobalConfiguration.class, configuration).orElseThrow();
         else
             conf = null;
-        /*Gson gson = new Gson();
+        Gson gson = new Gson();
         Type sccType = new TypeToken<TreeMap<String, IoT>>() {}.getType();
         BufferedReader reader1 = null;
         try {
@@ -83,12 +83,12 @@ public class IoTEntityGenerator {
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-        }*/
+        }/*
         try {
             timed_iots = readLargeJson(String.valueOf(iotFiles.getAbsoluteFile()));//
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
+        }*/
     }
 
     private TreeMap<String, IoT> readLargeJson(String path) throws IOException {
@@ -385,6 +385,7 @@ public class IoTEntityGenerator {
                 }
                 reader.endObject();
                 IoT IoTEntry = new IoT(DYNAMICINFORMATION, IProg);
+                //IoT IoTEntry = new IoT(DYNAMICINFORMATION, new IoTProgram(null));
                 timed_IoTs.put(name, IoTEntry);
             }
         }
@@ -396,8 +397,7 @@ public class IoTEntityGenerator {
 
         if(latency == 0.01) {
             for (var x : timed_iots.values()) {
-                setWUT.add(x.program.startCommunicatingAtSimulationTime);
-                for(double i = begin; i <= end ; i = i + latency) {
+                for (double i = begin; i <= end; i = i + latency) {
                     setWUT.add((double) Math.round(i * 1000) / 1000);
                 }
                 for (var j = Collections.min(x.dynamicInformation.keySet()); j <= Collections.max(x.dynamicInformation.keySet()); j = j + latency) {

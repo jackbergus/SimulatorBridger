@@ -17,7 +17,7 @@ public class JavaPostGres {
     public static Connection ConnectToSource(DataSource dataSource) {
         Connection conn = null;
         {
-            try {
+            try{
                 conn = dataSource.getConnection();
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -37,7 +37,7 @@ public class JavaPostGres {
         return insertStmt;
     }
 
-    public static int INSERTint(PreparedStatement insertStmt, int index, int x) {
+    public static int INSERTInt(PreparedStatement insertStmt, int index, int x) {
         try {
             insertStmt.setInt(index, x);
         } catch (SQLException e) {

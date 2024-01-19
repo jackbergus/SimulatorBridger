@@ -11,8 +11,6 @@ import uk.ncl.giacomobergami.utils.data.CSVMediator;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdgeMediator;
-import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
-import uk.ncl.giacomobergami.utils.shared_data.iot.IoTProgram;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoTMediator;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
@@ -132,6 +130,7 @@ public abstract class TrafficConverter {
         if (deleteTimed_SCCData) emptyTABLE(conn, "timed_scc");
         INSERTNeighbourData(conn, NeighbourData);
         if (deleteNeighbourData) emptyTABLE(conn, "neighboursChange");
+        conn.close();
     }
 
     protected void INSERTTimedIoTData(Connection conn, Object writable) throws SQLException {
@@ -148,7 +147,7 @@ public abstract class TrafficConverter {
             for (int j = 0; j < diffTimes; j++) {
                 TimedIoT entry = (TimedIoT) ((ArrayList) ((HashMap) writable).values().toArray()[i]).get(j);
                 PreparedStatement insertStmt = StartINSERTtoTable(conn, "vehInformation(di_entry_id, vehicle_id, x, y, angle, vehicle_type, speed, pos, lane, slope, simtime)");
-                int di_entry_ID = INSERTint(insertStmt, 1, start_ID);
+                int di_entry_ID = INSERTInt(insertStmt, 1, start_ID);
                 int vehicle_ID = INSERTString(insertStmt, 2, entry.getId());
                 int di_x = INSERTDouble(insertStmt, 3, entry.getX());
                 int di_y = INSERTDouble(insertStmt, 4, entry.getY());
@@ -177,7 +176,7 @@ public abstract class TrafficConverter {
         for (int i = 0; i < noEntries; i++) {
             TimedEdge entry = (TimedEdge) ((ArrayList) writable).get(i);
             PreparedStatement insertStmt = StartINSERTtoTable(conn, "rsuInformation(unique_entry_id, rsu_id, x, y, simtime, communication_radius, max_vehicle_communication)");
-            int unique_entry_ID = INSERTint(insertStmt, 1, start_ID);
+            int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
             int rsu_ID = INSERTString(insertStmt, 2, entry.getId());
             int ri_x = INSERTDouble(insertStmt, 3, entry.getX());
             int ri_y = INSERTDouble(insertStmt, 4, entry.getY());
@@ -206,7 +205,7 @@ public abstract class TrafficConverter {
                 int noNeighbours = entry.size();
 
                 PreparedStatement insertStmt = StartINSERTtoTable(conn, "timed_scc(unique_entry_id, time_of_update, networkneighbours1, networkneighbours2, networkneighbours3, networkneighbours4)");
-                int unique_entry_ID = INSERTint(insertStmt, 1, start_ID);
+                int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
                 int time_of_update = INSERTDouble(insertStmt, 2, timeEntry.getKey());
                 int networkneighbours1 = noNeighbours >= 1 ? INSERTString(insertStmt, 3, (String) entry.get(0)) : INSERTString(insertStmt, 3, "null");
                 int networkneighbours2 = noNeighbours >= 2 ? INSERTString(insertStmt, 4, (String) entry.get(1)) : INSERTString(insertStmt, 4, "null");
@@ -237,7 +236,7 @@ public abstract class TrafficConverter {
                 int noChanges = entry.getChanges().size();
 
                 PreparedStatement insertStmt = StartINSERTtoTable(conn, "neighboursChange(unique_entry_id, rsu_id, time_of_update, neighbour1, neighbour2, neighbour3, ischange, change1, change2, change3, change4)");
-                int unique_entry_ID = INSERTint(insertStmt, 1, start_ID);
+                int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
                 int rsu_id = INSERTString(insertStmt, 2, (String) RSUEntry.getKey());
                 int time_of_update = INSERTDouble(insertStmt, 3, (Double) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getKey());
                 int neighbours1 = noNeighbours >= 1 ? INSERTString(insertStmt, 4, (String) ((ArrayList) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getValue()).toArray()[0]) : INSERTString(insertStmt, 4, "null");

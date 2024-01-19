@@ -41,6 +41,7 @@ import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
@@ -295,6 +296,12 @@ public class OsmoticWrapper {
 
             if (conf.output_simulation_file != null)
                 pr.dumpCSV(new File(conf.output_simulation_file));
+
+            try {
+                pr.write_to_SQL();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 

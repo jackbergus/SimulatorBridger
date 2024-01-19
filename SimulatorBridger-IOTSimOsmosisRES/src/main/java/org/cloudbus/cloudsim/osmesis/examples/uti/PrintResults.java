@@ -13,6 +13,9 @@ package org.cloudbus.cloudsim.osmesis.examples.uti;
 
 
 import java.io.File;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -29,6 +32,10 @@ import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.cloudbus.osmosis.core.WorkflowInfo;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
+
+import javax.sql.DataSource;
+
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 
 /**
@@ -73,6 +80,141 @@ public class PrintResults {
 //		} catch (IOException e) {
 //			e.printStackTrace();
 //		}
+	}
+
+	public void write_to_SQL() throws SQLException {
+		DataSource dataSource = createDataSource();
+		Connection conn = ConnectToSource(dataSource);
+		emptyTABLE(conn, "accurateBatteryInfo");
+		INSERTAccurateBatteryInfo(conn, battInfo);
+		emptyTABLE(conn, "appList");
+		INSERTAppList(conn, appList);
+		emptyTABLE(conn, "osmoticAppsStats");
+		INSERTOsmoticAppsStats(conn, osmoticAppsStats);
+		conn.close();
+	}
+
+	protected void INSERTAccurateBatteryInfo(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "accurateBatteryInfo") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			AccurateBatteryInformation entry = (AccurateBatteryInformation) ((ArrayList) writable).get(i);
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "accurateBatteryInfo(unique_entry_id, iotdevicename, consumption, flowid, nopackets, time)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int iotdevicename = INSERTString(insertStmt, 2, entry.getIoTDeviceName());
+			int consumption = INSERTDouble(insertStmt, 3, entry.getConsumption());
+			int flowid = INSERTInt(insertStmt, 4, entry.getFlowId());
+			int nopackets = INSERTDouble(insertStmt, 5, entry.getNoPackets());
+			int time = INSERTDouble(insertStmt, 6, entry.getTime());
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTAppList(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "appList") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			OsmoticAppDescription entry = (OsmoticAppDescription) ((ArrayList) writable).get(i);
+			String EdgeLetsfromList = "";
+			for (int j = 0; j < entry.getEdgeLetList().size(); j++) {
+				if(j != 0) EdgeLetsfromList += ", ";
+				EdgeLetsfromList += entry.getEdgeLetList().get(j);
+			}
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "appList(unique_entry_id,appid,appname,appstarttime,clouddatacentername," +
+					"clouddcid,datarate,edgedatacentername,edgedcid,edgeletlist,endtime,iotdevicebatteryconsumption,\n" +
+					"\tiotdevicebatterystatus,iotdeviceid,iotdevicename,iotdeviceoutputsize,isiotdevicedied,melid,melname,meloutputsize,osmesiscloudletsize,osmesisedgeletsize,\n" +
+					"\tstartdatagenerationtime,stopdatagenerationtime,vmcloudid,vmname,workflowid)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int appID = INSERTInt(insertStmt, 2, entry.getAppID());
+			int appName = INSERTString(insertStmt, 3, entry.getAppName());
+			int appStartTime = INSERTDouble(insertStmt, 4, entry.getAppStartTime());
+			int cloudDatacenterName = INSERTString(insertStmt, 5, entry.getCloudDatacenterName());
+			int cloudDcId = INSERTInt(insertStmt, 6, entry.getCloudDcId());
+			int dataRate = INSERTDouble(insertStmt, 7, entry.getDataRate());
+			int edgeDatacenterName = INSERTString(insertStmt, 8, entry.getEdgeDatacenterName());
+			int edgeDcId = INSERTInt(insertStmt, 9, entry.getEdgeDcId());
+			int edgeLetList = entry.getEdgeLetList().size() > 0 ? INSERTString(insertStmt, 10, EdgeLetsfromList) : INSERTString(insertStmt, 10, "null");
+			int endTime = INSERTDouble(insertStmt, 11, entry.getEndTime());
+			int ioTDeviceBatteryConsumption = INSERTDouble(insertStmt, 12, entry.getIoTDeviceBatteryConsumption());
+			int ioTDeviceBatteryStatus = INSERTString(insertStmt, 13, entry.getIoTDeviceBatteryStatus());
+			int ioTDeviceId = INSERTInt(insertStmt, 14, entry.getIoTDeviceId());
+			int ioTDeviceName = INSERTString(insertStmt, 15, entry.getIoTDeviceName());
+			int ioTDeviceOutputSize = INSERTInt(insertStmt, 16, (int) entry.getIoTDeviceOutputSize());
+			int isIoTDeviceDied = INSERTString(insertStmt, 17, String.valueOf(entry.getIsIoTDeviceDied()));
+			int melId = INSERTInt(insertStmt, 18, entry.getMelId());
+			int melname = INSERTString(insertStmt, 19, entry.getMELName());
+			int meloutputSize = INSERTInt(insertStmt, 20, (int) entry.getMELOutputSize());
+			int osmesisCloudletSize = INSERTInt(insertStmt, 21, (int) entry.getOsmesisCloudletSize());
+			int osmesisEdgeletSize = INSERTInt(insertStmt, 22, (int) entry.getOsmesisEdgeletSize());
+			int startDataGenerationTime = INSERTDouble(insertStmt, 23, entry.getStartDataGenerationTime());
+			int stopDataGenerationTime = INSERTDouble(insertStmt, 24, entry.getStopDataGenerationTime());
+			int vmCloudId = INSERTInt(insertStmt, 25, entry.getVmCloudId());
+			int vmName = INSERTString(insertStmt, 26, entry.getVmName());
+			int workflowId = INSERTInt(insertStmt, 27, entry.getWorkflowId());
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
+	}
+
+	protected void INSERTOsmoticAppsStats(Connection conn, Object writable) throws SQLException {
+		if (TABLEsize(conn, "osmoticAppsStats") != 0) {
+			return;
+		}
+
+		int start_ID = 1;
+
+		int noEntries = ((ArrayList) writable).size();
+		for (int i = 0; i < noEntries; i++) {
+			PrintOsmosisAppFromTags entry = (PrintOsmosisAppFromTags) ((ArrayList) writable).get(i);
+			String EdgeLetsfromList = "";
+			PreparedStatement insertStmt = StartINSERTtoTable(conn, "osmoticAppsStats(unique_entry_id,appid,appname,cloudletmisize,cloudletproccessingtimebyvm" +
+					",datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel" +
+					",edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime," +
+					"oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw)");
+			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
+			int appID = INSERTInt(insertStmt, 2, entry.APP_ID);
+			int appname = INSERTString(insertStmt, 3, entry.AppName);
+			int cloudletmisize = INSERTDouble(insertStmt, 4, entry.CloudLetMISize);
+			int cloudletproccessingtimebyvm = INSERTDouble(insertStmt, 5, entry.CloudLetProccessingTimeByVM);
+			int datasizeiotdevicetomel_mb = INSERTInt(insertStmt, 6, (int) entry.DataSizeIoTDeviceToMEL_Mb);
+			int datasizemeltovm_mb = INSERTInt(insertStmt, 7, (int) entry.DataSizeMELToVM_Mb);
+			int destinationvmname = INSERTString(insertStmt, 8, entry.DestinationVmName);
+			int edgeletmisize = INSERTDouble(insertStmt, 9, entry.EdgeLetMISize);
+			int edgeletproccessingtimebymel = INSERTDouble(insertStmt, 10, entry.EdgeLetProccessingTimeByMEL);
+			int edgelet_mel_finishtime = INSERTDouble(insertStmt, 11, entry.EdgeLet_MEL_FinishTime);
+			int edgelet_mel_starttime = INSERTDouble(insertStmt, 12, entry.EdgeLet_MEL_StartTime);
+			int finishtime = INSERTDouble(insertStmt, 13, entry.FinishTime);
+			int iotdevicename = INSERTString(insertStmt, 14, entry.IoTDeviceName);
+			int melname = INSERTString(insertStmt, 15, entry.MELName);
+			int melendtransmissiontime = INSERTDouble(insertStmt, 16, entry.MelEndTransmissionTime);
+			int melstarttransmissiontime = INSERTDouble(insertStmt,  17, entry.MelStartTransmissionTime);
+			int starttime = INSERTDouble(insertStmt, 18, entry.StartTime);
+			int oas_transaction = INSERTInt(insertStmt, 19, entry.Transaction);
+			int transactiontotaltime = INSERTDouble(insertStmt, 20, entry.TransactionTotalTime);
+			int transmissiontimeiotdevicetomel = INSERTDouble(insertStmt, 21, entry.TransmissionTimeIoTDeviceToMEL);
+			int transmissiontimemeltovm = INSERTDouble(insertStmt, 22, entry.TransmissionTimeMELToVM);
+			int flowiotmelappid = INSERTInt(insertStmt, 23, entry.flowIoTMelAppId);
+			int flowmelcloudappid = INSERTInt(insertStmt, 24, entry.flowMELCloudAppId);
+			int path_dst = INSERTString(insertStmt, 25, entry.path_dst);
+			int path_src = INSERTString(insertStmt, 26, entry.path_src);
+			int edgetowanbw = INSERTDouble(insertStmt, 27, entry.zEdgeToWANBW);
+			boolean finishedInsert = EndINSERTtoTable(insertStmt);
+
+			start_ID++;
+		}
 	}
 
 	public void addHostPowerConsumption(String dcName, String name, double energy) {

@@ -107,7 +107,7 @@ public class PrintResults {
 		INSERTConnectionPerSimTime(conn, connectionPerSimTime);
 		emptyTABLE(conn, "bandwidthShareInfo");
 		INSERTBandwidthShareInfo(conn, bsi);
-		conn.close();
+		DisconnectFromSource(conn);
 	}
 
 	protected void INSERTAccurateBatteryInfo(Connection conn, Object writable) throws SQLException {

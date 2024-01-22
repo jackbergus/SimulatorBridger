@@ -37,6 +37,7 @@ import java.util.stream.Collectors;
 import static java.lang.Double.parseDouble;
 import static org.jooq.impl.DSL.field;
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.ConnectToSource;
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.DisconnectFromSource;
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.createDataSource;
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.getDSLContext;
 
@@ -506,22 +507,50 @@ public class IoTEntityGenerator {
     }
 
 
-    public void asIoTSQLCongigurationList() {
+    public List<IoTDeviceTabularConfiguration> asIoTSQLCongigurationList() {
         DataSource dataSource = createDataSource();
         Connection conn = ConnectToSource(dataSource);
         DSLContext context = getDSLContext(conn);
 
-        Result<Record1<Object>> collectAllVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch();
-        List allVehs = collectAllVehs.getValues(0);
-        Result<Record> vehInformation = context.select().from(Vehinformation.VEHINFORMATION).where( "vehicle_id = '" + allVehs.get(0) + "'").fetch();
-        var temp =5;
+        List<IoTDeviceTabularConfiguration> IDTCList = new ArrayList<>();
 
+        List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+
+        for (int i = 0; i < allVehs.size(); i++) {
+            List timesForCurrentVehicle = context.select(field("simtime")).distinctOn(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "'").fetch().getValues(0);
+            IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
+
+            idtc.beginX = (int) Math.floor((double) context.select(field("x")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0));
+            idtc.beginY = (int) Math.floor((double) context.select(field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0));
+            idtc.movable = timesForCurrentVehicle.size() > 0;
+            if (idtc.movable) {
+                idtc.hasMovingRange = true;
+                idtc.endX = (int) Math.floor((double) context.select(field("x")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(1) + "'").fetch().getValues(0).get(0));
+                idtc.endY = (int) Math.floor((double) context.select(field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(1) + "'").fetch().getValues(0).get(0));
+            }
+            idtc.latency = conf.latency;
+            idtc.match = conf.match;
+            idtc.signalRange = conf.signalRange;
+            idtc.associatedEdge = null;
+            idtc.networkType = conf.networkType;
+            idtc.stepSizeEditorPath = conf.stepSizeEditorPath;
+            idtc.velocity = (double) context.select(field("speed")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0);
+            idtc.name = (String) context.select(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0);
+            idtc.communicationProtocol = conf.communicationProtocol;
+            idtc.bw = conf.bw;
+            idtc.max_battery_capacity = conf.max_battery_capacity;
+            idtc.battery_sensing_rate = conf.battery_sensing_rate;
+            idtc.battery_sending_rate = conf.battery_sending_rate;
+            idtc.ioTClassName = conf.ioTClassName;
+
+            IDTCList.add(idtc);
+        }
+        DisconnectFromSource(conn);
+        return IDTCList;
     }
 
 
     public List<IoTDeviceTabularConfiguration> asIoTJSONConfigurationList() {
-
-        asIoTSQLCongigurationList();
 
         return timed_iots.values()
                 .stream()

@@ -28,6 +28,14 @@ public class JavaPostGres {
         }
         return conn;
     }
+
+    public static void DisconnectFromSource(Connection conn) {
+        try {
+            conn.close();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
     public static PreparedStatement StartINSERTtoTable(Connection conn, String addition) throws SQLException {
         String noValues = "(?";
         if(StringUtils.countMatches(addition, ',') > 1) {

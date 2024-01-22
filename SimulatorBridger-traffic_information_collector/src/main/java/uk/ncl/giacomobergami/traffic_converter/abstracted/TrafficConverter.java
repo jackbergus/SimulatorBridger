@@ -130,7 +130,7 @@ public abstract class TrafficConverter {
         if (deleteTimed_SCCData) emptyTABLE(conn, "timed_scc");
         INSERTNeighbourData(conn, NeighbourData);
         if (deleteNeighbourData) emptyTABLE(conn, "neighboursChange");
-        conn.close();
+        DisconnectFromSource(conn);
     }
 
     protected void INSERTTimedIoTData(Connection conn, Object writable) throws SQLException {

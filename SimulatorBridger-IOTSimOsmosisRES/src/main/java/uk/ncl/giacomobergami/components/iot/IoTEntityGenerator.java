@@ -4,12 +4,17 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
+import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.Record1;
+import org.jooq.Result;
 import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadFromVehicularProgram;
 import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
@@ -17,16 +22,23 @@ import uk.ncl.giacomobergami.utils.shared_data.iot.IoTProgram;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 import uk.ncl.giacomobergami.utils.structures.Union2;
 
+import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.sql.Connection;
 import java.sql.Time;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
+
 import static java.lang.Double.parseDouble;
+import static org.jooq.impl.DSL.field;
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.ConnectToSource;
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.createDataSource;
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.getDSLContext;
 
 public class IoTEntityGenerator {
     final TreeMap<String, IoT> timed_iots;
@@ -68,7 +80,7 @@ public class IoTEntityGenerator {
             conf = YAML.parse(IoTGlobalConfiguration.class, configuration).orElseThrow();
         else
             conf = null;
-        Gson gson = new Gson();
+        /*Gson gson = new Gson();
         Type sccType = new TypeToken<TreeMap<String, IoT>>() {}.getType();
         BufferedReader reader1 = null;
         try {
@@ -83,12 +95,12 @@ public class IoTEntityGenerator {
         } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-        }/*
+        }*/
         try {
             timed_iots = readLargeJson(String.valueOf(iotFiles.getAbsoluteFile()));//
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }*/
+        }
     }
 
     private TreeMap<String, IoT> readLargeJson(String path) throws IOException {
@@ -276,13 +288,13 @@ public class IoTEntityGenerator {
                                         temp1.setVal1(spIoT);
                                         temp1.setVal2(spEdge);
                                         shortest_path.add(temp1);
-                                        if(spEdge2 != null) {
+                                        if (spEdge2 != null) {
                                             Union2<TimedIoT, TimedEdge> temp2 = new Union2<>();
                                             temp2.setVal1(spIoT);
                                             temp2.setVal2(spEdge2);
                                             shortest_path.add(temp2);
                                         }
-                                        if(spEdge3 != null) {
+                                        if (spEdge3 != null) {
                                             Union2<TimedIoT, TimedEdge> temp3 = new Union2<>();
                                             temp3.setVal1(spIoT);
                                             temp3.setVal2(spEdge3);
@@ -493,7 +505,24 @@ public class IoTEntityGenerator {
         return timed_iots.size();
     }
 
+
+    public void asIoTSQLCongigurationList() {
+        DataSource dataSource = createDataSource();
+        Connection conn = ConnectToSource(dataSource);
+        DSLContext context = getDSLContext(conn);
+
+        Result<Record1<Object>> collectAllVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch();
+        List allVehs = collectAllVehs.getValues(0);
+        Result<Record> vehInformation = context.select().from(Vehinformation.VEHINFORMATION).where( "vehicle_id = '" + allVehs.get(0) + "'").fetch();
+        var temp =5;
+
+    }
+
+
     public List<IoTDeviceTabularConfiguration> asIoTJSONConfigurationList() {
+
+        asIoTSQLCongigurationList();
+
         return timed_iots.values()
                 .stream()
                 .map(x -> {

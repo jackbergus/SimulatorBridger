@@ -1,6 +1,9 @@
 package uk.ncl.giacomobergami.utils.database;
 
 import org.apache.commons.lang3.StringUtils;
+import org.jooq.DSLContext;
+import org.jooq.SQLDialect;
+import org.jooq.impl.DSL;
 import org.postgresql.ds.PGSimpleDataSource;
 
 import javax.sql.DataSource;
@@ -109,7 +112,11 @@ public class JavaPostGres {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
 
+    public static DSLContext getDSLContext (Connection conn) {
+        DSLContext context =  DSL.using(conn, SQLDialect.POSTGRES);
+        return context;
     }
 
    /*    PreparedStatement stmt;

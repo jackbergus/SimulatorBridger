@@ -2,6 +2,7 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.jooq.codegen.GenerationTool;
 import org.postgresql.ds.PGSimpleDataSource;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
@@ -15,6 +16,8 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import javax.sql.DataSource;
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.*;
 import java.util.Optional;
 
@@ -37,6 +40,16 @@ public class MainExample {
     }
 
     public static void main(String args[]) {
+
+        boolean generate = false;
+        if(generate) {
+            try {
+                GenerationTool.generate(Files.readString(Path.of("jooq-config.xml")));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         String converter = "clean_example/converter.yaml";
         String orchestrator = "clean_example/orchestrator.yaml";
         String simulator_runner = "clean_example/IoTSim.yaml";

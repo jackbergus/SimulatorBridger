@@ -13,7 +13,9 @@ package uk.ncl.giacomobergami.components.iot;
 
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
+import org.jooq.DSLContext;
 
+import java.sql.Connection;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -53,6 +55,11 @@ public class VoiceSensor extends IoTDevice {
 
 	@Override
 	public void processEvent(SimEvent ev) {
+		super.processEvent(ev);
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
 		super.processEvent(ev);
 	}
 

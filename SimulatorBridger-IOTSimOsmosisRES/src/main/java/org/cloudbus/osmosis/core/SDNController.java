@@ -12,6 +12,7 @@
 package org.cloudbus.osmosis.core;
 
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,6 +30,7 @@ import org.cloudbus.cloudsim.sdn.NetworkNIC;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.cloudsim.sdn.Switch;
 
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.sdn_traffic.SDNTrafficSchedulingPolicy;
 import uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingPolicy;
 
@@ -83,6 +85,27 @@ public class SDNController extends NetworkOperatingSystem {
 			break;
 			
 		default: System.out.println(this.getName() + ": Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
+		}
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+		int tag = ev.getTag();
+		Flow flow;
+		switch(tag){
+
+			case OsmoticTags.BUILD_ROUTE:
+				flow = (Flow) ev.getData();
+				scheduleFlow(flow);
+				break;
+
+			case OsmoticTags.BUILD_ROUTE_GREEN:
+				@SuppressWarnings("unchecked")
+				List<Object> list = (List<Object>) ev.getData();
+				startTransmittingGreenEnergy(list);
+				break;
+
+			default: System.out.println(this.getName() + ": Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
 		}
 	}
 	

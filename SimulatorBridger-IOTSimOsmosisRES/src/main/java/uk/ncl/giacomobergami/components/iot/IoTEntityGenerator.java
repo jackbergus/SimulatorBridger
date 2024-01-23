@@ -1,13 +1,10 @@
 package uk.ncl.giacomobergami.components.iot;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Record1;
-import org.jooq.Result;
+import org.jooq.impl.DSL;
 import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
@@ -22,27 +19,21 @@ import uk.ncl.giacomobergami.utils.shared_data.iot.IoTProgram;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 import uk.ncl.giacomobergami.utils.structures.Union2;
 
-import javax.sql.DataSource;
 import java.io.*;
-import java.lang.reflect.Type;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
-import java.sql.Time;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 
 import static java.lang.Double.parseDouble;
+import static org.jooq.impl.DSL.abs;
 import static org.jooq.impl.DSL.field;
-import static uk.ncl.giacomobergami.utils.database.JavaPostGres.ConnectToSource;
-import static uk.ncl.giacomobergami.utils.database.JavaPostGres.DisconnectFromSource;
-import static uk.ncl.giacomobergami.utils.database.JavaPostGres.createDataSource;
-import static uk.ncl.giacomobergami.utils.database.JavaPostGres.getDSLContext;
 
 public class IoTEntityGenerator {
-    final TreeMap<String, IoT> timed_iots;
+    //final TreeMap<String, IoT> timed_iots;
     final IoTGlobalConfiguration conf;
     static final HashSet<Double> setWUT = new HashSet<>();
     final File converter_file = new File("clean_example/converter.yaml");
@@ -50,6 +41,7 @@ public class IoTEntityGenerator {
     final double begin = time_conf.get().getBegin();
     final double end = time_conf.get().getEnd();
     double latency = time_conf.get().getStep();
+    HashMap<String, TreeSet> vehicleTimes = new HashMap<String, TreeSet>();
 
     public static HashSet<Double> getSetWUT() {
         return setWUT;
@@ -71,7 +63,7 @@ public class IoTEntityGenerator {
 
     public IoTEntityGenerator(TreeMap<String, IoT> timed_scc,
                               IoTGlobalConfiguration conf) {
-        this.timed_iots = timed_scc;
+        //this.timed_iots = timed_scc;
         this.conf = conf;
     }
 
@@ -97,14 +89,29 @@ public class IoTEntityGenerator {
             e.printStackTrace();
             System.exit(1);
         }*/
-        try {
+        /*try {
             timed_iots = readLargeJson(String.valueOf(iotFiles.getAbsoluteFile()));//
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }*/
+    }
+
+    public IoTEntityGenerator(File iotFiles,
+                              File configuration, Connection conn, DSLContext context) {
+        if (configuration != null)
+            conf = YAML.parse(IoTGlobalConfiguration.class, configuration).orElseThrow();
+        else
+            conf = null;
+
+        List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+        for (int i = 0; i < allVehs.size(); i++) {
+            TreeSet timesForCurrentVehicle = new TreeSet(context.select(field("simtime")).distinctOn(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "'").fetch().getValues(0));
+            vehicleTimes.put((String) allVehs.get(i), timesForCurrentVehicle);
         }
     }
 
-    private TreeMap<String, IoT> readLargeJson(String path) throws IOException {
+
+    /*private TreeMap<String, IoT> readLargeJson(String path) throws IOException {
         Gson gson = new Gson();
         TreeMap<String, IoT> timed_IoTs = new TreeMap<>();
         try (
@@ -403,85 +410,72 @@ public class IoTEntityGenerator {
             }
         }
         return timed_IoTs;
-    }
+    }*/
 
     public Collection<Double> collectionOfWakeUpTimes() {
         latency = Math.max(latency, 0.01);
-
-        if(latency == 0.01) {
-            for (var x : timed_iots.values()) {
-                for (double i = begin; i <= end; i = i + latency) {
-                    setWUT.add((double) Math.round(i * 1000) / 1000);
-                }
-                for (var j = Collections.min(x.dynamicInformation.keySet()); j <= Collections.max(x.dynamicInformation.keySet()); j = j + latency) {
-                    setWUT.add((double) Math.round(j * 1000) / 1000);
-                }//patch missing wake up times
-                x.program.setMinTime(Collections.min(x.dynamicInformation.keySet()));
-                x.program.setMaxTime(Collections.max(x.dynamicInformation.keySet()));
-            }
-        } else {
-            for (var x : timed_iots.values()) {
-                for (double i = begin; i <= end; i = i + latency) {
-                    setWUT.add((double) Math.round(i * 1000) / 1000);
-                }
-                x.program.setMinTime(Collections.min(x.dynamicInformation.keySet()));
-                x.program.setMaxTime(Collections.max(x.dynamicInformation.keySet()));
+        for (double i = begin; i <= end; i = i + latency) {
+            setWUT.add((double) Math.round(i * 1000) / 1000);
+        }
+        for (int j = 0; j < vehicleTimes.size(); j++) {
+            TreeSet timesForVehicle = (TreeSet) vehicleTimes.values().toArray()[j];
+            for (int k = 0; k < timesForVehicle.size(); k++) {
+                Double timeValue = (Double) ((TreeSet<?>) vehicleTimes.values().toArray()[j]).toArray()[k];
+                setWUT.add(timeValue.doubleValue());
             }
         }
         return setWUT;
     }
 
     public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
-                                @Input double simTimeLow,
-                                @Input double simTimeUp) {
-        simTimeLow = (double) Math.round(simTimeLow * 1000) /1000;
-        simTimeUp = (double) Math.round(simTimeUp * 1000) /1000;
-        var lat = latency == 0.01 ? 0.001 : latency;
-        var ls = timed_iots.get(toUpdateWithTime.getName());
-        if (simTimeLow >= begin) { //ls.program.startCommunicatingAtSimulationTime) {
-            //var times = new TreeSet<>(ls.dynamicInformation.keySet());
-            /*(simTimeUp > times.last())  {
+                                @Input double simTimeLow, @Input double simTimeUp,
+                                @Input DSLContext context) {
+        simTimeLow = (double) Math.round(simTimeLow * 1000) / 1000;
+        if (simTimeLow >= begin && simTimeLow <= end) {
+            TreeSet timesForCurrentVehicle = vehicleTimes.get(toUpdateWithTime.getName());
+            if(!timesForCurrentVehicle.contains(simTimeLow) && timesForCurrentVehicle.lower(simTimeLow) == null) {
                 toUpdateWithTime.transmit = false;
-            } else*/ {
-                Double expectedLow = Math.min(simTimeLow, ls.program.getMaxTime());
-                expectedLow = (double) Math.round(Math.floor(expectedLow / lat) * lat * 1000) /1000;//times.contains(simTimeLow) ? ((Double) simTimeLow) : times.lower(simTimeLow);
-                double dist = simTimeUp - simTimeLow;
-                double lowTime = Math.floor(ls.program.getMinTime() / lat) * lat;
-                var expObj = ls.dynamicInformation.get(expectedLow);
-                if(expObj == null) {
-                    var times = new TreeSet<>(ls.dynamicInformation.keySet());
-                    expectedLow = times.contains(simTimeLow) ? ((Double) simTimeLow) : times.lower(simTimeLow);
-                    expObj = ls.dynamicInformation.get(expectedLow);
-                }
-                if (simTimeLow >= lowTime && expectedLow != null && expObj != null) {
-                    toUpdateWithTime.transmit = true;
-//                System.out.println(toUpdateWithTime.getName()+" Transmitting at "+expectedLow);
-                    toUpdateWithTime.mobility.range.beginX = (int) (toUpdateWithTime.mobility.location.x = expObj.x);
-                    toUpdateWithTime.mobility.range.beginY = (int) (toUpdateWithTime.mobility.location.y = expObj.y);
-                    toUpdateWithTime.mobility.location.y = ls.dynamicInformation.get(expectedLow).y;
-                    toUpdateWithTime.mobility.location.x = ls.dynamicInformation.get(expectedLow).x;
-                    if (toUpdateWithTime.getName().equals("0") && ((simTimeLow - Math.floor(simTimeLow) <= 0.1))) {
-                        System.out.println(simTimeLow+" time: " +toUpdateWithTime.mobility.range.beginX+"->"+toUpdateWithTime.mobility.location.x+", "+toUpdateWithTime.mobility.range.beginY+"->"+toUpdateWithTime.mobility.location.y);
-                    }
-                    Double expectedUp = simTimeUp + dist;
-                    //expectedUp = times.contains(expectedUp) ? expectedUp : times.lower(expectedUp);
-                    expectedUp = (double) Math.round(Math.floor(expectedUp / lat) * lat * 1000) /1000;
-                    expObj = ls.dynamicInformation.get(expectedUp);
-                    if(expObj == null) {
-                        var times = new TreeSet<>(ls.dynamicInformation.keySet());
-                        expectedUp = times.contains(expectedUp) ? expectedUp : times.lower(expectedUp);
-                        expObj = ls.dynamicInformation.get(expectedUp);
-                    }
-                    if (expectedUp <= end && expObj != null) {
-                        //expectedUp = expectedUp == end ? end - lat : expectedUp;//(expectedUp != null) {
-                        //expObj = ls.dynamicInformation.get(expectedUp);
-                        toUpdateWithTime.mobility.range.endX = (int) expObj.x;
-                        toUpdateWithTime.mobility.range.endY = (int) expObj.y;
-                    }
-                } else {
-                    toUpdateWithTime.transmit = false;
-                }
+                return;
             }
+            simTimeUp = (double) Math.round(simTimeUp * 1000) / 1000;
+            var lat = latency == 0.01 ? 0.001 : latency;
+            Double expectedLow = Math.min(simTimeLow, (Double) Collections.max(timesForCurrentVehicle));
+            expectedLow = (double) Math.round(Math.floor(expectedLow / lat) * lat * 1000) / 1000;
+            double dist = simTimeUp - simTimeLow;
+            double lowTime = Math.floor((Double) Collections.min(timesForCurrentVehicle) / lat) * lat;
+            boolean isNull = !timesForCurrentVehicle.contains(expectedLow);
+            if (isNull) {
+                //double closestLowerTime = simTimeLow != Math.min(simTimeLow, (Double) Collections.min(timesForCurrentVehicle)) ? (double) context.select(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + toUpdateWithTime.getName() + "' AND simtime < '"+ simTimeLow + "'").orderBy(field("ABS("+ simTimeLow +" - simtime)")).limit(DSL.inline(1)).fetch().getValues(0).get(0) : 0.0;
+                expectedLow = timesForCurrentVehicle.contains(simTimeLow) ? simTimeLow : (Double) timesForCurrentVehicle.lower(simTimeLow);
+                isNull = (Double) Collections.min(timesForCurrentVehicle) > simTimeLow;
+            }
+            if (simTimeLow >= lowTime && !isNull) {
+                var expectedLowInfo = context.select().from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + toUpdateWithTime.getName() + "' AND simtime =" + expectedLow).fetch();
+                toUpdateWithTime.transmit = true;
+                toUpdateWithTime.mobility.range.beginX = (int) (double) expectedLowInfo.getValues(2).get(0);
+                toUpdateWithTime.mobility.range.beginY = (int) (double) expectedLowInfo.getValues(3).get(0);
+                toUpdateWithTime.mobility.location.y = (double) expectedLowInfo.getValues(3).get(0);
+                toUpdateWithTime.mobility.location.x = (double) expectedLowInfo.getValues(2).get(0);
+                if (toUpdateWithTime.getName().equals("0") && ((simTimeLow - Math.floor(simTimeLow) <= 0.1))) {
+                    System.out.println(simTimeLow + " time: " + toUpdateWithTime.mobility.range.beginX + "->" + toUpdateWithTime.mobility.location.x + ", " + toUpdateWithTime.mobility.range.beginY + "->" + toUpdateWithTime.mobility.location.y);
+                }
+                Double expectedUp = simTimeUp + dist;
+                expectedUp = (double) Math.round(Math.floor(expectedUp / lat) * lat * 1000) / 1000;
+                isNull = !timesForCurrentVehicle.contains(expectedUp);
+                if (isNull) {
+                    //double closestLowerTime = expectedUp != Math.min(expectedUp, (Double) Collections.min(timesForCurrentVehicle)) ? (double) context.select(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + toUpdateWithTime.getName() + "' AND simtime < '"+ simTimeLow + "'").orderBy(field("ABS("+ simTimeLow +" - simtime)")).limit(DSL.inline(1)).fetch().getValues(0).get(0) : 0.0;
+                    expectedUp = timesForCurrentVehicle.contains(expectedUp) ? expectedUp : (Double) timesForCurrentVehicle.lower(expectedUp);
+                    isNull = (Double) Collections.min(timesForCurrentVehicle) > expectedUp;
+                }
+                if (expectedUp <= end && !isNull) {
+                    var expectedUpInfo = context.select().from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + toUpdateWithTime.getName() + "' AND simtime =" + expectedUp).fetch();
+                    toUpdateWithTime.mobility.range.endX = (int) (double) expectedUpInfo.getValues(2).get(0);
+                    toUpdateWithTime.mobility.range.endY = (int) (double) expectedUpInfo.getValues(3).get(0);
+                }
+            } else {
+                toUpdateWithTime.transmit = false;
+            }
+
         } else {
             toUpdateWithTime.transmit = false;
         }
@@ -491,27 +485,24 @@ public class IoTEntityGenerator {
                                               AtomicInteger global_program_counter) {
         var vehicularConverterToWorkflow = new WorkloadFromVehicularProgram(null);
         List<WorkloadCSV> ls = new ArrayList<>();
-        for (var k : timed_iots.entrySet()) {
+        /*for (var k : timed_iots.entrySet()) {
             vehicularConverterToWorkflow.setNewVehicularProgram(k.getValue().getProgram());
             ls.addAll(vehicularConverterToWorkflow.generateFirstMileSpecifications(simulation_step, global_program_counter, null));
         }
         ls.sort(Comparator
                 .comparingDouble((WorkloadCSV o) -> o.StartDataGenerationTime_Sec)
                 .thenComparingDouble(o -> o.StopDataGeneration_Sec)
-                .thenComparing(o -> o.IoTDevice));
+                .thenComparing(o -> o.IoTDevice));*/
         return ls;
     }
 
-    public int maximumNumberOfCommunicatingVehicles() {
-        return timed_iots.size();
+    public int maximumNumberOfCommunicatingVehicles(DSLContext context) {
+        List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+        return allVehs.size();
     }
 
 
-    public List<IoTDeviceTabularConfiguration> asIoTSQLCongigurationList() {
-        DataSource dataSource = createDataSource();
-        Connection conn = ConnectToSource(dataSource);
-        DSLContext context = getDSLContext(conn);
-
+    public List<IoTDeviceTabularConfiguration> asIoTSQLCongigurationList(Connection conn, DSLContext context) {
         List<IoTDeviceTabularConfiguration> IDTCList = new ArrayList<>();
 
         List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
@@ -545,12 +536,11 @@ public class IoTEntityGenerator {
 
             IDTCList.add(idtc);
         }
-        DisconnectFromSource(conn);
         return IDTCList;
     }
 
 
-    public List<IoTDeviceTabularConfiguration> asIoTJSONConfigurationList() {
+    /*public List<IoTDeviceTabularConfiguration> asIoTJSONConfigurationList() {
 
         return timed_iots.values()
                 .stream()
@@ -586,6 +576,6 @@ public class IoTEntityGenerator {
                     iot.ioTClassName = conf.ioTClassName;
                     return iot;
                 }).collect(Collectors.toList());
-    }
+    }*/
 
 }

@@ -8,12 +8,14 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
+import org.jooq.DSLContext;
 
 
 /**
@@ -49,6 +51,15 @@ public class SDNHost extends SimEntity implements NetworkNIC {
 
 	@Override
 	public void processEvent(SimEvent ev) {
+		int tag = ev.getTag();
+		switch(tag){
+
+			default: System.out.println("Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
+		}
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
 		int tag = ev.getTag();
 		switch(tag){
 

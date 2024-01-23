@@ -2,10 +2,12 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.jooq.DSLContext;
 import org.jooq.codegen.GenerationTool;
 import org.postgresql.ds.PGSimpleDataSource;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
+import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.traffic_converter.TrafficConverterRunner;
 import uk.ncl.giacomobergami.traffic_converter.abstracted.TrafficConverter;
 import uk.ncl.giacomobergami.traffic_orchestrator.PreSimulatorEstimator;
@@ -20,6 +22,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
 import java.util.Optional;
+
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class MainExample {
 
@@ -40,6 +44,10 @@ public class MainExample {
     }
 
     public static void main(String args[]) {
+
+        DataSource dataSource = createDataSource();
+        Connection conn = ConnectToSource(dataSource);
+        DSLContext context = getDSLContext(conn);
 
         boolean generate = false;
         if(generate) {
@@ -74,7 +82,7 @@ public class MainExample {
             y.VehicleCsvFile = new File(output_folder_1, converter_out_VehicleCsvFile).getAbsolutePath();
             TrafficConverter conv1 = TrafficConverterRunner.generateFacade(y);
             try {
-                conv1.run();
+                conv1.run(conn);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -125,10 +133,14 @@ public class MainExample {
                 }
                 conf3.netsim_output = output_folder_3.getAbsolutePath();
                 var conv3 = new EnsembleConfigurations(conf3.first(), conf3.second(), conf3.third(), conf3.fourth(), conf3.fith());
-                var configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3);
-                configuration_for_each_network_change.forEach(OsmoticRunner::runFromConfiguration);
+                var configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3, conn, context);
+
+                for (GlobalConfigurationSettings globalConfigurationSettings : configuration_for_each_network_change) {
+                    OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context);
+                }
             });
         });
+        DisconnectFromSource(conn);
     }
 
 }

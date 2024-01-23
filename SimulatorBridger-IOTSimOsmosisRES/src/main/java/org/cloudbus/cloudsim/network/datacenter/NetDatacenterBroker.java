@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.network.datacenter;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -24,6 +25,7 @@ import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 import org.cloudbus.cloudsim.lists.VmList;
+import org.jooq.DSLContext;
 
 /**
  * NetDatacentreBroker represents a broker acting on behalf of Datacenter provider. It hides VM
@@ -162,6 +164,40 @@ public class NetDatacenterBroker extends SimEntity {
 	public void processEvent(SimEvent ev) {
 		switch (ev.getTag()) {
 		// Resource characteristics request
+			case CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST:
+				processResourceCharacteristicsRequest();
+				break;
+			// Resource characteristics answer
+			case CloudSimTags.RESOURCE_CHARACTERISTICS:
+				processResourceCharacteristics(ev);
+				break;
+			// VM Creation answer
+
+			// A finished cloudlet returned
+			case CloudSimTags.CLOUDLET_RETURN:
+				processCloudletReturn(ev);
+				break;
+			// if the simulation finishes
+			case CloudSimTags.END_OF_SIMULATION:
+				shutdownEntity();
+				break;
+			case CloudSimTags.NextCycle:
+				if (NetworkConstants.BASE) {
+					createVmsInDatacenterBase(linkDC.getId());
+				}
+
+				break;
+			// other unknown tags are processed by this method
+			default:
+				processOtherEvent(ev);
+				break;
+		}
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+		switch (ev.getTag()) {
+			// Resource characteristics request
 			case CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST:
 				processResourceCharacteristicsRequest();
 				break;

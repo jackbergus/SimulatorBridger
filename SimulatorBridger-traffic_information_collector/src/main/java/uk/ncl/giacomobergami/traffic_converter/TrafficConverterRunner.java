@@ -7,6 +7,7 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Optional;
 
@@ -23,23 +24,23 @@ public class TrafficConverterRunner {
                                 conf);
     }
 
-    public static void convert(String configuration) {
+    public static void convert(String configuration, Connection conn) {
         Optional<TrafficConfiguration> conf = YAML.parse(TrafficConfiguration.class, new File(configuration));
         conf.ifPresent(x -> {
             TrafficConverter conv = generateFacade(x);
             try {
-                conv.run();
+                conv.run(conn);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args, Connection conn) {
         String configuration = "converter.yaml";
         if (args.length > 0) {
             configuration = args[0];
         }
-        convert(configuration);
+        convert(configuration, conn);
     }
 }

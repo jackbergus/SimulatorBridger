@@ -11,7 +11,9 @@ import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.osmosis.core.Flow;
+import org.jooq.DSLContext;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -62,6 +64,14 @@ public class Switch extends SimEntity implements NetworkNIC{
 
 	@Override
 	public void processEvent(SimEvent ev) {
+		int tag = ev.getTag();
+		switch(tag){
+			default: System.out.println("Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
+		}
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
 		int tag = ev.getTag();
 		switch(tag){
 			default: System.out.println("Unknown event received by "+super.getName()+". Tag:"+ev.getTag());

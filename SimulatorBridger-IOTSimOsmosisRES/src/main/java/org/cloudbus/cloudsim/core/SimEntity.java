@@ -15,6 +15,9 @@ import org.apache.logging.log4j.Logger;
 import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.NetworkTopology;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
+import org.jooq.DSLContext;
+
+import java.sql.Connection;
 
 /**
  * This class represents a simulation entity. An entity handles events and can send events to other
@@ -403,17 +406,19 @@ public abstract class SimEntity implements Cloneable {
 	 */
 	public abstract void processEvent(SimEvent ev);
 
+	public abstract void processEvent(SimEvent ev, Connection conn, DSLContext context);
+
 	/**
 	 * This method is invoked by the {@link Simulation} before the simulation finishes. If you want
 	 * to save data in log files this is the method in which the corresponding code would be placed.
 	 */
 	public abstract void shutdownEntity();
 
-	public void run() {
+	public void run(Connection conn, DSLContext context) {
 		SimEvent ev = evbuf != null ? evbuf : getNextEvent();
 
 		while (ev != null) {
-			processEvent(ev);
+			processEvent(ev, conn, context);
 			if (state != RUNNABLE) {
 				break;
 			}

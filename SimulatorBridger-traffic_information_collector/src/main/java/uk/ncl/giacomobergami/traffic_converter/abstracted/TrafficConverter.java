@@ -61,7 +61,7 @@ public abstract class TrafficConverter {
     protected abstract HashSet<TimedEdge> getTimedEdgeNodes(Double tick);
     protected abstract void endReadSimulatorOutput();
 
-    public boolean run() throws SQLException {
+    public boolean run(Connection conn) throws SQLException {
         logger.trace("TRAFFIC CONVERTER: running the simulator as per configuration: " + conf.YAMLConverterConfiguration);
         runSimulator(conf.begin, conf.end, conf.step);
         if (!initReadSimulatorOutput()) {
@@ -97,7 +97,7 @@ public abstract class TrafficConverter {
         logger.trace("Dumping the last results...");
         HashMap<String, ImmutablePair<ImmutablePair<Double, List<String>>, List<ClusterDifference<String>>>> delta_network_neighbours = ClusterDifference.computeTemporalDifference(timedNodeAdjacency, allTlsS, StringComparator.getInstance());
 
-        write_to_SQL(getAllTimedIoT(), false, timedEdgeFullSet, false, sccPerTimeComponent, false, delta_network_neighbours, false);
+        write_to_SQL(conn, getAllTimedIoT(), true, timedEdgeFullSet, true, sccPerTimeComponent, true, delta_network_neighbours, true);
 
         try {
             Files.writeString(Paths.get(new File(conf.RSUCsvFile + "_" + "neighboursChange.json").getAbsolutePath()), gson.toJson(delta_network_neighbours));
@@ -119,18 +119,15 @@ public abstract class TrafficConverter {
         return true;
     }
 
-    protected void write_to_SQL(Object TimedIoTData, boolean deleteIoTSQLData, Object TimedEdgeData, boolean deleteEdgeSQLData, Object Timed_SCCData, boolean deleteTimed_SCCData, Object NeighbourData, boolean deleteNeighbourData) throws SQLException {
-        DataSource dataSource = createDataSource();
-        Connection conn = ConnectToSource(dataSource);
-        INSERTTimedIoTData(conn, TimedIoTData);
+    protected void write_to_SQL(Connection conn, Object TimedIoTData, boolean deleteIoTSQLData, Object TimedEdgeData, boolean deleteEdgeSQLData, Object Timed_SCCData, boolean deleteTimed_SCCData, Object NeighbourData, boolean deleteNeighbourData) throws SQLException {
         if (deleteIoTSQLData) emptyTABLE(conn, "vehInformation");
-        INSERTTimedEdgeData(conn, TimedEdgeData);
+        INSERTTimedIoTData(conn, TimedIoTData);
         if (deleteEdgeSQLData) emptyTABLE(conn, "rsuInformation");
-        INSERTTimed_SCCData(conn, Timed_SCCData);
+        INSERTTimedEdgeData(conn, TimedEdgeData);
         if (deleteTimed_SCCData) emptyTABLE(conn, "timed_scc");
-        INSERTNeighbourData(conn, NeighbourData);
+        INSERTTimed_SCCData(conn, Timed_SCCData);
         if (deleteNeighbourData) emptyTABLE(conn, "neighboursChange");
-        DisconnectFromSource(conn);
+        INSERTNeighbourData(conn, NeighbourData);
     }
 
     protected void INSERTTimedIoTData(Connection conn, Object writable) throws SQLException {

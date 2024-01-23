@@ -8,6 +8,9 @@
 
 package org.cloudbus.cloudsim.core;
 
+import org.jooq.DSLContext;
+
+import java.sql.Connection;
 import java.util.Calendar;
 
 /**
@@ -64,6 +67,14 @@ public class CloudSimShutdown extends SimEntity {
 	 */
 	@Override
 	public void processEvent(SimEvent ev) {
+		numUser--;
+		if (numUser == 0 || ev.getTag() == CloudSimTags.ABRUPT_END_OF_SIMULATION) {
+			MainEventManager.abruptallyTerminate();
+		}
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
 		numUser--;
 		if (numUser == 0 || ev.getTag() == CloudSimTags.ABRUPT_END_OF_SIMULATION) {
 			MainEventManager.abruptallyTerminate();

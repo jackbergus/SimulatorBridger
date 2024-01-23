@@ -10,6 +10,8 @@ package org.cloudbus.cloudsim.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
@@ -24,6 +26,11 @@ import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.cloudbus.cloudsim.core.predicates.PredicateAny;
 import org.cloudbus.cloudsim.core.predicates.PredicateNone;
+import org.jooq.DSLContext;
+
+import javax.sql.DataSource;
+
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 /**
  * This class extends the CloudSimCore to enable network simulation in CloudSim. Also, it disables
@@ -192,10 +199,10 @@ public class MainEventManager {
 	 * @pre $none
 	 * @post $none
 	 */
-	public static double startSimulation() throws NullPointerException {
+	public static double startSimulation(Connection conn, DSLContext context) throws NullPointerException {
 		logger.trace("Starting CloudSim version "+ CLOUDSIM_VERSION_STRING);
 		try {
-			double clock = legacy_run();
+			double clock = legacy_run(conn, context);
 
 			// reset all static variables
 			cisId = -1;
@@ -524,7 +531,7 @@ public class MainEventManager {
 	 * 
 	 * @return true, if successful otherwise
 	 */
-	public static boolean runClockTick() {
+	public static boolean runClockTick(Connection conn, DSLContext context) {
 		SimEntity ent;
 		boolean queue_empty;
 		
@@ -533,7 +540,7 @@ public class MainEventManager {
 		for (int i = 0; i < entities_size; i++) {
 			ent = entities.get(i);
 			if (ent.getState() == SimEntity.RUNNABLE) {
-				ent.run();
+				ent.run(conn, context);
 			}
 		}
 				
@@ -897,13 +904,14 @@ public class MainEventManager {
 	 * 
 	 * @return the double last clock value
 	 */
-	public static double legacy_run() {
+	public static double legacy_run(Connection conn, DSLContext context) {
 		if (!running) {
 			runStart(); // Starting all of the entities that should be started!
 		}
+
 		double curr = Math.floor(clock());
 		while (true) {
-			if (runClockTick() || abruptTerminate) {
+			if (runClockTick(conn, context) || abruptTerminate) {
 				break;
 			}
 
@@ -937,18 +945,18 @@ public class MainEventManager {
 
 		double clock = clock();
 
-		finishSimulation();
+		finishSimulation(conn, context);
 		runStop();
 
 		return clock;
 	}
 
-	public static double novel_run() {
+	public static double novel_run(Connection conn, DSLContext context) {
 		if (!running) {
 			runStart(); // Starting all of the entities that should be started!
 		}
 		while (true) {
-			if (runClockTick() || abruptTerminate) {
+			if (runClockTick(conn, context) || abruptTerminate) {
 				break;
 			}
 
@@ -980,8 +988,8 @@ public class MainEventManager {
 		return clock();
 	}
 
-	public static void novel_stop() {
-		finishSimulation();
+	public static void novel_stop(Connection conn, DSLContext context) {
+		finishSimulation(conn, context);
 		runStop();
 	}
 
@@ -989,12 +997,12 @@ public class MainEventManager {
 	 * Internal method that allows the entities to terminate. This method should <b>not</b> be used
 	 * in user simulations.
 	 */
-	public static void finishSimulation() {
+	public static void finishSimulation(Connection conn, DSLContext context) {
 		// Allow all entities to exit their body method
 		if (!abruptTerminate) {
 			for (SimEntity ent : entities) {
 				if (ent.getState() != SimEntity.FINISHED) {
-					ent.run();
+					ent.run(conn, context);
 				}
 			}
 		}

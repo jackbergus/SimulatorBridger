@@ -12,6 +12,7 @@
 package org.cloudbus.osmosis.core;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -25,17 +26,22 @@ import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
 import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
+import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
+import javax.sql.DataSource;
+
 import static org.cloudbus.cloudsim.core.CloudSimTags.MAPE_WAKEUP_FOR_COMMUNICATION;
 import static org.cloudbus.osmosis.core.OsmoticTags.GENERATE_OSMESIS_WITH_RESOLUTION;
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 /**
  * 
@@ -132,7 +138,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 
 	@Override
-	public void processEvent(SimEvent ev) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
 		double chron = MainEventManager.clock();
 		var ab = AgentBroker.getInstance();
 
@@ -152,9 +158,12 @@ public class OsmoticBroker extends DatacenterBroker {
 			logger.trace("WakeUp Call @"+chron);
 		}
 
+		/*DataSource dataSource = createDataSource();
+		Connection conn = ConnectToSource(dataSource);
+		DSLContext context = getDSLContext(conn);*/
 		// Updates the IoT Device with the geo-location information
 		iotDeviceNameToObject.forEach((id, obj) -> {
-			ioTEntityGenerator.updateIoTDevice(obj, chron, chron+deltaVehUpdate);
+			ioTEntityGenerator.updateIoTDevice(obj, chron, chron+deltaVehUpdate, context);
 		});
 
 		//Update simulation time in the AgentBroker

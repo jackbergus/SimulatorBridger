@@ -33,6 +33,8 @@ import org.cloudbus.osmosis.core.*;
 import org.cloudbus.res.EnergyController;
 import org.cloudbus.res.config.AppConfig;
 import org.cloudbus.res.dataproviders.res.RESResponse;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELRoutingPolicyGeneratorFacade;
@@ -41,6 +43,7 @@ import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -90,9 +93,9 @@ public class OsmoticWrapper {
         return null;
     }
 
-    public void stop() {
+    public void stop(Connection conn, DSLContext context) {
         if (started) {
-            MainEventManager.novel_stop();
+            MainEventManager.novel_stop(conn, context);
 //            OsmoticAppsParser.appList.clear();
             OsmoticBroker.workflowTag.clear();
 //            osmoticBroker = null;
@@ -107,20 +110,20 @@ public class OsmoticWrapper {
         }
     }
 
-    public boolean runConfiguration(OsmoticConfiguration newConfiguration) {
-        stop();
+    public boolean runConfiguration(OsmoticConfiguration newConfiguration, Connection conn, DSLContext context) {
+        stop(conn, context);
         init = false;
         this.conf = newConfiguration;
-        if (!init()) {
-            stop();
+        if (!init(conn, context)) {
+            stop(conn, context);
             return false;
         }
-        start();
+        start(conn, context);
         return true;
     }
 
-    private boolean init() {
-        stop(); // ensuring that the previous simulation was stopped
+    private boolean init(Connection conn, DSLContext context) {
+        stop(conn, context); // ensuring that the previous simulation was stopped
         if (init) return init;
         Calendar calendar = Calendar.getInstance();
 
@@ -236,9 +239,9 @@ public class OsmoticWrapper {
         return false;
     }
 
-    private void start() {
-        init(); // Ensuring that the simulation is started
-        runTime = MainEventManager.startSimulation();
+    private void start(Connection conn, DSLContext context) {
+        init(conn, context); // Ensuring that the simulation is started
+        runTime = MainEventManager.startSimulation(conn, context);
         finished = true;
     }
 
@@ -271,7 +274,7 @@ public class OsmoticWrapper {
     }
 
 
-    public void log(GlobalConfigurationSettings conf) {
+    public void log(GlobalConfigurationSettings conf, Connection conn) {
         if (finished) {
             LogUtil.logger.trace("Simulation finished...");
             bandwidthInfoList = OsmosisOrchestrator.getBandwidthShareInfo();
@@ -298,27 +301,27 @@ public class OsmoticWrapper {
                 pr.dumpCSV(new File(conf.output_simulation_file));
 
             try {
-                pr.write_to_SQL();
+                pr.write_to_SQL(conn);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         }
     }
 
-    public boolean runConfiguration(GlobalConfigurationSettings conf) {
-        stop();
+    public boolean runConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
+        stop(conn, context);
         init = false;
         this.conf = conf.asPreviousOsmoticConfiguration();
-        if (!init(conf)) {
-            stop();
+        if (!init(conf, conn, context)) {
+            stop(conn, context);
             return false;
         }
-        start();
+        start(conn, context);
         return true;
     }
 
-    private boolean init(GlobalConfigurationSettings conf) {
-        stop(); // ensuring that the previous simulation was stopped
+    private boolean init(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
+        stop(conn, context); // ensuring that the previous simulation was stopped
         if (init) return init;
         Calendar calendar = Calendar.getInstance();
 
@@ -344,7 +347,7 @@ public class OsmoticWrapper {
         appList = osmoticBroker.submitWorkloadCSVApps(conf.apps);
         osmoticBroker.setDatacenters(conf.conf.osmesisDatacentres);
         osmoticBroker.setDeltaVehUpdate(conf.simulation_step);
-        osmoticBroker.setIoTTraces(new IoTEntityGenerator(new File(conf.iot_traces), null));
+        osmoticBroker.setIoTTraces(new IoTEntityGenerator(new File(conf.iot_traces), null, conn, context));
 
         init = true;
         return init;

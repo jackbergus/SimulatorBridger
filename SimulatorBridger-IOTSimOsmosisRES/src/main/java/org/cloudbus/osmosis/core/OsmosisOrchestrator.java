@@ -11,6 +11,7 @@
 
 package org.cloudbus.osmosis.core;
 
+import java.sql.Connection;
 import java.util.*;
 
 import org.cloudbus.cloudsim.Cloudlet;
@@ -24,6 +25,7 @@ import org.cloudbus.cloudsim.osmesis.examples.uti.PrintResults;
 import org.cloudbus.cloudsim.sdn.Channel;
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
+import org.jooq.DSLContext;
 
 /**
  * 
@@ -102,6 +104,26 @@ public class OsmosisOrchestrator extends SimEntity {
 		default:
 			System.out.println(this.getName() + ": Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
 			break;
+		}
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+		int tag = ev.getTag();
+
+		switch(tag){
+			case OsmoticTags.START_TRANSMISSION:
+				Flow flow = (Flow) ev.getData();
+				transmitFlow(flow);
+				break;
+
+			case OsmoticTags.SDN_INTERNAL_EVENT:
+				internalFlowProcess();
+				break;
+
+			default:
+				System.out.println(this.getName() + ": Unknown event received by "+super.getName()+". Tag:"+ev.getTag());
+				break;
 		}
 	}
 

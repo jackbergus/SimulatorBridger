@@ -22,12 +22,14 @@ package uk.ncl.giacomobergami.components;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.simulator.OsmoticConfiguration;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.utils.data.JSON;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.List;
 
 public class OsmoticRunner {
@@ -48,27 +50,27 @@ public class OsmoticRunner {
     }
 
     @Deprecated
-    public static void legacyOrchestrate(String configuration) {
+    public static void legacyOrchestrate(String configuration, Connection conn, DSLContext context) {
         List<OsmoticConfiguration> ls = JSON.stringToArray(new File(configuration), OsmoticConfiguration[].class);
         if (ls.isEmpty()) return;
         OsmoticWrapper conv = generateFacade();
         for (var y : ls) {
-            conv.runConfiguration(y);
+            conv.runConfiguration(y, conn, context);
         }
-        conv.stop();
+        conv.stop(conn, context);
         conv.legacy_log();
     }
 
-    public static void runFromConfiguration(GlobalConfigurationSettings conf) {
+    public static void runFromConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
         var conv = new OsmoticWrapper(conf.asPreviousOsmoticConfiguration());
-        conv.runConfiguration(conf);
-        conv.stop();
-        conv.log(conf);
+        conv.runConfiguration(conf, conn, context);
+        conv.stop(conn, context);
+        conv.log(conf, conn);
     }
 
     @Deprecated
-    public static void runFromDump(String configuration) {
+    public static void runFromDump(String configuration, Connection conn, DSLContext context) {
         var conf = GlobalConfigurationSettings.readFromYAML(new File(configuration));
-        runFromConfiguration(GlobalConfigurationSettings.readFromYAML(new File(configuration)));
+        runFromConfiguration(GlobalConfigurationSettings.readFromYAML(new File(configuration)), conn, context);
     }
 }

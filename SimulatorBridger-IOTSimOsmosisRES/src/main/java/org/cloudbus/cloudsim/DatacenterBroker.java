@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -25,6 +26,7 @@ import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.lists.CloudletList;
 import org.cloudbus.cloudsim.lists.VmList;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicy;
 import uk.ncl.giacomobergami.components.cloudlet_scheduler.CloudletScheduler;
 
@@ -272,6 +274,48 @@ public class DatacenterBroker extends SimEntity  {
 				//processReduce_To_BROKER(ev);
 				break;
 											
+			// other unknown tags are processed by this method
+			default:
+				processOtherEvent(ev);
+				break;
+		}
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+//		int srcId = -1;
+
+		switch (ev.getTag()) {
+
+
+			// Resource characteristics request
+			case CloudSimTags.RESOURCE_CHARACTERISTICS_REQUEST:
+				processResourceCharacteristicsRequest(ev);
+				break;
+
+			case CloudSimTags.RESOURCE_CHARACTERISTICS:
+				processResourceCharacteristics(ev);
+				break;
+
+
+			// VM Creation answer
+			case CloudSimTags.VM_CREATE_ACK:
+				processVmCreate(ev);
+				break;
+			// A finished cloudlet returned
+			case CloudSimTags.CLOUDLET_RETURN:
+				processCloudletReturn(ev);
+				break;
+			// if the simulation finishes
+			case CloudSimTags.END_OF_SIMULATION:
+				shutdownEntity();
+				break;
+
+
+			case CloudSimTags.REDUCE_TO_BROKER:
+				//processReduce_To_BROKER(ev);
+				break;
+
 			// other unknown tags are processed by this method
 			default:
 				processOtherEvent(ev);

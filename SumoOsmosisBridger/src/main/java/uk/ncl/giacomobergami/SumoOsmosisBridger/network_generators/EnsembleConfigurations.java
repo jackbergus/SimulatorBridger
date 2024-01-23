@@ -2,6 +2,7 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.from_traffic_data.EdgeNetworksGenerator;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
@@ -18,11 +19,15 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 
+import javax.sql.DataSource;
 import java.io.File;
+import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class EnsembleConfigurations {
 
@@ -64,9 +69,9 @@ public class EnsembleConfigurations {
     private List<CloudInfrastructureGenerator.Configuration> setCloudPolicyFromIoTNumbers(int numberOfClouds,
                                                                                          int IoTMultiplicityForVMs,
                                                                                          int nSCC,
-                                                                                         CloudInfrastructureGenerator.Configuration globalCloud) {
+                                                                                         CloudInfrastructureGenerator.Configuration globalCloud, DSLContext context) {
         List<CloudInfrastructureGenerator.Configuration> ls = new ArrayList<>();
-        int IoTNumber = ioTEntityGenerator.maximumNumberOfCommunicatingVehicles();
+        int IoTNumber = ioTEntityGenerator.maximumNumberOfCommunicatingVehicles(context);
 
         // Assuming to set VM in the number of IoTNumber * IoTMultiplicityForVMs / numberOfClouds
         globalCloud.hosts_and_vms.n_vm = IoTNumber * IoTMultiplicityForVMs / numberOfClouds;
@@ -210,9 +215,9 @@ public class EnsembleConfigurations {
         }
     }
 
-    public List<GlobalConfigurationSettings> getTimedPossibleConfigurations(EnsembleConfigurations.Configuration conf) {
+    public List<GlobalConfigurationSettings> getTimedPossibleConfigurations(EnsembleConfigurations.Configuration conf, Connection conn, DSLContext context) {
         List<GlobalConfigurationSettings> ls = new ArrayList<>();
-        List<IoTDeviceTabularConfiguration> iotDevices = ioTEntityGenerator.asIoTSQLCongigurationList();
+        List<IoTDeviceTabularConfiguration> iotDevices = ioTEntityGenerator.asIoTSQLCongigurationList(conn, context);
         AtomicInteger global_program_counter = new AtomicInteger(1);
         List<WorkloadCSV> globalApps = ioTEntityGenerator.generateAppSetUp(conf.simulation_step, global_program_counter);
         MEL_APP_POLICY casus = MEL_APP_POLICY.valueOf(conf.mel_app_policy);
@@ -248,7 +253,7 @@ public class EnsembleConfigurations {
             List<CloudInfrastructureGenerator.Configuration> cloudNets = setCloudPolicyFromIoTNumbers(conf.numberOfClouds,
                                                                                                       conf.IoTMultiplicityForVMs,
                                                                                                       nSCC,
-                                                                                                      cloud);
+                                                                                                      cloud, context);
             ls.add(ensemble(consistent_network_conf.getLeft(),
                             cloudNets,
                             edgeNets,
@@ -317,10 +322,10 @@ public class EnsembleConfigurations {
     }
 
 
-    public static boolean generateConfigurationFromFile(@Input File configuration_file) {
+    public static boolean generateConfigurationFromFile(@Input File configuration_file, @Input Connection conn, @Input DSLContext context) {
         var conf = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
         var ec = new EnsembleConfigurations(conf.first(), conf.second(), conf.third(), conf.fourth(), conf.fith());
-        var ls = ec.getTimedPossibleConfigurations(conf);
+        var ls = ec.getTimedPossibleConfigurations(conf, conn, context);
         var dump = new File(configuration_file.getParentFile(), "dump");
         if (ls.size() == 1) {
             ls.get(0).dump(dump);
@@ -333,18 +338,24 @@ public class EnsembleConfigurations {
         return true;
     }
 
-    public static boolean runConfigurationFromFile(@Input String file) {
+    public static boolean runConfigurationFromFile(@Input String file, @Input Connection conn, @Input DSLContext context) {
         var configuration_file = new File(file);
         var conf = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
         var ec = new EnsembleConfigurations(conf.first(), conf.second(), conf.third(), conf.fourth(), conf.fith());
-        var ls = ec.getTimedPossibleConfigurations(conf);
-        ls.forEach(OsmoticRunner::runFromConfiguration);
+        var ls = ec.getTimedPossibleConfigurations(conf, conn, context);
+        for (GlobalConfigurationSettings l : ls) {
+            OsmoticRunner.runFromConfiguration(l, conn, context);
+        }
         return true;
     }
 
 
     public static void main(String args[]) {
-        generateConfigurationFromFile(new File("/home/giacomo/IdeaProjects/SimulatorBridger/inputFiles/novel/main.yaml"));
+        DataSource dataSource = createDataSource();
+        Connection conn = ConnectToSource(dataSource);
+        DSLContext context = getDSLContext(conn);
+        generateConfigurationFromFile(new File("/home/giacomo/IdeaProjects/SimulatorBridger/inputFiles/novel/main.yaml"), conn, context);
+        DisconnectFromSource(conn);
     }
 
 }

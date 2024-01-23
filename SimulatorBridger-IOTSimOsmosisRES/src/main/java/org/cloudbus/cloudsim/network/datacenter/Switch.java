@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.network.datacenter;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -25,6 +26,8 @@ import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.core.predicates.PredicateType;
 import org.cloudbus.cloudsim.lists.VmList;
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 
 public class Switch extends SimEntity {
 
@@ -90,6 +93,36 @@ public class Switch extends SimEntity {
 		// Log.printLine(CloudSim.clock()+"[Broker]: event received:"+ev.getTag());
 		switch (ev.getTag()) {
 		// Resource characteristics request
+			case CloudSimTags.Network_Event_UP:
+				// process the packet from down switch or host
+				processpacket_up(ev);
+				break;
+			case CloudSimTags.Network_Event_DOWN:
+				// process the packet from uplink
+				processpacket_down(ev);
+				break;
+			case CloudSimTags.Network_Event_send:
+				processpacketforward(ev);
+				break;
+
+			case CloudSimTags.Network_Event_Host:
+				processhostpacket(ev);
+				break;
+			// Resource characteristics answer
+			case CloudSimTags.RESOURCE_Register:
+				registerHost(ev);
+				break;
+			// other unknown tags are processed by this method
+			default:
+				processOtherEvent(ev);
+				break;
+		}
+	}
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+		// Log.printLine(CloudSim.clock()+"[Broker]: event received:"+ev.getTag());
+		switch (ev.getTag()) {
+			// Resource characteristics request
 			case CloudSimTags.Network_Event_UP:
 				// process the packet from down switch or host
 				processpacket_up(ev);

@@ -8,12 +8,11 @@
 
 package org.cloudbus.cloudsim.core;
 
-import java.util.Collection;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
+import java.sql.Connection;
+import java.util.*;
 
 import org.cloudbus.cloudsim.Log;
+import org.jooq.DSLContext;
 
 /**
  * A Cloud Information Service (CIS) is an entity that provides cloud resource registration,
@@ -127,6 +126,73 @@ public class CloudInformationService extends SimEntity {
 				//System.out.println("--------This Event is sent from------" + this.getId() + "[" + this.getName() + "]-------to-------" + " Destination" + "["+ id+ "]"  + "------tag name is----" +"CloudSimTags.RESOURCE_AR_LIST" + "-----Data" + "[arList]" + arList.toString());		
 				
 				
+				break;
+
+			default:
+				processOtherEvent(ev);
+				break;
+		}
+	}
+
+	@Override
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+		int id = -1;  // requester id
+		switch (ev.getTag()) {
+			// storing regional GIS id
+			case CloudSimTags.REGISTER_REGIONAL_GIS:
+				gisList.add((Integer) ev.getData());
+				break;
+
+			// request for all regional GIS list
+			case CloudSimTags.REQUEST_REGIONAL_GIS:
+
+				// Get ID of an entity that send this event
+				id = ((Integer) ev.getData()).intValue();
+
+				// Send the regional GIS list back to sender
+				super.send(id, 0L, ev.getTag(), gisList);
+
+				//System.out.println("--------This Event is sent from------" + this.getId() + "[" + this.getName() + "]-------to-------" + " Destination" + "["+ id+ "]"  + "------tag name is----" +"CloudSimTags.REQUEST_REGIONAL_GIS" + "-----Data" + "[gisList]" + gisList.toString());
+
+
+				break;
+
+			// A resource is requesting to register.
+			case CloudSimTags.REGISTER_RESOURCE:
+				resList.add((Integer) ev.getData());
+				break;
+
+			// A resource that can support Advance Reservation
+			case CloudSimTags.REGISTER_RESOURCE_AR:
+				resList.add((Integer) ev.getData());
+				arList.add((Integer) ev.getData());
+				break;
+
+			// A Broker is requesting for a list of all hostList.
+			case CloudSimTags.RESOURCE_LIST:
+
+				// Get ID of an entity that send this event
+				id = ((Integer) ev.getData()).intValue();
+
+				// Send the resource list back to the sender
+				super.send(id, 0L, ev.getTag(), resList);
+
+				//System.out.println("--------This Event is sent from------" + this.getId() + "[" + this.getName() + "]-------to-------" + " Destination" + "["+ id+ "]"  + "------tag name is----" +"CloudSimTags.RESOURCE_LIST" + "-----Data" + "[resList]" + resList.toString());
+
+				break;
+
+			// A Broker is requesting for a list of all hostList.
+			case CloudSimTags.RESOURCE_AR_LIST:
+
+				// Get ID of an entity that send this event
+				id = ((Integer) ev.getData()).intValue();
+
+				// Send the resource AR list back to the sender
+				super.send(id, 0L, ev.getTag(), arList);
+
+				//System.out.println("--------This Event is sent from------" + this.getId() + "[" + this.getName() + "]-------to-------" + " Destination" + "["+ id+ "]"  + "------tag name is----" +"CloudSimTags.RESOURCE_AR_LIST" + "-----Data" + "[arList]" + arList.toString());
+
+
 				break;
 
 			default:

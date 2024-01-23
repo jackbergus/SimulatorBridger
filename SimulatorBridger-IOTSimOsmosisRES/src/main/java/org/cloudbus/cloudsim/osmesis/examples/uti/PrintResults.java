@@ -82,9 +82,7 @@ public class PrintResults {
 //		}
 	}
 
-	public void write_to_SQL() throws SQLException {
-		DataSource dataSource = createDataSource();
-		Connection conn = ConnectToSource(dataSource);
+	public void write_to_SQL(Connection conn) throws SQLException {
 		emptyTABLE(conn, "accurateBatteryInfo");
 		INSERTAccurateBatteryInfo(conn, battInfo);
 		emptyTABLE(conn, "appList");
@@ -107,7 +105,6 @@ public class PrintResults {
 		INSERTConnectionPerSimTime(conn, connectionPerSimTime);
 		emptyTABLE(conn, "bandwidthShareInfo");
 		INSERTBandwidthShareInfo(conn, bsi);
-		DisconnectFromSource(conn);
 	}
 
 	protected void INSERTAccurateBatteryInfo(Connection conn, Object writable) throws SQLException {

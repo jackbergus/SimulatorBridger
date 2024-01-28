@@ -195,11 +195,11 @@ public class EnsembleConfigurations {
             return new TimeTicker(start_vehicle_time, simulation_step, end_vehicle_time);
         }
 
-        public EdgeNetworksGenerator second() {
+        public EdgeNetworksGenerator second(DSLContext context, boolean isRSUJSON) {
             return new EdgeNetworksGenerator(new File(strongly_connected_components),
                                              new File(edge_information),
                                              new File(edge_neighbours),
-                                             ticker());
+                                             ticker(), context, isRSUJSON);
         }
 
         public CloudInfrastructureGenerator.Configuration third() {
@@ -322,9 +322,9 @@ public class EnsembleConfigurations {
     }
 
 
-    public static boolean generateConfigurationFromFile(@Input File configuration_file, @Input Connection conn, @Input DSLContext context) {
+    public static boolean generateConfigurationFromFile(@Input File configuration_file, @Input Connection conn, @Input DSLContext context, boolean isRSUJSON) {
         var conf = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
-        var ec = new EnsembleConfigurations(conf.first(), conf.second(), conf.third(), conf.fourth(), conf.fith());
+        var ec = new EnsembleConfigurations(conf.first(), conf.second(context, isRSUJSON), conf.third(), conf.fourth(), conf.fith());
         var ls = ec.getTimedPossibleConfigurations(conf, conn, context);
         var dump = new File(configuration_file.getParentFile(), "dump");
         if (ls.size() == 1) {
@@ -338,10 +338,10 @@ public class EnsembleConfigurations {
         return true;
     }
 
-    public static boolean runConfigurationFromFile(@Input String file, @Input Connection conn, @Input DSLContext context) {
+    public static boolean runConfigurationFromFile(@Input String file, @Input Connection conn, @Input DSLContext context, boolean isRSUJSON) {
         var configuration_file = new File(file);
         var conf = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
-        var ec = new EnsembleConfigurations(conf.first(), conf.second(), conf.third(), conf.fourth(), conf.fith());
+        var ec = new EnsembleConfigurations(conf.first(), conf.second(context, isRSUJSON), conf.third(), conf.fourth(), conf.fith());
         var ls = ec.getTimedPossibleConfigurations(conf, conn, context);
         for (GlobalConfigurationSettings l : ls) {
             OsmoticRunner.runFromConfiguration(l, conn, context);
@@ -354,7 +354,10 @@ public class EnsembleConfigurations {
         DataSource dataSource = createDataSource();
         Connection conn = ConnectToSource(dataSource);
         DSLContext context = getDSLContext(conn);
-        generateConfigurationFromFile(new File("/home/giacomo/IdeaProjects/SimulatorBridger/inputFiles/novel/main.yaml"), conn, context);
+
+        boolean isRSUJSON = false;
+
+        generateConfigurationFromFile(new File("/home/giacomo/IdeaProjects/SimulatorBridger/inputFiles/novel/main.yaml"), conn, context, isRSUJSON);
         DisconnectFromSource(conn);
     }
 

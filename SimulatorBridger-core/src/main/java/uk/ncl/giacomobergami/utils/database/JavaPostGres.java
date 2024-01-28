@@ -4,9 +4,14 @@ import org.apache.commons.lang3.StringUtils;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
+import org.postgresql.copy.CopyManager;
+import org.postgresql.core.BaseConnection;
 import org.postgresql.ds.PGSimpleDataSource;
 
 import javax.sql.DataSource;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
 import java.sql.*;
 
 public class JavaPostGres {
@@ -115,7 +120,7 @@ public class JavaPostGres {
     public static void emptyTABLE(Connection conn, String tableName) {
         PreparedStatement stmt;
         try {
-            stmt = conn.prepareStatement("DELETE FROM " + tableName + ";");
+            stmt = conn.prepareStatement("TRUNCATE " + tableName + " RESTART IDENTITY;");
             int rs = stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -127,30 +132,39 @@ public class JavaPostGres {
         return context;
     }
 
-   /*    PreparedStatement stmt;
-            try {
-        stmt = conn.prepareStatement("SELECT * FROM accounts");
-    } catch (SQLException e) {
-        throw new RuntimeException(e);
-    }
-
-    ResultSet rs;
-            try {
-        rs = stmt.executeQuery();
-    } catch (SQLException e) {
-        throw new RuntimeException(e);
-    }
-
-            while (true) {
+    public static void copyCSVDATA(Connection conn, String file, String origin) {
+        origin = origin + "_import";
+        CopyManager copyManager = null;
         try {
-            if (!rs.next()) break;
+            copyManager = new CopyManager((BaseConnection) conn);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        FileReader fileReader;
         try {
-            System.out.printf("id:%d username %s password:%s%n", rs.getLong("user_id"), rs.getString("username"), rs.getString("password"));
+            fileReader = new FileReader(file);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+
+        try {
+            copyManager.copyIn("COPY " + origin + " FROM stdin DELIMITER ',' CSV header", fileReader);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    public static void transferDATABetweenTables(Connection conn, String dest, String params, String origin){
+        PreparedStatement stmt;
+        origin = origin + "_import";
+        try {
+            stmt = conn.prepareStatement("INSERT INTO " + dest + " SELECT " + params+ " FROM " + origin + ";");
+            int rs = stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-    }*/
+    }
 }

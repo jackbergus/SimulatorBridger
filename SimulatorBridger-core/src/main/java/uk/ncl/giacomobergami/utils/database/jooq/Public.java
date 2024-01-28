@@ -27,6 +27,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.Rsuinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Switchpowerconsumption;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.VehinformationImport;
 
 
 /**
@@ -118,6 +119,11 @@ public class Public extends SchemaImpl {
     public final Vehinformation VEHINFORMATION = Vehinformation.VEHINFORMATION;
 
     /**
+     * The table <code>public.vehinformation_import</code>.
+     */
+    public final VehinformationImport VEHINFORMATION_IMPORT = VehinformationImport.VEHINFORMATION_IMPORT;
+
+    /**
      * No further instances allowed
      */
     private Public() {
@@ -154,7 +160,8 @@ public class Public extends SchemaImpl {
             Rsuinformation.RSUINFORMATION,
             Switchpowerconsumption.SWITCHPOWERCONSUMPTION,
             TimedScc.TIMED_SCC,
-            Vehinformation.VEHINFORMATION
+            Vehinformation.VEHINFORMATION,
+            VehinformationImport.VEHINFORMATION_IMPORT
         );
     }
 }

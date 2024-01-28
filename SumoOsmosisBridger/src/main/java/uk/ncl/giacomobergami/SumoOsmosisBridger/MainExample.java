@@ -50,7 +50,11 @@ public class MainExample {
         DSLContext context = getDSLContext(conn);
 
         boolean generate = false;
-        if(generate) {
+        boolean step1 = true;
+        boolean step2 = false;
+        boolean step3 = false;
+
+        if (generate) {
             try {
                 GenerationTool.generate(Files.readString(Path.of("jooq-config.xml")));
             } catch (Exception e) {
@@ -73,6 +77,7 @@ public class MainExample {
         var converter_file = new File(converter).getAbsoluteFile();
         Optional<TrafficConfiguration> conf1 = YAML.parse(TrafficConfiguration.class, converter_file);
         // First configuration step
+
         conf1.ifPresent(y -> {
             var output_folder_1 = new File(converter_file.getParentFile(), converter_out);
             if (!output_folder_1.exists()) {
@@ -81,13 +86,17 @@ public class MainExample {
             y.RSUCsvFile = new File(output_folder_1, converter_out_RSUCsvFile).getAbsolutePath();
             y.VehicleCsvFile = new File(output_folder_1, converter_out_VehicleCsvFile).getAbsolutePath();
             TrafficConverter conv1 = TrafficConverterRunner.generateFacade(y);
-            try {
-                conv1.run(conn);
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
+            if (step1) {
+                try {
+                    conv1.run(conn, context);
+                } catch (SQLException e) {
+                    throw new RuntimeException(e);
+                }
             }
+
             var orchestrator_file = new File(finalOrchestrator).getAbsoluteFile();
             Optional<OrchestratorConfiguration> conf2 = YAML.parse(OrchestratorConfiguration.class, orchestrator_file);
+
 
             // Second configuration step
             conf2.ifPresent(x -> {
@@ -102,16 +111,19 @@ public class MainExample {
                 x.output_stats_folder = new File(output_folder_2, orchestrator_out_output_stats_folder).getAbsolutePath();
                 x.experiment_name = orchestrator_out_output_experiment_name;
                 PreSimulatorEstimator conv2 = null;
+
                 try {
                     conv2 = CentralAgentPlannerRunner.generateFacade(x, y);
                 } catch (SQLException e) {
                     throw new RuntimeException(e);
                 }
-                conv2.run();
-                try {
-                    conv2.serializeAll();
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
+                if (step2) {
+                    conv2.run();
+                    try {
+                        conv2.serializeAll();
+                    } catch (SQLException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
 
                 var maxAcceptableVehiclesPerEdgeNode = x.reset_max_vehicle_communication;
@@ -121,8 +133,8 @@ public class MainExample {
                 var configuration_file = new File(finalSimulator_runner).getAbsoluteFile();
                 var conf3 = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
                 conf3.converter_yaml = converter_file.getAbsolutePath();
-                conf3.strongly_connected_components = new File(output_folder_1, converter_out_RSUCsvFile+"_timed_scc.json").getAbsolutePath();
-                conf3.edge_neighbours = new File(output_folder_1, converter_out_RSUCsvFile+"_neighboursChange.json").getAbsolutePath();
+                conf3.strongly_connected_components = new File(output_folder_1, converter_out_RSUCsvFile + "_timed_scc.json").getAbsolutePath();
+                conf3.edge_neighbours = new File(output_folder_1, converter_out_RSUCsvFile + "_neighboursChange.json").getAbsolutePath();
                 conf3.iots = x.vehiclejsonFile;
                 conf3.edge_information = x.RSUJsonFile;
                 conf3.reset_rsu_communication_radius = x.reset_rsu_communication_radius;
@@ -132,11 +144,13 @@ public class MainExample {
                     output_folder_3.mkdirs();
                 }
                 conf3.netsim_output = output_folder_3.getAbsolutePath();
-                var conv3 = new EnsembleConfigurations(conf3.first(), conf3.second(), conf3.third(), conf3.fourth(), conf3.fith());
-                var configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3, conn, context);
+                if(step3) {
+                    var conv3 = new EnsembleConfigurations(conf3.first(), conf3.second(context, step2), conf3.third(), conf3.fourth(), conf3.fith());
+                    var configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3, conn, context);
 
-                for (GlobalConfigurationSettings globalConfigurationSettings : configuration_for_each_network_change) {
-                    OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context);
+                    for (GlobalConfigurationSettings globalConfigurationSettings : configuration_for_each_network_change) {
+                        OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context);
+                    }
                 }
             });
         });

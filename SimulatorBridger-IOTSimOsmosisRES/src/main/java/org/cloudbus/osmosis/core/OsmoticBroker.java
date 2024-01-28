@@ -27,21 +27,21 @@ import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 import org.jooq.DSLContext;
+import org.jooq.Record4;
+import org.jooq.Result;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
 import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
-import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
-
-import javax.sql.DataSource;
 
 import static org.cloudbus.cloudsim.core.CloudSimTags.MAPE_WAKEUP_FOR_COMMUNICATION;
 import static org.cloudbus.osmosis.core.OsmoticTags.GENERATE_OSMESIS_WITH_RESOLUTION;
-import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
+import static org.jooq.impl.DSL.field;
 
 /**
  * 
@@ -109,6 +109,12 @@ public class OsmoticBroker extends DatacenterBroker {
 	private AtomicInteger flowId;
 	private IoTEntityGenerator ioTEntityGenerator;
 	public static double deltaVehUpdate;
+	private int collectSQLInfo = 0;
+	private int intervalStart = 0;
+	private int intervalEnd = 25;
+	private int collectionInterval = 25;
+	private Result<Record4<Object, Object, Object, Object>> dataNowRange = null;
+	private Result<Record4<Object, Object, Object, Object>> dataFutureRange = null;
 
 	private static OsmoticBroker OBINSTANCE;
 
@@ -158,13 +164,52 @@ public class OsmoticBroker extends DatacenterBroker {
 			logger.trace("WakeUp Call @"+chron);
 		}
 
-		/*DataSource dataSource = createDataSource();
-		Connection conn = ConnectToSource(dataSource);
-		DSLContext context = getDSLContext(conn);*/
-		// Updates the IoT Device with the geo-location information
-		iotDeviceNameToObject.forEach((id, obj) -> {
-			ioTEntityGenerator.updateIoTDevice(obj, chron, chron+deltaVehUpdate, context);
-		});
+		if(chron <= IoTEntityGenerator.endTime) {
+			//info used to update IoT devices' positions
+			double now = (double) Math.round((chron / IoTEntityGenerator.lat) * IoTEntityGenerator.lat * 1000) /1000;
+			double future = now + (2 * deltaVehUpdate);
+
+			if(collectSQLInfo == (int) now / collectionInterval){
+				dataNowRange = context.select(field("vehicle_id"), field("x"), field("y"), field("simtime")).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double)intervalStart + "' AND '" + (double)intervalEnd + "'").orderBy(field("simtime")).fetch();
+				dataFutureRange = context.select(field("vehicle_id"), field("x"), field("y"), field("simtime")).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + ((double)intervalStart + (2*deltaVehUpdate)) + "' AND '"+ ((double)intervalEnd + (2*deltaVehUpdate))+ "'").orderBy(field("simtime")).fetch();
+				collectSQLInfo++;
+				intervalStart += collectionInterval;
+				intervalEnd += collectionInterval;
+			}
+			var nowTimes = dataNowRange.getValues(3);
+			HashMap<String, double[]> nowData = new HashMap<>();
+			HashMap<String, double[]> futureData = new HashMap<>();
+			var nowFirst = nowTimes.indexOf(now);
+			var nowLast = nowTimes.lastIndexOf(now);
+			if(nowFirst != -1) {
+				for (int i = nowFirst; i <= nowLast; i++) {
+					String name = (String) dataNowRange.get(i).getValue(0);
+					double[] nowPos = {(double) dataNowRange.get(i).getValue(1), (double) dataNowRange.get(i).getValue(2)};
+					nowData.put(name, nowPos);
+				}
+
+				var futureTimes = dataFutureRange.getValues(3);
+				var futureFirst = futureTimes.indexOf(future);
+				var futureLast = futureTimes.lastIndexOf(future);
+				for (int i = futureFirst; i < futureLast; i++) {
+					String name = (String) dataNowRange.get(i).getValue(0);
+					double[] futurePos = nowData.containsKey(name) ? new double[]{(double) dataFutureRange.get(i).getValue(1), (double) dataFutureRange.get(i).getValue(2)} : new double[]{-1.0, -1.0};
+					futureData.put(name, futurePos);
+				}
+			}
+			var temp = 5;
+			//var dataNow = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + now + "'").fetch();
+			//var dataFuture = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + future + "'").fetch();
+
+			// Updates the IoT Device with the geo-location information
+			iotDeviceNameToObject.forEach((id, obj) -> {
+				double[] nowDouble = nowData.containsKey(id) ? nowData.get(id) : new double[] {-1.0, -1.0};
+				//double[] nowDouble = dataNow.getValues(0).indexOf(id) == -1 ? new double[]{-1.0, -1.0} : new double[]{(double) dataNow.getValue(dataNow.getValues(0).indexOf(id), 1), (double) dataNow.getValue(dataNow.getValues(0).indexOf(id), 2)};
+				double[] futureDouble = futureData.containsKey(id) ? futureData.get(id) : new double[] {-1.0, -1.0};
+				//double[] futureDouble = dataFuture.getValues(0).indexOf(id) == -1 ? new double[]{-1.0, -1.0} : new double[]{(double) dataFuture.getValue(dataFuture.getValues(0).indexOf(id), 1), (double) dataFuture.getValue(dataFuture.getValues(0).indexOf(id), 2)};
+				ioTEntityGenerator.updateIoTDevice(obj, now, future, context, nowDouble, futureDouble);
+			});
+		}
 
 		//Update simulation time in the AgentBroker
 		ab.updateTime(chron);
@@ -296,6 +341,27 @@ public class OsmoticBroker extends DatacenterBroker {
 		edgeLet.getWorkflowTag(). setFinishTime(MainEventManager.clock());
 	}
 	public void transferEvents(SimEvent ev) {
+
+		/*RocksDB.loadLibrary();
+
+		try (final Options options = new Options().setCreateIfMissing(true)) {
+			try (final RocksDB db = RocksDB.open(options, "C:/Users/rohin/SimulatorBridger/SimulatorBridger/RocksDB-SimulatorBridger")) {
+				byte[] key1 = new byte[0];
+				byte[] key2 = new byte[1];
+				try {
+					final byte[] value = db.get(key1);
+					if (value != null) {  // value == null if key1 does not exist in db.
+						db.put(key2, value);
+					}
+					db.delete(key1);
+				} catch (RocksDBException e) {
+					throw new RuntimeException(e);
+				}
+			}
+		} catch (RocksDBException e) {
+			throw new RuntimeException(e);
+		}*/
+
 		float maxEdgeBW = 100; //(float) ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getFlowBandwidth();
 		int messageSize = (int) this.getAppById(1).getMELOutputSize();
 

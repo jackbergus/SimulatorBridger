@@ -2,12 +2,21 @@ package uk.ncl.giacomobergami.traffic_converter.abstracted;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import me.tongfei.progressbar.ProgressBar;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.jooq.BatchBindStep;
+import org.jooq.DSLContext;
+import org.postgresql.copy.CopyManager;
+import org.postgresql.core.BaseConnection;
 import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.algorithms.StringComparator;
 import uk.ncl.giacomobergami.utils.algorithms.Tarjan;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Neighbourschange;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdgeMediator;
@@ -61,7 +70,7 @@ public abstract class TrafficConverter {
     protected abstract HashSet<TimedEdge> getTimedEdgeNodes(Double tick);
     protected abstract void endReadSimulatorOutput();
 
-    public boolean run(Connection conn) throws SQLException {
+    public boolean run(Connection conn, DSLContext context) throws SQLException {
         logger.trace("TRAFFIC CONVERTER: running the simulator as per configuration: " + conf.YAMLConverterConfiguration);
         runSimulator(conf.begin, conf.end, conf.step);
         if (!initReadSimulatorOutput()) {
@@ -78,13 +87,16 @@ public abstract class TrafficConverter {
         ArrayList<TimedEdge> timedEdgeFullSet = new ArrayList<>();
         for (Double tick : timeUnits) {
             // Writing IoT Devices
-            getTimedIoT(tick).forEach(this::writeTimedIoT);
-
+            if(conf.isOutputVehicleCsvFile()) {
+                getTimedIoT(tick).forEach(this::writeTimedIoT);
+            }
             // Getting all of the IoT Devices
             HashSet<TimedEdge> allEdgeNodes = getTimedEdgeNodes(tick);
             allEdgeNodes.forEach(x -> {
                 allTlsS.add(x.getId());
-                writeTimedEdge(x);
+                if(conf.isOutputRSUCsvFile()) {
+                    writeTimedEdge(x);
+                }
                 timedEdgeFullSet.add(x);
             });
             StraightforwardAdjacencyList<String> network = getTimedEdgeNetwork(tick);
@@ -96,8 +108,6 @@ public abstract class TrafficConverter {
 
         logger.trace("Dumping the last results...");
         HashMap<String, ImmutablePair<ImmutablePair<Double, List<String>>, List<ClusterDifference<String>>>> delta_network_neighbours = ClusterDifference.computeTemporalDifference(timedNodeAdjacency, allTlsS, StringComparator.getInstance());
-
-        write_to_SQL(conn, getAllTimedIoT(), true, timedEdgeFullSet, true, sccPerTimeComponent, true, delta_network_neighbours, true);
 
         try {
             Files.writeString(Paths.get(new File(conf.RSUCsvFile + "_" + "neighboursChange.json").getAbsolutePath()), gson.toJson(delta_network_neighbours));
@@ -111,119 +121,118 @@ public abstract class TrafficConverter {
             e.printStackTrace();
             return false;
         }
-        logger.trace("quitting...");
         closeWritingTimedIoT();
         closeWritingTimedEdge();
+        logger.trace("Transferring results to SQL Database...");
+        write_to_SQL(conn, context, getAllTimedIoT(), true, timedEdgeFullSet, true, sccPerTimeComponent, true, delta_network_neighbours, true);
+        logger.trace("quitting...");
         endReadSimulatorOutput();
         logger.info("=========================");
         return true;
     }
 
-    protected void write_to_SQL(Connection conn, Object TimedIoTData, boolean deleteIoTSQLData, Object TimedEdgeData, boolean deleteEdgeSQLData, Object Timed_SCCData, boolean deleteTimed_SCCData, Object NeighbourData, boolean deleteNeighbourData) throws SQLException {
+    protected void write_to_SQL(Connection conn, DSLContext context, Object TimedIoTData, boolean deleteIoTSQLData, Object TimedEdgeData, boolean deleteEdgeSQLData, Object Timed_SCCData, boolean deleteTimed_SCCData, Object NeighbourData, boolean deleteNeighbourData) {
         if (deleteIoTSQLData) emptyTABLE(conn, "vehInformation");
-        INSERTTimedIoTData(conn, TimedIoTData);
+        INSERTTimedIoTData(conn);
+        emptyTABLE(conn, "vehInformation_import");
         if (deleteEdgeSQLData) emptyTABLE(conn, "rsuInformation");
-        INSERTTimedEdgeData(conn, TimedEdgeData);
+        INSERTTimedEdgeData(conn);
+        emptyTABLE(conn, "rsuInformation_import");
         if (deleteTimed_SCCData) emptyTABLE(conn, "timed_scc");
-        INSERTTimed_SCCData(conn, Timed_SCCData);
+        INSERTTimed_SCCData(conn, context, Timed_SCCData);
         if (deleteNeighbourData) emptyTABLE(conn, "neighboursChange");
-        INSERTNeighbourData(conn, NeighbourData);
+        INSERTNeighbourData(conn, context, NeighbourData);
     }
 
-    protected void INSERTTimedIoTData(Connection conn, Object writable) throws SQLException {
-
-        if (TABLEsize(conn, "vehInformation") != 0) {
+    protected void INSERTTimedIoTData(Connection conn) {
+        String targetTABLE = "vehInformation";
+        if (TABLEsize(conn, targetTABLE) != 0) {
             return;
         }
-
-        int start_ID = 1;
-
-        int noVehicles = ((HashMap) writable).values().size();
-        for (int i = 0; i < noVehicles; i++) {
-            int diffTimes = ((ArrayList) ((HashMap) writable).values().toArray()[i]).size();
-            for (int j = 0; j < diffTimes; j++) {
-                TimedIoT entry = (TimedIoT) ((ArrayList) ((HashMap) writable).values().toArray()[i]).get(j);
-                PreparedStatement insertStmt = StartINSERTtoTable(conn, "vehInformation(di_entry_id, vehicle_id, x, y, angle, vehicle_type, speed, pos, lane, slope, simtime)");
-                int di_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-                int vehicle_ID = INSERTString(insertStmt, 2, entry.getId());
-                int di_x = INSERTDouble(insertStmt, 3, entry.getX());
-                int di_y = INSERTDouble(insertStmt, 4, entry.getY());
-                int angle = INSERTDouble(insertStmt, 5, entry.getAngle());
-                int vehicle_type = INSERTString(insertStmt, 6, entry.getType());
-                int speed = INSERTDouble(insertStmt, 7, entry.getSpeed());
-                int pos = INSERTDouble(insertStmt, 8, entry.getPos());
-                int lane = INSERTString(insertStmt, 9, entry.getLane());
-                int slope = INSERTDouble(insertStmt, 10, entry.getSlope());
-                int simtime = INSERTDouble(insertStmt, 11, entry.getSimtime());
-                boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-                start_ID++;
-            }
-        }
+        System.out.print("Organising vehInformation Data...\n");
+        long startTime = System.nanoTime();
+        copyCSVDATA(conn, vehicleCSVFile, targetTABLE);
+        transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime)",
+                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime", targetTABLE);
+        long endTime = System.nanoTime();
+        long executionTime = (endTime - startTime) / 1000000;
+        System.out.print("Sending vehInformation to SQL Database\n");
+        System.out.println("This takes " + executionTime + "ms");
     }
 
-    protected void INSERTTimedEdgeData(Connection conn, Object writable) throws SQLException {
+    protected void INSERTTimedEdgeData(Connection conn) {
 
-        if (TABLEsize(conn, "rsuInformation") != 0) {
+        String targetTABLE = "rsuInformation";
+        if (TABLEsize(conn, targetTABLE) != 0) {
             return;
         }
-        int start_ID = 1;
-
-        int noEntries = ((ArrayList) writable).size();
-        for (int i = 0; i < noEntries; i++) {
-            TimedEdge entry = (TimedEdge) ((ArrayList) writable).get(i);
-            PreparedStatement insertStmt = StartINSERTtoTable(conn, "rsuInformation(unique_entry_id, rsu_id, x, y, simtime, communication_radius, max_vehicle_communication)");
-            int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-            int rsu_ID = INSERTString(insertStmt, 2, entry.getId());
-            int ri_x = INSERTDouble(insertStmt, 3, entry.getX());
-            int ri_y = INSERTDouble(insertStmt, 4, entry.getY());
-            int simtime = INSERTDouble(insertStmt, 5, entry.getSimtime());
-            int communication_radius = INSERTDouble(insertStmt, 6, entry.getCommunication_radius());
-            int max_vehicle_communication  =INSERTDouble(insertStmt, 7, entry.getMax_vehicle_communication());
-            boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-            start_ID++;
-        }
+        System.out.print("Organising rsuInformation Data...\n");
+        long startTime = System.nanoTime();
+        copyCSVDATA(conn, RSUCsvFile, targetTABLE);
+        transferDATABetweenTables(conn, "rsuInformation(rsu_id, x, y, simtime, communication_radius, max_vehicle_communication)",
+                "rsu_id, x, y, simtime, communication_radius, max_vehicle_communication", targetTABLE);
+        long endTime = System.nanoTime();
+        long executionTime = (endTime - startTime) / 1000000;
+        System.out.print("Sending rsuInformation to SQL Database\n");
+        System.out.println("This takes " + executionTime + "ms");
     }
 
-    protected void INSERTTimed_SCCData(Connection conn, Object writable) throws SQLException {
+    protected void INSERTTimed_SCCData(Connection conn, DSLContext context ,Object writable) {
 
         if (TABLEsize(conn, "timed_scc") != 0) {
             return;
         }
+        System.out.print("Organising timed_SCC Data...\n");
+        long startTime = System.nanoTime();
+        var query = context.insertInto(TimedScc.TIMED_SCC, TimedScc.TIMED_SCC.UNIQUE_ENTRY_ID, TimedScc.TIMED_SCC.TIME_OF_UPDATE,
+                        TimedScc.TIMED_SCC.NETWORKNEIGHBOURS1, TimedScc.TIMED_SCC.NETWORKNEIGHBOURS2,
+                        TimedScc.TIMED_SCC.NETWORKNEIGHBOURS3, TimedScc.TIMED_SCC.NETWORKNEIGHBOURS4)
+                .values((Integer) null, (Double) null, (String) null, (String) null, (String) null, (String) null);
         int start_ID = 1;
+        int k = 0;
+        int batchSize = 25000;
+        BatchBindStep step = context.batch(query);
 
-        Set allTimes = ((TreeMap) writable).entrySet();
-        int noTimeEntries = ((TreeMap) writable).size();
         for (Map.Entry<Double, ArrayList> timeEntry : ((TreeMap<Double, ArrayList>) writable).entrySet()) {
             int noNeighbourEntries = timeEntry.getValue().size();
             for (int i = 0; i < noNeighbourEntries; i++) {
                 ArrayList entry  = (ArrayList) timeEntry.getValue().get(i);
                 int noNeighbours = entry.size();
-
-                PreparedStatement insertStmt = StartINSERTtoTable(conn, "timed_scc(unique_entry_id, time_of_update, networkneighbours1, networkneighbours2, networkneighbours3, networkneighbours4)");
-                int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-                int time_of_update = INSERTDouble(insertStmt, 2, timeEntry.getKey());
-                int networkneighbours1 = noNeighbours >= 1 ? INSERTString(insertStmt, 3, (String) entry.get(0)) : INSERTString(insertStmt, 3, "null");
-                int networkneighbours2 = noNeighbours >= 2 ? INSERTString(insertStmt, 4, (String) entry.get(1)) : INSERTString(insertStmt, 4, "null");
-                int networkneighbours3 = noNeighbours >= 3 ? INSERTString(insertStmt, 5, (String) entry.get(2)) : INSERTString(insertStmt, 5, "null");
-                int networkneighbours4 = noNeighbours >= 4 ? INSERTString(insertStmt, 6, (String) entry.get(3)) : INSERTString(insertStmt, 6, "null");
-                boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
+                step.bind(start_ID, timeEntry.getKey(), noNeighbours >= 1 ? entry.get(0) : "null", noNeighbours >= 2 ? entry.get(1) : "null",
+                        noNeighbours >= 3 ? entry.get(2) : "null", noNeighbours >= 4 ? entry.get(3) : "null");
                 start_ID++;
             }
+            if (step.size() >= batchSize || k + 1 == ((TreeMap<Double, ArrayList>) writable).entrySet().size()) {
+                step.execute();
+                step = context.batch(query);
+            }
+            k++;
         }
+        long endTime = System.nanoTime();
+        long executionTime = (endTime - startTime) / 1000000;
+        System.out.print("Sending timed_SCC to SQL Database\n");
+        System.out.println("This takes " + executionTime + "ms");
     }
 
-    protected void INSERTNeighbourData(Connection conn, Object writable) throws SQLException {
+    protected void INSERTNeighbourData(Connection conn, DSLContext context, Object writable) {
 
         if (TABLEsize(conn, "neighboursChange") != 0) {
             return;
         }
+        System.out.print("Organising neighboursInfo Data...\n");
+        long startTime = System.nanoTime();
+        var query = context.insertInto(Neighbourschange.NEIGHBOURSCHANGE, Neighbourschange.NEIGHBOURSCHANGE.UNIQUE_ENTRY_ID, Neighbourschange.NEIGHBOURSCHANGE.RSU_ID,
+                        Neighbourschange.NEIGHBOURSCHANGE.TIME_OF_UPDATE, Neighbourschange.NEIGHBOURSCHANGE.NEIGHBOUR1, Neighbourschange.NEIGHBOURSCHANGE.NEIGHBOUR2,
+                        Neighbourschange.NEIGHBOURSCHANGE.NEIGHBOUR3, Neighbourschange.NEIGHBOURSCHANGE.ISCHANGE, Neighbourschange.NEIGHBOURSCHANGE.CHANGE1,
+                        Neighbourschange.NEIGHBOURSCHANGE.CHANGE2, Neighbourschange.NEIGHBOURSCHANGE.CHANGE3, Neighbourschange.NEIGHBOURSCHANGE.CHANGE4)
+                .values((Integer) null, (String) null, (Double) null, (String) null, (String) null, (String) null, (String) null,
+                        (String) null, (String) null, (String) null, (String) null);
         int start_ID = 1;
-
+        //int batchNo = 1;
+        int batchSize = 25000;//Math.min(((TreeMap<Double, ArrayList>) writable).size(), 25000);
+        BatchBindStep step = context.batch(query);
+        //ProgressBar pb = new ProgressBar("neighboursInfo batch 1", batchSize);
         var allRSU = ((HashMap) writable).entrySet();
-        int noRSUEntries = ((HashMap) writable).size();
         for (int i = 0; i < allRSU.toArray().length; i++) {
             var RSUEntry = (Map.Entry) allRSU.toArray()[i];
             for (int j = 0; j < ((ArrayList) ((ImmutablePair) ((Map.Entry) allRSU.toArray()[i]).getValue()).getValue()).size(); j++) {
@@ -232,23 +241,30 @@ public abstract class TrafficConverter {
                 int noNeighbours = ((ArrayList) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getValue()).size();
                 int noChanges = entry.getChanges().size();
 
-                PreparedStatement insertStmt = StartINSERTtoTable(conn, "neighboursChange(unique_entry_id, rsu_id, time_of_update, neighbour1, neighbour2, neighbour3, ischange, change1, change2, change3, change4)");
-                int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-                int rsu_id = INSERTString(insertStmt, 2, (String) RSUEntry.getKey());
-                int time_of_update = INSERTDouble(insertStmt, 3, (Double) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getKey());
-                int neighbours1 = noNeighbours >= 1 ? INSERTString(insertStmt, 4, (String) ((ArrayList) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getValue()).toArray()[0]) : INSERTString(insertStmt, 4, "null");
-                int neighbours2 = noNeighbours >= 2 ? INSERTString(insertStmt, 5, (String) ((ArrayList) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getValue()).toArray()[1]) : INSERTString(insertStmt, 5, "null");
-                int neighbours3 = noNeighbours >= 3 ? INSERTString(insertStmt, 6, (String) ((ArrayList) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getValue()).toArray()[2]) : INSERTString(insertStmt, 6, "null");
-                int ischange = INSERTString(insertStmt, 7, entry.getChange().name());
-                int change1 =  noChanges >= 1 ? INSERTString(insertStmt, 8, (String) entry.getChanges().get(0)) : INSERTString(insertStmt, 8, "null");
-                int change2 =  noChanges >= 2 ? INSERTString(insertStmt, 9, (String) entry.getChanges().get(1)) : INSERTString(insertStmt, 9, "null");
-                int change3 =  noChanges >= 3 ? INSERTString(insertStmt, 10, (String) entry.getChanges().get(2)) : INSERTString(insertStmt, 10, "null");
-                int change4 =  noChanges >= 4 ? INSERTString(insertStmt, 11, (String) entry.getChanges().get(3)) : INSERTString(insertStmt, 11, "null");
-                boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
+                step.bind(start_ID, (String) RSUEntry.getKey(), (Double) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getKey(),
+                        noNeighbours >= 1 ? (String) ((ArrayList) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getValue()).toArray()[0] : "null",
+                        noNeighbours >= 2 ? (String) ((ArrayList) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getValue()).toArray()[1] : "null",
+                        noNeighbours >= 3 ? (String) ((ArrayList) ((ImmutablePair) ((ImmutablePair) RSUEntry.getValue()).getKey()).getValue()).toArray()[2] : "null",
+                        entry.getChange().name(), noChanges >= 1 ? (String) entry.getChanges().get(0) : "null", noChanges >= 2 ? (String) entry.getChanges().get(1) : "null",
+                        noChanges >= 3 ? (String) entry.getChanges().get(2) : "null", noChanges >= 4 ? (String) entry.getChanges().get(3) : "null");
+                //pb.step();
                 start_ID++;
             }
+            if (step.size() >= batchSize || i + 1 == allRSU.toArray().length) {
+                //System.out.print("Sending neighboursInfo to SQL Database from batch " + batchNo + "\n");
+                //pb.stepTo(step.size());
+                step.execute();
+                step = context.batch(query);
+                /*if(i + 1 < allRSU.toArray().length) {
+                    batchNo++;
+                    //pb = new ProgressBar("neighboursInfo batch " + batchNo, batchSize);
+                }*/
+            }
         }
+        long endTime = System.nanoTime();
+        long executionTime = (endTime - startTime) / 1000000;
+        System.out.print("Sending neighboursInfo to SQL Database\n");
+        System.out.println("This takes " + executionTime + "ms");
     }
 
     protected boolean writeTimedEdge(TimedEdge object) {

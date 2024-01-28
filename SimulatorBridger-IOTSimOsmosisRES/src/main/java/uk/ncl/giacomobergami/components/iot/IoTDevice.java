@@ -299,6 +299,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		if (this.flowList.isEmpty()) {
 			// If there is no flow, then the device is not communicating, and therefore the battery should be
 			// updated as only in sensing
+
 			isDrained = this.updateBatteryBySensing();
 			isCommunicating = false;
 		} else {

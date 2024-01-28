@@ -1,11 +1,6 @@
 package uk.ncl.giacomobergami.components.iot;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
-import com.google.gson.stream.JsonToken;
 import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
-import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
@@ -13,26 +8,18 @@ import uk.ncl.giacomobergami.utils.asthmatic.WorkloadFromVehicularProgram;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
-import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
-import uk.ncl.giacomobergami.utils.shared_data.iot.IoTProgram;
-import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
-import uk.ncl.giacomobergami.utils.structures.Union2;
 
 import java.io.*;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
-
-import static java.lang.Double.parseDouble;
-import static org.jooq.impl.DSL.abs;
 import static org.jooq.impl.DSL.field;
 
 public class IoTEntityGenerator {
+    public static double lat;
+    public static double endTime;
     //final TreeMap<String, IoT> timed_iots;
     final IoTGlobalConfiguration conf;
     static final HashSet<Double> setWUT = new HashSet<>();
@@ -73,6 +60,10 @@ public class IoTEntityGenerator {
             conf = YAML.parse(IoTGlobalConfiguration.class, configuration).orElseThrow();
         else
             conf = null;
+
+        lat = latency;
+        endTime = end;
+
         /*Gson gson = new Gson();
         Type sccType = new TypeToken<TreeMap<String, IoT>>() {}.getType();
         BufferedReader reader1 = null;
@@ -103,13 +94,17 @@ public class IoTEntityGenerator {
         else
             conf = null;
 
+        lat = latency;
+        endTime = end;
+
+        System.out.print("Collecting Vehicle Active Times from SQL Database...\n");
         List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
         for (int i = 0; i < allVehs.size(); i++) {
             TreeSet timesForCurrentVehicle = new TreeSet(context.select(field("simtime")).distinctOn(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "'").fetch().getValues(0));
             vehicleTimes.put((String) allVehs.get(i), timesForCurrentVehicle);
         }
+        System.out.print("Vehicle Active Times Collected\n");
     }
-
 
     /*private TreeMap<String, IoT> readLargeJson(String path) throws IOException {
         Gson gson = new Gson();
@@ -413,23 +408,46 @@ public class IoTEntityGenerator {
     }*/
 
     public Collection<Double> collectionOfWakeUpTimes() {
+        System.out.print("Starting Collection of Wake Up Times...\n");
         latency = Math.max(latency, 0.01);
         for (double i = begin; i <= end; i = i + latency) {
             setWUT.add((double) Math.round(i * 1000) / 1000);
         }
         for (int j = 0; j < vehicleTimes.size(); j++) {
-            TreeSet timesForVehicle = (TreeSet) vehicleTimes.values().toArray()[j];
-            for (int k = 0; k < timesForVehicle.size(); k++) {
-                Double timeValue = (Double) ((TreeSet<?>) vehicleTimes.values().toArray()[j]).toArray()[k];
-                setWUT.add(timeValue.doubleValue());
-            }
+            setWUT.addAll((Collection<? extends Double>) vehicleTimes.values().toArray()[j]);
         }
+        System.out.print("Wake Up Times Collected\n");
         return setWUT;
     }
 
     public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
                                 @Input double simTimeLow, @Input double simTimeUp,
-                                @Input DSLContext context) {
+                                @Input DSLContext context, double[] currentPosition, double[] expectedPosition) {
+
+        if(currentPosition[0] == -1) {
+            toUpdateWithTime.transmit = false;
+            return;
+        }
+
+        toUpdateWithTime.transmit = true;
+        toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];
+        toUpdateWithTime.mobility.range.beginY = (int) currentPosition[1];
+        toUpdateWithTime.mobility.location.x = currentPosition[0];
+        toUpdateWithTime.mobility.location.y = currentPosition[1];
+        toUpdateWithTime.mobility.range.endX = (int) expectedPosition[0];
+        toUpdateWithTime.mobility.range.endY = (int) expectedPosition[1];
+
+    }
+
+    /*public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
+                                @Input double simTimeLow, @Input double simTimeUp,
+                                @Input DSLContext context, double[] currentPosition, double[] expectedPosition) {
+
+        if(currentPosition[0] == -1) {
+            toUpdateWithTime.transmit = false;
+            return;
+        }
+
         simTimeLow = (double) Math.round(simTimeLow * 1000) / 1000;
         if (simTimeLow >= begin && simTimeLow <= end) {
             TreeSet timesForCurrentVehicle = vehicleTimes.get(toUpdateWithTime.getName());
@@ -452,10 +470,10 @@ public class IoTEntityGenerator {
             if (simTimeLow >= lowTime && !isNull) {
                 var expectedLowInfo = context.select().from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + toUpdateWithTime.getName() + "' AND simtime =" + expectedLow).fetch();
                 toUpdateWithTime.transmit = true;
-                toUpdateWithTime.mobility.range.beginX = (int) (double) expectedLowInfo.getValues(2).get(0);
-                toUpdateWithTime.mobility.range.beginY = (int) (double) expectedLowInfo.getValues(3).get(0);
-                toUpdateWithTime.mobility.location.y = (double) expectedLowInfo.getValues(3).get(0);
-                toUpdateWithTime.mobility.location.x = (double) expectedLowInfo.getValues(2).get(0);
+                toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];
+                toUpdateWithTime.mobility.range.beginY = (int) currentPosition[1];
+                toUpdateWithTime.mobility.location.x = currentPosition[0];
+                toUpdateWithTime.mobility.location.y = currentPosition[1];
                 if (toUpdateWithTime.getName().equals("0") && ((simTimeLow - Math.floor(simTimeLow) <= 0.1))) {
                     System.out.println(simTimeLow + " time: " + toUpdateWithTime.mobility.range.beginX + "->" + toUpdateWithTime.mobility.location.x + ", " + toUpdateWithTime.mobility.range.beginY + "->" + toUpdateWithTime.mobility.location.y);
                 }
@@ -468,9 +486,9 @@ public class IoTEntityGenerator {
                     isNull = (Double) Collections.min(timesForCurrentVehicle) > expectedUp;
                 }
                 if (expectedUp <= end && !isNull) {
-                    var expectedUpInfo = context.select().from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + toUpdateWithTime.getName() + "' AND simtime =" + expectedUp).fetch();
-                    toUpdateWithTime.mobility.range.endX = (int) (double) expectedUpInfo.getValues(2).get(0);
-                    toUpdateWithTime.mobility.range.endY = (int) (double) expectedUpInfo.getValues(3).get(0);
+                    //var expectedUpInfo = context.select().from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + toUpdateWithTime.getName() + "' AND simtime =" + expectedUp).fetch();
+                    toUpdateWithTime.mobility.range.endX = (int) expectedPosition[0];//(int) (double) expectedUpInfo.getValues(2).get(0);
+                    toUpdateWithTime.mobility.range.endY = (int) expectedPosition[1];//(int) (double) expectedUpInfo.getValues(3).get(0);
                 }
             } else {
                 toUpdateWithTime.transmit = false;
@@ -479,7 +497,7 @@ public class IoTEntityGenerator {
         } else {
             toUpdateWithTime.transmit = false;
         }
-    }
+    }*/
 
     public List<WorkloadCSV> generateAppSetUp(double simulation_step,
                                               AtomicInteger global_program_counter) {
@@ -501,8 +519,8 @@ public class IoTEntityGenerator {
         return allVehs.size();
     }
 
-
     public List<IoTDeviceTabularConfiguration> asIoTSQLCongigurationList(Connection conn, DSLContext context) {
+        System.out.print("Starting IoT from SQL Configuration...\n");
         List<IoTDeviceTabularConfiguration> IDTCList = new ArrayList<>();
 
         List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
@@ -536,9 +554,9 @@ public class IoTEntityGenerator {
 
             IDTCList.add(idtc);
         }
+        System.out.print("IoT from SQL Configuration Completed\n");
         return IDTCList;
     }
-
 
     /*public List<IoTDeviceTabularConfiguration> asIoTJSONConfigurationList() {
 

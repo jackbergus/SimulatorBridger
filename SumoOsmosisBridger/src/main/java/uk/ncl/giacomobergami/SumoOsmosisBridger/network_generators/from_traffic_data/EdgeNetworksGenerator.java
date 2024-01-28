@@ -4,20 +4,28 @@ import com.google.common.collect.HashMultimap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.CloudInfrastructureGenerator;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EdgeInfrastructureGenerator;
 import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.algorithms.ReconstructorIterator;
 import uk.ncl.giacomobergami.utils.algorithms.StringComparator;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Rsuinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.RsuinformationRecord;
 import uk.ncl.giacomobergami.utils.shared_data.edge.Edge;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.MutablePair;
 import uk.ncl.giacomobergami.utils.structures.ReconstructNetworkInformation;
 
+import javax.sql.DataSource;
 import java.io.*;
 import java.lang.reflect.Type;
+import java.sql.Connection;
 import java.util.*;
+
+import static org.jooq.impl.DSL.field;
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class EdgeNetworksGenerator {
 
@@ -39,9 +47,11 @@ public class EdgeNetworksGenerator {
     public EdgeNetworksGenerator(File scc_json,
                                  File rsu_json,
                                  File neigh_json,
-                                 TimeTicker traffic_simulator_ticker) {
+                                 TimeTicker traffic_simulator_ticker,
+                                 DSLContext context,
+                                 boolean isRSUJSON) {
 
-        simulation_intervals = new TreeSet<>((o1, o2) -> {
+        simulation_intervals = new TreeSet<MutablePair<Double, Double>>((o1, o2) -> {
             if (o1 == o2)
                 return 0;
             else if (o1 == null)
@@ -62,11 +72,14 @@ public class EdgeNetworksGenerator {
         Type networkType = new TypeToken<HashMap<String, ImmutablePair<ImmutablePair<Double, List<String>>, List<ClusterDifference<String>>>>>() {}.getType();
         Gson gson = new Gson();
 
-        BufferedReader reader1 = null, reader2 = null, reader3 = null;
+        BufferedReader reader1 = null, reader2 = null,reader3 = null;
+
         retrieved_basic_information = new HashMap<>();
         try {
             reader1 = new BufferedReader(new FileReader(scc_json.getAbsoluteFile()));
-            reader2 = new BufferedReader(new FileReader(rsu_json.getAbsoluteFile()));
+            if(isRSUJSON) {
+                reader2 = new BufferedReader(new FileReader(rsu_json.getAbsoluteFile()));
+            }
             reader3 = new BufferedReader(new FileReader(neigh_json.getAbsoluteFile()));
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -98,17 +111,39 @@ public class EdgeNetworksGenerator {
             });
 
             // Retrieving the geoloc of the RSU
-            HashMap<String, Edge> edges_in_time = gson.fromJson(reader2, sccType2);
-            edges_in_time.forEach((k,v)->{
-                v.dynamicInformation.forEach((c,a) -> {
-                    retrieved_basic_information.computeIfAbsent(c, any -> new HashMap<>()).put(k, a);
+            TreeSet<Double> ticks;
+            System.out.print("Starting RSU Information Retrieval...\n");
+            if(isRSUJSON) {
+                HashMap<String, Edge> edges_in_time = gson.fromJson(reader2, sccType2);
+                edges_in_time.forEach((k, v) -> {
+                    v.dynamicInformation.forEach((c, a) -> {
+                        retrieved_basic_information.computeIfAbsent(c, any -> new HashMap<>()).put(k, a);
+                    });
                 });
-            });
-            edges_in_time.clear();
+                edges_in_time.clear();
 
-            TreeSet<Double> ticks = new TreeSet<>(retrieved_basic_information.keySet());
-
+                ticks = new TreeSet<>(retrieved_basic_information.keySet());
+            } else {
+                var rsuTimeData = context.select(field("simtime")).distinctOn(field("simtime")).from(Rsuinformation.RSUINFORMATION).fetch();
+                ticks = (TreeSet<Double>) new TreeSet<>(rsuTimeData.getValues(0));
+                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).orderBy(field("simtime")).fetch();
+                int noRSU = allRSUData.size()/ticks.size();
+                for(int j = 0; j < ticks.size(); j++) {
+                    HashMap<String, TimedEdge> rbi_entry = new HashMap<>();
+                    RsuinformationRecord entry;
+                    double currentTime = 0.0;
+                    for (int i = 0; i < noRSU; i++) {
+                        long k = (j * noRSU) + i;
+                        entry = ((RsuinformationRecord) allRSUData.toArray()[(int) k]);
+                        TimedEdge currentRSUInfo = new TimedEdge(entry.getRsuId(), entry.getX(), entry.getY(), entry.getCommunicationRadius(), entry.getMaxVehicleCommunication(), entry.getSimtime());
+                        rbi_entry.put(entry.getRsuId(), currentRSUInfo);
+                        currentTime = entry.getSimtime();
+                    }
+                    retrieved_basic_information.put(currentTime, rbi_entry);
+                }
+            }
             // Reconstructing the edges' neighbours
+            System.out.print("Retrieved RSU Information\n");
             HashMap<String, ImmutablePair<ImmutablePair<Double, List<String>>, List<ClusterDifference<String>>>>
                     adjacencyListVariationInTime =  gson.fromJson(reader3, networkType);
             for (var cp: adjacencyListVariationInTime.entrySet()) {
@@ -121,7 +156,9 @@ public class EdgeNetworksGenerator {
         }
         try {
             reader1.close();
-            reader2.close();
+            if(reader2 != null) {
+                reader2.close();
+            }
             reader3.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -129,20 +166,26 @@ public class EdgeNetworksGenerator {
         }
     }
 
-//    public void updateEdgeDevice(EdgeDevice device, double lower, double upper) {
-//        var retrieve = retriveEdgeLocationInTime(lower, device.getDeviceName());
-//        if (retrieve == null) return;
-//        device.location.x = retrieve.x;
-//        device.location.y = retrieve.y;
-//        device.signalRange = retrieve.communication_radius;
-//        device.max_vehicle_communication = retrieve.max_vehicle_communication;
-//    }
+    /*public void updateEdgeDevice(EdgeDevice device, double lower, double upper) {
+        var retrieve = retriveEdgeLocationInTime(lower, device.getDeviceName());
+        if (retrieve == null) return;
+        device.location.x = retrieve.x;
+        device.location.y = retrieve.y;
+        device.signalRange = retrieve.communication_radius;
+        device.max_vehicle_communication = retrieve.max_vehicle_communication;
+    }*/
 
     public static void main(String args[]) {
+        DataSource dataSource = createDataSource();
+        Connection conn = ConnectToSource(dataSource);
+        DSLContext context = getDSLContext(conn);
+
+        boolean isRSUJSON = false;
+
         new EdgeNetworksGenerator(
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/rsu.csv_timed_scc.json"),
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/stats/test_rsu.json"),
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/rsu.csv_neighboursChange.json"),
-                new TimeTicker(0, 100, 1));
+                new TimeTicker(0, 100, 1), context, false);
     }
 }

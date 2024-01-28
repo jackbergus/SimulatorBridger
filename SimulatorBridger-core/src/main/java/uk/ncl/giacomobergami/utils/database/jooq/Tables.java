@@ -19,6 +19,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.Rsuinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Switchpowerconsumption;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.VehinformationImport;
 
 
 /**
@@ -101,4 +102,9 @@ public class Tables {
      * The table <code>public.vehinformation</code>.
      */
     public static final Vehinformation VEHINFORMATION = Vehinformation.VEHINFORMATION;
+
+    /**
+     * The table <code>public.vehinformation_import</code>.
+     */
+    public static final VehinformationImport VEHINFORMATION_IMPORT = VehinformationImport.VEHINFORMATION_IMPORT;
 }

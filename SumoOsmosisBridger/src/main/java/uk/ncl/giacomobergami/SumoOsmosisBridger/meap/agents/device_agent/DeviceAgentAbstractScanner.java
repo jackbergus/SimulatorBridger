@@ -74,7 +74,8 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                     if (!(x.getRight() instanceof EdgeDevice)) return false;
                     var obj = (EdgeDevice)x.getRight();
                     var distance = Math.sqrt(f.getDistance(iot, obj.location));
-                    return ((distance <= iot.mobility.signalRange) && (distance <= obj.signalRange));
+                    var outcome = ((distance <= iot.mobility.signalRange) && (distance <= obj.signalRange));
+                    return outcome;
                 })
                 .map(x -> new ImmutablePair<>(((EdgeDataCenter)x.getLeft()), ((EdgeDevice) x.getRight())))
                 .collect(Collectors.toList());

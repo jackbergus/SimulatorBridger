@@ -274,7 +274,7 @@ public class OsmoticWrapper {
     }
 
 
-    public void log(GlobalConfigurationSettings conf, Connection conn) {
+    public void log(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
         if (finished) {
             LogUtil.logger.trace("Simulation finished...");
             bandwidthInfoList = OsmosisOrchestrator.getBandwidthShareInfo();
@@ -301,7 +301,7 @@ public class OsmoticWrapper {
                 pr.dumpCSV(new File(conf.output_simulation_file));
 
             try {
-                pr.write_to_SQL(conn);
+                pr.write_to_SQL(conn, context);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }

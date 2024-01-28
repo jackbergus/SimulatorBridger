@@ -65,7 +65,7 @@ public class OsmoticRunner {
         var conv = new OsmoticWrapper(conf.asPreviousOsmoticConfiguration());
         conv.runConfiguration(conf, conn, context);
         conv.stop(conn, context);
-        conv.log(conf, conn);
+        conv.log(conf, conn, context);
     }
 
     @Deprecated

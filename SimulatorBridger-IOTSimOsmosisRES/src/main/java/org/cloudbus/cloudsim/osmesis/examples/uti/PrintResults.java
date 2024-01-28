@@ -30,6 +30,7 @@ import org.cloudbus.cloudsim.sdn.power.PowerUtilizationInterface;
 import org.cloudbus.osmosis.core.OsmoticAppDescription;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.cloudbus.osmosis.core.WorkflowInfo;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
 
@@ -39,11 +40,11 @@ import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 
 /**
- * 
+ *
  * @author Khaled Alwasel
  * @contact kalwasel@gmail.com
  * @since IoTSim-Osmosis 1.0
- * 
+ *
 **/
 
 public class PrintResults {
@@ -58,23 +59,53 @@ public class PrintResults {
 	List<ActualHistoryEntry> ahe;
 	private List<EdgeConnectionsPerSimulationTime> connectionPerSimTime;
 	List<BandShareInfo> bsi;
+	File ABIFile, ALFile, OASFile, OARFile, DCECFile, HPCFile, SPCFile, PUHFile, HEFile, CPSFile, BSIFile;
+	String ABICSV, ALCSV, OASCSV, OARCSV, DCECCSV, HPCCSV, SPCCSV, PUHCSV, HECSV, CPSCSV, BSICSV;
 //	TreeMap<String, List<String>> app_to_path;
+
+	public void createCSVFiles(File folder) {
+		String[] Paths = new String[11];
+		ABIFile = new File(folder, "accurateBatteryInfo.csv");
+		ALFile = new File(folder, "appList.csv");
+		OASFile = new File(folder, "osmoticAppsStats.csv");
+		OARFile = new File(folder, "overallAppResults.csv");
+		DCECFile = new File(folder, "dataCenterEnergyConsumption.csv");
+		HPCFile = new File(folder, "HostPowerConsumption.csv");
+		SPCFile = new File(folder, "SwitchPowerConsumption.csv");
+		PUHFile = new File(folder, "PowerUtilisationHistory.csv");
+		HEFile = new File(folder, "HistoryEntry.csv");
+		CPSFile = new File(folder, "connectionPerSimTime.csv");
+		BSIFile = new File(folder, "bandwidthShareInfo.csv");
+
+		ABICSV = ABIFile.getAbsolutePath();
+		ALCSV = ALFile.getAbsolutePath();
+		BSICSV = BSIFile.getAbsolutePath();
+		CPSCSV = CPSFile.getAbsolutePath();
+		DCECCSV = DCECFile.getAbsolutePath();
+		HECSV = HEFile.getAbsolutePath();
+		HPCCSV = HPCFile.getAbsolutePath();
+		OASCSV = OASFile.getAbsolutePath();
+		OARCSV = OARFile.getAbsolutePath();
+		PUHCSV = PUHFile.getAbsolutePath();
+		SPCCSV = SPCFile.getAbsolutePath();
+	}
 
 	public void dumpCSV(File folder) {
 		if (!folder.exists()) {
 			folder.mkdirs();
 		}
-		new CSVMediator<>(AccurateBatteryInformation.class).writeAll(new File(folder, "accurateBatteryInfo.csv"), battInfo);
-		new CSVMediator<>(OsmoticAppDescription.class).writeAll(new File(folder, "appList.csv"), appList);
-		new CSVMediator<>(PrintOsmosisAppFromTags.class).writeAll(new File(folder, "osmoticAppsStats.csv"), osmoticAppsStats);
-		new CSVMediator<>(OsmesisOverallAppsResults.class).writeAll(new File(folder, "overallAppResults.csv"), overallAppResults);
-		new CSVMediator<>(EnergyConsumption.class).writeAll(new File(folder, "dataCenterEnergyConsumption.csv"), dataCenterEnergyConsumption);
-		new CSVMediator<>(PowerConsumption.class).writeAll(new File(folder, "HostPowerConsumption.csv"), hpc);
-		new CSVMediator<>(PowerConsumption.class).writeAll(new File(folder, "SwitchPowerConsumption.csv"), spc);
-		new CSVMediator<>(ActualPowerUtilizationHistoryEntry.class).writeAll(new File(folder, "PowerUtilisationHistory.csv"), puhe);
-		new CSVMediator<>(ActualHistoryEntry.class).writeAll(new File(folder, "HistoryEntry.csv"), ahe);
-		new CSVMediator<>(EdgeConnectionsPerSimulationTime.class).writeAll(new File(folder, "connectionPerSimTime.csv"), connectionPerSimTime);
-		new CSVMediator<>(BandShareInfo.class).writeAll(new File(folder, "bandwidthShareInfo.csv"), bsi);
+		createCSVFiles(folder);
+		new CSVMediator<>(AccurateBatteryInformation.class).writeAll(ABIFile, battInfo);
+		new CSVMediator<>(OsmoticAppDescription.class).writeAll(ALFile, appList);
+		new CSVMediator<>(PrintOsmosisAppFromTags.class).writeAll(OASFile, osmoticAppsStats);
+		new CSVMediator<>(OsmesisOverallAppsResults.class).writeAll(OARFile, overallAppResults);
+		new CSVMediator<>(EnergyConsumption.class).writeAll(DCECFile, dataCenterEnergyConsumption);
+		new CSVMediator<>(PowerConsumption.class).writeAll(HPCFile, hpc);
+		new CSVMediator<>(PowerConsumption.class).writeAll(SPCFile, spc);
+		new CSVMediator<>(ActualPowerUtilizationHistoryEntry.class).writeAll(PUHFile, puhe);
+		new CSVMediator<>(ActualHistoryEntry.class).writeAll(HEFile, ahe);
+		new CSVMediator<>(EdgeConnectionsPerSimulationTime.class).writeAll(CPSFile, connectionPerSimTime);
+		new CSVMediator<>(BandShareInfo.class).writeAll(BSIFile, bsi);
 //		try {
 //			Files.writeString(new File(folder, "paths.json").toPath(), new Gson().toJson(app_to_path));
 //		} catch (IOException e) {
@@ -82,37 +113,59 @@ public class PrintResults {
 //		}
 	}
 
-	public void write_to_SQL(Connection conn) throws SQLException {
+	public void write_to_SQL(Connection conn, DSLContext context) throws SQLException {
 		emptyTABLE(conn, "accurateBatteryInfo");
 		INSERTAccurateBatteryInfo(conn, battInfo);
+		emptyTABLE(conn, "accurateBatteryInfo_import");
 		emptyTABLE(conn, "appList");
 		INSERTAppList(conn, appList);
+		emptyTABLE(conn, "appList_import");
 		emptyTABLE(conn, "osmoticAppsStats");
 		INSERTOsmoticAppsStats(conn, osmoticAppsStats);
+		emptyTABLE(conn, "osmoticAppsStats_import");
 		emptyTABLE(conn, "overallAppResults");
 		INSERTOverallAppResults(conn, overallAppResults);
+		emptyTABLE(conn, "overallAppResults_import");
 		emptyTABLE(conn, "dataCenterEnergyConsumption");
 		INSERTDataCenterEnergyConsumption(conn, dataCenterEnergyConsumption);
+		emptyTABLE(conn, "dataCenterEnergyConsumption_import");
 		emptyTABLE(conn, "HostPowerConsumption");
 		INSERTHostPowerConsumption(conn, hpc);
+		emptyTABLE(conn, "HostPowerConsumption_import");
 		emptyTABLE(conn, "SwitchPowerConsumption");
 		INSERTSwitchPowerConsumption(conn, spc);
+		emptyTABLE(conn, "SwitchPowerConsumption_import");
 		emptyTABLE(conn, "PowerUtilisationHistory");
 		INSERTPowerUtilisationHistory(conn, puhe);
+		emptyTABLE(conn, "PowerUtilisationHistory_import");
 		emptyTABLE(conn, "HistoryEntry");
 		INSERTHistoryEntry(conn, ahe);
+		emptyTABLE(conn, "HistoryEntry_import");
 		emptyTABLE(conn, "connectionPerSimTime");
 		INSERTConnectionPerSimTime(conn, connectionPerSimTime);
+		emptyTABLE(conn, "connectionPerSimTime_import");
 		emptyTABLE(conn, "bandwidthShareInfo");
 		INSERTBandwidthShareInfo(conn, bsi);
+		emptyTABLE(conn, "bandwidthShareInfo_import");
 	}
 
 	protected void INSERTAccurateBatteryInfo(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "accurateBatteryInfo") != 0) {
+		String targetTABLE = "accurateBatteryInfo";
+		if (TABLEsize(conn, targetTABLE) != 0) {
 			return;
 		}
 
-		int start_ID = 1;
+		System.out.print("Organising accurateBatteryInfo Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, ABICSV, targetTABLE);
+		transferDATABetweenTables(conn, "accurateBatteryInfo(iotdevicename, consumption, flowid, nopackets, time)",
+				"iotdevicename, consumption, flowid, nopackets, time", targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending accurateBatteryInfo data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*int start_ID = 1;
 
 		int noEntries = ((ArrayList) writable).size();
 		for (int i = 0; i < noEntries; i++) {
@@ -127,11 +180,31 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTAppList(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "appList") != 0) {
+		String targetTABLE = "appList";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising appList Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, ALCSV, targetTABLE);
+		transferDATABetweenTables(conn, "appList(appid,appname,appstarttime,clouddatacentername,clouddcid,datarate," +
+						"edgedatacentername,edgedcid,endtime,iotdevicebatteryconsumption,iotdevicebatterystatus,iotdeviceid,iotdevicename,iotdeviceoutputsize," +
+						"isiotdevicedied,melid,melname,meloutputsize,osmesiscloudletsize,osmesisedgeletsize,startdatagenerationtime,stopdatagenerationtime," +
+						"vmcloudid,vmname,workflowid)",
+				"appid,appname,appstarttime,clouddatacentername,clouddcid,datarate,edgedatacentername,edgedcid,endtime,iotdevicebatteryconsumption,iotdevicebatterystatus,iotdeviceid,iotdevicename,iotdeviceoutputsize,isiotdevicedied,melid,melname,meloutputsize,osmesiscloudletsize,osmesisedgeletsize,startdatagenerationtime,stopdatagenerationtime,vmcloudid,vmname,workflowid"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending appList data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+
+		/*if (TABLEsize(conn, "appList") != 0) {
 			return;
 		}
 
@@ -179,11 +252,30 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTOsmoticAppsStats(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "osmoticAppsStats") != 0) {
+		String targetTABLE = "osmoticAppsStats";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising osmoticAppsStats Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, OASCSV, targetTABLE);
+		transferDATABetweenTables(conn, "osmoticAppsStats(appid,appname,cloudletmisize,cloudletproccessingtimebyvm" +
+						",datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel" +
+						",edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime," +
+						"oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw)",
+				"appid,appname,cloudletmisize,cloudletproccessingtimebyvm,datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel,edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime,oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending osmoticAppsStats data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "osmoticAppsStats") != 0) {
 			return;
 		}
 
@@ -226,11 +318,28 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTOverallAppResults(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "overallAppResults") != 0) {
+		String targetTABLE = "overallAppResults";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising overallAppResults Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, OARCSV, targetTABLE);
+		transferDATABetweenTables(conn, "overallAppResults(appname,endtime,iotdevicebatteryconsumption," +
+						"iotdevicedrained,simluationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime)",
+				"appname,endtime,iotdevicebatteryconsumption,iotdevicedrained,simluationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending overallAppResults data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "overallAppResults") != 0) {
 			return;
 		}
 
@@ -257,11 +366,28 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTDataCenterEnergyConsumption(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "dataCenterEnergyConsumption") != 0) {
+
+		String targetTABLE = "dataCenterEnergyConsumption";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising dataCenterEnergyConsumption Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, DCECCSV, targetTABLE);
+		transferDATABetweenTables(conn, "dataCenterEnergyConsumption(hostenergyconsumed,switchenergyconsumed,totalenergyconsumed,dcname,finishtime)",
+				"hostenergyconsumed,switchenergyconsumed,totalenergyconsumed,dcname,finishtime"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending dataCenterEnergyConsumption data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "dataCenterEnergyConsumption") != 0) {
 			return;
 		}
 
@@ -280,11 +406,28 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTHostPowerConsumption(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "HostPowerConsumption") != 0) {
+
+		String targetTABLE = "HostPowerConsumption";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising HostPowerConsumption Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, HPCCSV, targetTABLE);
+		transferDATABetweenTables(conn, "HostPowerConsumption(dcname,energy,hpc_name)",
+				"dcname,energy,hpc_name"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending HostPowerConsumption data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "HostPowerConsumption") != 0) {
 			return;
 		}
 
@@ -301,11 +444,28 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTSwitchPowerConsumption(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "SwitchPowerConsumption") != 0) {
+
+		String targetTABLE = "SwitchPowerConsumption";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising SwitchPowerConsumption Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, SPCCSV, targetTABLE);
+		transferDATABetweenTables(conn, "SwitchPowerConsumption(dcname,energy,spc_name)",
+				"dcname,energy,spc_name"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending SwitchPowerConsumption data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "SwitchPowerConsumption") != 0) {
 			return;
 		}
 
@@ -322,11 +482,28 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTPowerUtilisationHistory(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "PowerUtilisationHistory") != 0) {
+
+		String targetTABLE = "PowerUtilisationHistory";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising PowerUtilisationHistory Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, PUHCSV, targetTABLE);
+		transferDATABetweenTables(conn, "PowerUtilisationHistory(dcname, puh_name, starttime, usedmips)",
+				"dcname, puh_name, starttime, usedmips"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending PowerUtilisationHistory data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "PowerUtilisationHistory") != 0) {
 			return;
 		}
 
@@ -344,11 +521,28 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTHistoryEntry(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "HistoryEntry") != 0) {
+
+		String targetTABLE = "HistoryEntry";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising HistoryEntry Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, HECSV, targetTABLE);
+		transferDATABetweenTables(conn, "HistoryEntry(numactiveports, starttime)",
+				"numactiveports, starttime"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending HistoryEntry data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "HistoryEntry") != 0) {
 			return;
 		}
 
@@ -365,11 +559,28 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTConnectionPerSimTime(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "ConnectionPerSimTime") != 0) {
+
+		String targetTABLE = "ConnectionPerSimTime";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising ConnectionPerSimTime Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, CPSCSV, targetTABLE);
+		transferDATABetweenTables(conn, "ConnectionPerSimTime(iotdevices, edgehost, cps_time)",
+				"iotdevices, edgehost, cps_time"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending ConnectionPerSimTime data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "ConnectionPerSimTime") != 0) {
 			return;
 		}
 
@@ -387,11 +598,28 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	protected void INSERTBandwidthShareInfo(Connection conn, Object writable) throws SQLException {
-		if (TABLEsize(conn, "bandwidthShareInfo") != 0) {
+
+		String targetTABLE = "bandwidthShareInfo";
+		if (TABLEsize(conn, targetTABLE) != 0) {
+			return;
+		}
+
+		System.out.print("Organising bandwidthShareInfo Data...\n");
+		long startTime = System.nanoTime();
+		copyCSVDATA(conn, BSICSV, targetTABLE);
+		transferDATABetweenTables(conn, "bandwidthShareInfo(bandwidthshare, channelid, edgename, melname, timestamp)",
+				"bandwidthshare, channelid, edgename, melname, timestamp"
+				,targetTABLE);
+		long endTime = System.nanoTime();
+		long executionTime = (endTime - startTime) / 1000000;
+		System.out.print("Sending bandwidthShareInfo data to SQL Database\n");
+		System.out.println("This takes " + executionTime + "ms");
+
+		/*if (TABLEsize(conn, "bandwidthShareInfo") != 0) {
 			return;
 		}
 
@@ -411,7 +639,7 @@ public class PrintResults {
 			boolean finishedInsert = EndINSERTtoTable(insertStmt);
 
 			start_ID++;
-		}
+		}*/
 	}
 
 	public void addHostPowerConsumption(String dcName, String name, double energy) {

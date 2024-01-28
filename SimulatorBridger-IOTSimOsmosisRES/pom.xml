@@ -29,15 +29,12 @@
     </properties>
 
 <dependencies>
-
-
 <dependency>
     <groupId>org.projectlombok</groupId>
     <artifactId>lombok</artifactId>
     <version>1.18.20</version>
     <scope>provided</scope>
 </dependency>
-
 <!--&lt;!&ndash; https://mvnrepository.com/artifact/org.codehaus.mojo/build-helper-maven-plugin &ndash;&gt;-->
 <!--<dependency>-->
 <!--    <groupId>org.codehaus.mojo</groupId>-->
@@ -56,7 +53,12 @@
         <version>8.10.0</version>
         <scope>compile</scope>
     </dependency>
-
+    <dependency>
+        <groupId>me.tongfei</groupId>
+        <artifactId>progressbar</artifactId>
+        <version>0.10.0</version>
+        <scope>compile</scope>
+    </dependency>
 </dependencies>
 
 </project>

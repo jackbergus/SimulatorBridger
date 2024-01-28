@@ -1,5 +1,6 @@
 package uk.ncl.giacomobergami.components.iot;
 
+import me.tongfei.progressbar.ProgressBar;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
@@ -524,18 +525,21 @@ public class IoTEntityGenerator {
         List<IoTDeviceTabularConfiguration> IDTCList = new ArrayList<>();
 
         List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
-
+        ProgressBar pb = new ProgressBar("Collecting IoT device info from SQL table", allVehs.size());
         for (int i = 0; i < allVehs.size(); i++) {
             List timesForCurrentVehicle = context.select(field("simtime")).distinctOn(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "'").fetch().getValues(0);
+            var thisVehicleBeginInfo = context.select(field("vehicle_id"), field("x"), field("y"), field("speed")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch();
+            int endPoint = timesForCurrentVehicle.size() > 1 ? 1 : 0;
+            var thisVehicleEndInfo = endPoint == 0 ? thisVehicleBeginInfo : context.select(field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(endPoint) + "'").fetch();
             IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
 
-            idtc.beginX = (int) Math.floor((double) context.select(field("x")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0));
-            idtc.beginY = (int) Math.floor((double) context.select(field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0));
+            idtc.beginX = (int) Math.floor((Double)thisVehicleBeginInfo.getValue(0,1));//Math.floor((double) context.select(field("x")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0));
+            idtc.beginY = (int) Math.floor((Double)thisVehicleBeginInfo.getValue(0,2)); //Math.floor((double) context.select(field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0));
             idtc.movable = timesForCurrentVehicle.size() > 0;
             if (idtc.movable) {
                 idtc.hasMovingRange = true;
-                idtc.endX = (int) Math.floor((double) context.select(field("x")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(1) + "'").fetch().getValues(0).get(0));
-                idtc.endY = (int) Math.floor((double) context.select(field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(1) + "'").fetch().getValues(0).get(0));
+                idtc.endX = (int) Math.floor((Double)thisVehicleEndInfo.getValue(0,0));//Math.floor((double) context.select(field("x")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(1) + "'").fetch().getValues(0).get(0));
+                idtc.endY = (int) Math.floor((Double)thisVehicleEndInfo.getValue(0,1));//Math.floor((double) context.select(field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(1) + "'").fetch().getValues(0).get(0));
             }
             idtc.latency = conf.latency;
             idtc.match = conf.match;
@@ -543,14 +547,15 @@ public class IoTEntityGenerator {
             idtc.associatedEdge = null;
             idtc.networkType = conf.networkType;
             idtc.stepSizeEditorPath = conf.stepSizeEditorPath;
-            idtc.velocity = (double) context.select(field("speed")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0);
-            idtc.name = (String) context.select(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0);
+            idtc.velocity = (double) thisVehicleBeginInfo.getValue(0,3);// context.select(field("speed")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0);
+            idtc.name = (String) thisVehicleBeginInfo.getValue(0,0);//context.select(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0);
             idtc.communicationProtocol = conf.communicationProtocol;
             idtc.bw = conf.bw;
             idtc.max_battery_capacity = conf.max_battery_capacity;
             idtc.battery_sensing_rate = conf.battery_sensing_rate;
             idtc.battery_sending_rate = conf.battery_sending_rate;
             idtc.ioTClassName = conf.ioTClassName;
+            pb.step();
 
             IDTCList.add(idtc);
         }

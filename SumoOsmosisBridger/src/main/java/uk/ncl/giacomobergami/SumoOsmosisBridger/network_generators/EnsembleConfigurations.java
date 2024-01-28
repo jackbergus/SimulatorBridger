@@ -45,10 +45,10 @@ public class EnsembleConfigurations {
     }
 
     public EnsembleConfigurations(IoTEntityGenerator ioTEntityGenerator,
-                                  EdgeNetworksGenerator edgeNetworkGenerator,
+                                  WANInfrastructureGenerator.Configuration wan_conf,
                                   CloudInfrastructureGenerator.Configuration cloud,
                                   EdgeInfrastructureGenerator.Configuration edge,
-                                  WANInfrastructureGenerator.Configuration wan_conf) {
+                                  EdgeNetworksGenerator edgeNetworkGenerator) {
         this.ioTEntityGenerator = ioTEntityGenerator;
         this.edgeNetworkGenerator = edgeNetworkGenerator;
 
@@ -195,11 +195,11 @@ public class EnsembleConfigurations {
             return new TimeTicker(start_vehicle_time, simulation_step, end_vehicle_time);
         }
 
-        public EdgeNetworksGenerator second(DSLContext context, boolean isRSUJSON) {
+        public EdgeNetworksGenerator fifth(DSLContext context, boolean isRSUJSON, boolean movingEdges) {
             return new EdgeNetworksGenerator(new File(strongly_connected_components),
                                              new File(edge_information),
                                              new File(edge_neighbours),
-                                             ticker(), context, isRSUJSON);
+                                             ticker(), context, isRSUJSON, movingEdges);
         }
 
         public CloudInfrastructureGenerator.Configuration third() {
@@ -210,7 +210,7 @@ public class EnsembleConfigurations {
             return YAML.parse(EdgeInfrastructureGenerator.Configuration.class, new File(edge_general_configuration)).orElseThrow();
         }
 
-        public WANInfrastructureGenerator.Configuration fith() {
+        public WANInfrastructureGenerator.Configuration second() {
             return YAML.parse(WANInfrastructureGenerator.Configuration.class, new File(wan_general_configuration)).orElseThrow();
         }
     }
@@ -324,7 +324,7 @@ public class EnsembleConfigurations {
 
     public static boolean generateConfigurationFromFile(@Input File configuration_file, @Input Connection conn, @Input DSLContext context, boolean isRSUJSON) {
         var conf = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
-        var ec = new EnsembleConfigurations(conf.first(), conf.second(context, isRSUJSON), conf.third(), conf.fourth(), conf.fith());
+        var ec = new EnsembleConfigurations(conf.first(), conf.second(), conf.third(), conf.fourth(), conf.fifth(context, isRSUJSON, conf.fourth().getMovingEdges()));
         var ls = ec.getTimedPossibleConfigurations(conf, conn, context);
         var dump = new File(configuration_file.getParentFile(), "dump");
         if (ls.size() == 1) {
@@ -341,7 +341,7 @@ public class EnsembleConfigurations {
     public static boolean runConfigurationFromFile(@Input String file, @Input Connection conn, @Input DSLContext context, boolean isRSUJSON) {
         var configuration_file = new File(file);
         var conf = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
-        var ec = new EnsembleConfigurations(conf.first(), conf.second(context, isRSUJSON), conf.third(), conf.fourth(), conf.fith());
+        var ec = new EnsembleConfigurations(conf.first(), conf.second(), conf.third(), conf.fourth(), conf.fifth(context, isRSUJSON, conf.fourth().getMovingEdges()));
         var ls = ec.getTimedPossibleConfigurations(conf, conn, context);
         for (GlobalConfigurationSettings l : ls) {
             OsmoticRunner.runFromConfiguration(l, conn, context);

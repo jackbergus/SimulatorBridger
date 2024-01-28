@@ -1,3 +1,4 @@
+movingEdges:              "false"
 edge_network_name:                                #defined dynamically
 gateway_name:                                     #defined dynamically
 gateway_iops:             1000000000

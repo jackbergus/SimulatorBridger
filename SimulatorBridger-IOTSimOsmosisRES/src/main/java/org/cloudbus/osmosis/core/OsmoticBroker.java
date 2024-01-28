@@ -170,11 +170,13 @@ public class OsmoticBroker extends DatacenterBroker {
 			double future = now + (2 * deltaVehUpdate);
 
 			if(collectSQLInfo == (int) now / collectionInterval){
+				System.out.print("Collecting new batch of vehicle information from SQL table...\n");
 				dataNowRange = context.select(field("vehicle_id"), field("x"), field("y"), field("simtime")).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double)intervalStart + "' AND '" + (double)intervalEnd + "'").orderBy(field("simtime")).fetch();
 				dataFutureRange = context.select(field("vehicle_id"), field("x"), field("y"), field("simtime")).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + ((double)intervalStart + (2*deltaVehUpdate)) + "' AND '"+ ((double)intervalEnd + (2*deltaVehUpdate))+ "'").orderBy(field("simtime")).fetch();
 				collectSQLInfo++;
 				intervalStart += collectionInterval;
 				intervalEnd += collectionInterval;
+				System.out.print("Batch collected from SQL table\n");
 			}
 			var nowTimes = dataNowRange.getValues(3);
 			HashMap<String, double[]> nowData = new HashMap<>();
@@ -192,12 +194,11 @@ public class OsmoticBroker extends DatacenterBroker {
 				var futureFirst = futureTimes.indexOf(future);
 				var futureLast = futureTimes.lastIndexOf(future);
 				for (int i = futureFirst; i < futureLast; i++) {
-					String name = (String) dataNowRange.get(i).getValue(0);
+					String name = (String) dataFutureRange.get(i).getValue(0);
 					double[] futurePos = nowData.containsKey(name) ? new double[]{(double) dataFutureRange.get(i).getValue(1), (double) dataFutureRange.get(i).getValue(2)} : new double[]{-1.0, -1.0};
 					futureData.put(name, futurePos);
 				}
 			}
-			var temp = 5;
 			//var dataNow = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + now + "'").fetch();
 			//var dataFuture = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + future + "'").fetch();
 

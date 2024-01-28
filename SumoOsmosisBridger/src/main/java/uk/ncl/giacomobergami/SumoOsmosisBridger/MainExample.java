@@ -4,7 +4,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.jooq.DSLContext;
 import org.jooq.codegen.GenerationTool;
-import org.postgresql.ds.PGSimpleDataSource;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
@@ -52,7 +51,7 @@ public class MainExample {
         boolean generate = false;
         boolean step1 = true;
         boolean step2 = false;
-        boolean step3 = false;
+        boolean step3 = true;
 
         if (generate) {
             try {
@@ -145,7 +144,7 @@ public class MainExample {
                 }
                 conf3.netsim_output = output_folder_3.getAbsolutePath();
                 if(step3) {
-                    var conv3 = new EnsembleConfigurations(conf3.first(), conf3.second(context, step2), conf3.third(), conf3.fourth(), conf3.fith());
+                    var conv3 = new EnsembleConfigurations(conf3.first(), conf3.second(), conf3.third(), conf3.fourth(), conf3.fifth(context, step2, conf3.fourth().getMovingEdges()));
                     var configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3, conn, context);
 
                     for (GlobalConfigurationSettings globalConfigurationSettings : configuration_for_each_network_change) {

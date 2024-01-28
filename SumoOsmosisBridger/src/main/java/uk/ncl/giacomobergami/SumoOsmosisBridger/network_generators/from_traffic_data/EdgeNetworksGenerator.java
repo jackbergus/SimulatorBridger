@@ -3,9 +3,7 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.from_traffic
 import com.google.common.collect.HashMultimap;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.jooq.DSLContext;
-import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.CloudInfrastructureGenerator;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EdgeInfrastructureGenerator;
 import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.algorithms.ReconstructorIterator;
@@ -16,7 +14,6 @@ import uk.ncl.giacomobergami.utils.shared_data.edge.Edge;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.MutablePair;
-import uk.ncl.giacomobergami.utils.structures.ReconstructNetworkInformation;
 
 import javax.sql.DataSource;
 import java.io.*;
@@ -49,7 +46,7 @@ public class EdgeNetworksGenerator {
                                  File neigh_json,
                                  TimeTicker traffic_simulator_ticker,
                                  DSLContext context,
-                                 boolean isRSUJSON) {
+                                 boolean isRSUJSON, boolean movingEdges) {
 
         simulation_intervals = new TreeSet<MutablePair<Double, Double>>((o1, o2) -> {
             if (o1 == o2)
@@ -126,9 +123,13 @@ public class EdgeNetworksGenerator {
             } else {
                 var rsuTimeData = context.select(field("simtime")).distinctOn(field("simtime")).from(Rsuinformation.RSUINFORMATION).fetch();
                 ticks = (TreeSet<Double>) new TreeSet<>(rsuTimeData.getValues(0));
-                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).orderBy(field("simtime")).fetch();
-                int noRSU = allRSUData.size()/ticks.size();
-                for(int j = 0; j < ticks.size(); j++) {
+                System.out.print("Fetching RSU data from SQL table...\n");
+                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).where("simtime = 0.0").orderBy(field("simtime")).fetch();
+                System.out.print("RSU data fetched\n");
+                System.out.print("Starting organisation of RSU data...\n");
+                int noRSU = Math.max(allRSUData.size()/ticks.size(),16);
+                int iterateSize = movingEdges ? ticks.size() : 1;
+                for(int j = 0; j < iterateSize; j++) {
                     HashMap<String, TimedEdge> rbi_entry = new HashMap<>();
                     RsuinformationRecord entry;
                     double currentTime = 0.0;
@@ -141,6 +142,7 @@ public class EdgeNetworksGenerator {
                     }
                     retrieved_basic_information.put(currentTime, rbi_entry);
                 }
+                System.out.print("RSU data organised\n");
             }
             // Reconstructing the edges' neighbours
             System.out.print("Retrieved RSU Information\n");
@@ -182,10 +184,12 @@ public class EdgeNetworksGenerator {
 
         boolean isRSUJSON = false;
 
+
+        boolean isMovingEdges = false;
         new EdgeNetworksGenerator(
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/rsu.csv_timed_scc.json"),
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/stats/test_rsu.json"),
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/rsu.csv_neighboursChange.json"),
-                new TimeTicker(0, 100, 1), context, false);
+                new TimeTicker(0, 100, 1), context, false, isMovingEdges);
     }
 }

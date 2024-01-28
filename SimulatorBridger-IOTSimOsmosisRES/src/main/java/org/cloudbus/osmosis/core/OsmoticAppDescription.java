@@ -51,13 +51,13 @@ public class OsmoticAppDescription {
 	private int edgeDcId;
 	private int cloudDcId;
 	
-	private String edgeDatacenterName; 
+	private String edgeDatacenterName;
 	private String cloudDatacenterName;
 	
 	private double startTime = -1;
 	private double endTime;	 	
 		
-	private List<EdgeLet> edgeLetList;
+	//private List<EdgeLet> edgeLetList;
 
 	private boolean isIoTDeviceDied;
 
@@ -87,8 +87,9 @@ public class OsmoticAppDescription {
 		this.MELOutputSize = MELOutput;
 		this.VmName = vmName;
 		this.OsmesisCloudletSize = osmesisCloudletSize; 
-		this.edgeLetList = new ArrayList<>();
+		//this.edgeLetList = new ArrayList<>();
 		this.isIoTDeviceDied = false;
+		this.edgeDatacenterName = getEdgeDatacenterName();
 	}
 
 	public double getStartDataGenerationTime() {
@@ -111,13 +112,13 @@ public class OsmoticAppDescription {
 		this.vmCloudId = vmCloudId;
 	}
 	
-	public List<EdgeLet> getEdgeLetList() {
+	/*public List<EdgeLet> getEdgeLetList() {
 		return edgeLetList;
 	}
 
 	public void setEdgeLetList(EdgeLet edgeLet) {
 		this.edgeLetList.add(edgeLet); 
-	}
+	}*/
 
 	
 	public String getAppName() {

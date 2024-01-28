@@ -56,6 +56,7 @@ public class EdgeInfrastructureGenerator {
     }
 
     public static class Configuration {
+        public boolean movingEdges;
         public String edge_network_name;
         public String gateway_name;
         public long gateway_iops;
@@ -81,8 +82,13 @@ public class EdgeInfrastructureGenerator {
         @JsonIgnore
         public ArrayList<String> stringToInteger;
 
+        public boolean getMovingEdges() {
+            return movingEdges;
+        }
+
         public Configuration copy() {
             Configuration result = new Configuration();
+            result.movingEdges = movingEdges;
             result.edge_network_name = edge_network_name;
             result.gateway_name = gateway_name;
             result.gateway_iops = gateway_iops;

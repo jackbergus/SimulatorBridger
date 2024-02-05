@@ -217,7 +217,7 @@ public class EnsembleConfigurations {
 
     public List<GlobalConfigurationSettings> getTimedPossibleConfigurations(EnsembleConfigurations.Configuration conf, Connection conn, DSLContext context) {
         List<GlobalConfigurationSettings> ls = new ArrayList<>();
-        List<IoTDeviceTabularConfiguration> iotDevices = ioTEntityGenerator.asIoTSQLCongigurationList(conn, context);
+        List<IoTDeviceTabularConfiguration> iotDevices = ioTEntityGenerator.asIoTSQLCongigurationList(context);
         AtomicInteger global_program_counter = new AtomicInteger(1);
         List<WorkloadCSV> globalApps = ioTEntityGenerator.generateAppSetUp(conf.simulation_step, global_program_counter);
         MEL_APP_POLICY casus = MEL_APP_POLICY.valueOf(conf.mel_app_policy);

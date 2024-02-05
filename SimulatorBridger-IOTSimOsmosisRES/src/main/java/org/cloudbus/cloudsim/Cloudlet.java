@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim;
 
+import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -23,7 +24,7 @@ import org.cloudbus.cloudsim.core.MainEventManager;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public class Cloudlet {
+public class Cloudlet implements Serializable {
 	
 	public int vmType;
 

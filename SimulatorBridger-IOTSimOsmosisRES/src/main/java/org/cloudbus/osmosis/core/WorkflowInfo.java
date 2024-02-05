@@ -13,6 +13,8 @@ package org.cloudbus.osmosis.core;
 
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 
+import java.io.Serializable;
+
 /**
  * Track every transaction from an IoT device until it reaches the cloud and got processed. 
  * This class is used to reporting OsmesisSDN results
@@ -23,7 +25,7 @@ import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
  * 
 **/
 
-public class WorkflowInfo {
+public class WorkflowInfo implements Serializable {
 	private int workflowId;	// create a new ID every time an IoT device generates data
 	private int appId;
 	private String appName;

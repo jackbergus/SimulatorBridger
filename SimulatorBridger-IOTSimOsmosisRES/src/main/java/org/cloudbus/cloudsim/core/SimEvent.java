@@ -8,6 +8,8 @@
 
 package org.cloudbus.cloudsim.core;
 
+import java.io.Serializable;
+
 /**
  * This class represents a simulation event which is passed between the entities in the simulation.
  * 
@@ -15,7 +17,7 @@ package org.cloudbus.cloudsim.core;
  * @see Simulation
  * @see SimEntity
  */
-public class SimEvent implements Cloneable, Comparable<SimEvent> {
+public class SimEvent implements Cloneable, Comparable<SimEvent>, Serializable{
 	
 	public static int event_count = 0;
 	

@@ -8,6 +8,8 @@
 
 package org.cloudbus.cloudsim;
 
+import java.io.Serializable;
+
 /**
  * The UtilizationModel interface needs to be implemented in order to provide a fine-grained control
  * over resource usage by a Cloudlet.
@@ -15,7 +17,7 @@ package org.cloudbus.cloudsim;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 2.0
  */
-public interface UtilizationModel {
+public interface UtilizationModel extends Serializable {
 
 	/**
 	 * Returns utilization in percents according to the time.

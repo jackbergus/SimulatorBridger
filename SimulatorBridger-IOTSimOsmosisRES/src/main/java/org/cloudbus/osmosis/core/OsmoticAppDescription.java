@@ -11,6 +11,7 @@
 
 package org.cloudbus.osmosis.core;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
@@ -24,7 +25,7 @@ import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
  * 
 **/
 
-public class OsmoticAppDescription {
+public class OsmoticAppDescription implements Serializable {
 	
 	private String appName;	
 	private int workflowId;	

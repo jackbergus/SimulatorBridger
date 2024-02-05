@@ -26,6 +26,7 @@ public class AgentBroker {
     //Osmotic Agents are uniquely recognized by name
     private Map<String,DCAgent> agentsDC = new HashMap<>();
     private Map<String,DeviceAgent> agentsDevices = new HashMap<>();
+    private Map<String, DeviceAgent> updateAgentDevices = new HashMap<>();
     private CentralAgent ca;
 
     public Stream<OsmoticDatacenter> getOsmoticDataCentersStream() {
@@ -64,7 +65,7 @@ public class AgentBroker {
             lastBatteryUpdate = clock;
         }
 
-        for(DeviceAgent devAgent:agentsDevices.values()){
+        for(DeviceAgent devAgent:updateAgentDevices.values()){
             IoTDevice iotDevice = devAgent.getIoTDevice();
             if (iotDevice.getBattery().isResPowered()){
 
@@ -107,10 +108,15 @@ public class AgentBroker {
         updateEnergyControllersTime();
     }
 
-    public void updateTime(double clock) {
+    public void updateTime(double clock, List<String> toUpdate) {
         if (!agentsAvailable) return;
         simulationCurrentTime = simulationStartTime.plusNanos((long) (clock*1000000000));
         updateEnergyControllersTime();
+        updateAgentDevices.clear();
+        Set<String> intersection = agentsDevices.keySet().stream().filter(toUpdate::contains).collect(Collectors.toSet());
+        for(String entry:intersection) {
+            updateAgentDevices.put(entry, agentsDevices.get(entry));
+        }
         updateDeviceBatteries(clock);
     }
 
@@ -250,7 +256,7 @@ public class AgentBroker {
             agent.monitor();
             agent.analyze();
         }
-        for(Agent agent: agentsDevices.values()){
+        for(Agent agent: updateAgentDevices.values()){
             agent.setCurrentTime(lastMAPEloop);
             agent.monitor();
             agent.analyze();
@@ -272,7 +278,7 @@ public class AgentBroker {
             agent.plan();
             agent.execute();
         }
-        for(Agent agent: agentsDevices.values()){
+        for(Agent agent: updateAgentDevices.values()){
             agent.plan();
             agent.execute();
         }

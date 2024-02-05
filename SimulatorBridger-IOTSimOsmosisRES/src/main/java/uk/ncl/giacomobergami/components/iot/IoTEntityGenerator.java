@@ -2,12 +2,14 @@ package uk.ncl.giacomobergami.components.iot;
 
 import me.tongfei.progressbar.ProgressBar;
 import org.jooq.DSLContext;
+import org.jooq.Result;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadFromVehicularProgram;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
 
@@ -16,6 +18,7 @@ import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
 
 public class IoTEntityGenerator {
@@ -98,11 +101,17 @@ public class IoTEntityGenerator {
         lat = latency;
         endTime = end;
 
-        System.out.print("Collecting Vehicle Active Times from SQL Database...\n");
         List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+        ProgressBar pb = null;
+        if(latency == 0.01) {
+            pb = new ProgressBar("Collecting vehicle active times from SQL table", allVehs.size());
+        }
         for (int i = 0; i < allVehs.size(); i++) {
             TreeSet timesForCurrentVehicle = new TreeSet(context.select(field("simtime")).distinctOn(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "'").fetch().getValues(0));
             vehicleTimes.put((String) allVehs.get(i), timesForCurrentVehicle);
+            if(pb != null) {
+                pb.step();
+            }
         }
         System.out.print("Vehicle Active Times Collected\n");
     }
@@ -422,13 +431,12 @@ public class IoTEntityGenerator {
     }
 
     public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
-                                @Input double simTimeLow, @Input double simTimeUp,
-                                @Input DSLContext context, double[] currentPosition, double[] expectedPosition) {
+                                double[] currentPosition, double[] expectedPosition) {
 
-        if(currentPosition[0] == -1) {
+        /*if(currentPosition[0] == -1) {
             toUpdateWithTime.transmit = false;
             return;
-        }
+        }*/
 
         toUpdateWithTime.transmit = true;
         toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];
@@ -517,29 +525,31 @@ public class IoTEntityGenerator {
 
     public int maximumNumberOfCommunicatingVehicles(DSLContext context) {
         List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+        //SELECT COUNT(DISTINCT vehicleid) as num FROM VehInformation
         return allVehs.size();
     }
 
-    public List<IoTDeviceTabularConfiguration> asIoTSQLCongigurationList(Connection conn, DSLContext context) {
+    public List<IoTDeviceTabularConfiguration> asIoTSQLCongigurationList(DSLContext context) {
         System.out.print("Starting IoT from SQL Configuration...\n");
         List<IoTDeviceTabularConfiguration> IDTCList = new ArrayList<>();
-
-        List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
-        ProgressBar pb = new ProgressBar("Collecting IoT device info from SQL table", allVehs.size());
-        for (int i = 0; i < allVehs.size(); i++) {
-            List timesForCurrentVehicle = context.select(field("simtime")).distinctOn(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "'").fetch().getValues(0);
-            var thisVehicleBeginInfo = context.select(field("vehicle_id"), field("x"), field("y"), field("speed")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch();
+        List<?> allVehs = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID).distinctOn(Vehinformation.VEHINFORMATION.VEHICLE_ID).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+        ProgressBar pb = null;
+        if(latency == 0.001) {
+            pb = new ProgressBar("Collecting IoT device info from SQL table", allVehs.size());
+        }
+        for (Object allVeh : allVehs) {
+            List timesForCurrentVehicle = context.select(Vehinformation.VEHINFORMATION.SIMTIME).distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "'").fetchInto(Vehinformation.VEHINFORMATION).getValues(Vehinformation.VEHINFORMATION.SIMTIME);
             int endPoint = timesForCurrentVehicle.size() > 1 ? 1 : 0;
-            var thisVehicleEndInfo = endPoint == 0 ? thisVehicleBeginInfo : context.select(field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(endPoint) + "'").fetch();
+            Result<VehinformationRecord> thisVehicleBeginInfo = context.select(Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SPEED).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetchInto(Vehinformation.VEHINFORMATION);
+            Result<VehinformationRecord> thisVehicleEndInfo = endPoint == 0 ? thisVehicleBeginInfo : context.select(Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "' AND simtime = '" + timesForCurrentVehicle.get(endPoint) + "'").fetchInto(Vehinformation.VEHINFORMATION);
             IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
-
-            idtc.beginX = (int) Math.floor((Double)thisVehicleBeginInfo.getValue(0,1));//Math.floor((double) context.select(field("x")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0));
-            idtc.beginY = (int) Math.floor((Double)thisVehicleBeginInfo.getValue(0,2)); //Math.floor((double) context.select(field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0));
-            idtc.movable = timesForCurrentVehicle.size() > 0;
+            idtc.beginX = (int) Math.floor(thisVehicleBeginInfo.getValues(Vehinformation.VEHINFORMATION.X).get(0));
+            idtc.beginY = (int) Math.floor(thisVehicleBeginInfo.getValues(Vehinformation.VEHINFORMATION.Y).get(0));
+            idtc.movable = !timesForCurrentVehicle.isEmpty();
             if (idtc.movable) {
                 idtc.hasMovingRange = true;
-                idtc.endX = (int) Math.floor((Double)thisVehicleEndInfo.getValue(0,0));//Math.floor((double) context.select(field("x")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(1) + "'").fetch().getValues(0).get(0));
-                idtc.endY = (int) Math.floor((Double)thisVehicleEndInfo.getValue(0,1));//Math.floor((double) context.select(field("y")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(1) + "'").fetch().getValues(0).get(0));
+                idtc.endX = (int) Math.floor(thisVehicleEndInfo.getValues(Vehinformation.VEHINFORMATION.X).get(0));
+                idtc.endY = (int) Math.floor(thisVehicleEndInfo.getValues(Vehinformation.VEHINFORMATION.Y).get(0));
             }
             idtc.latency = conf.latency;
             idtc.match = conf.match;
@@ -547,16 +557,17 @@ public class IoTEntityGenerator {
             idtc.associatedEdge = null;
             idtc.networkType = conf.networkType;
             idtc.stepSizeEditorPath = conf.stepSizeEditorPath;
-            idtc.velocity = (double) thisVehicleBeginInfo.getValue(0,3);// context.select(field("speed")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0);
-            idtc.name = (String) thisVehicleBeginInfo.getValue(0,0);//context.select(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetch().getValues(0).get(0);
+            idtc.velocity = thisVehicleBeginInfo.getValues(Vehinformation.VEHINFORMATION.SPEED).get(0);
+            idtc.name = (String) allVeh;
             idtc.communicationProtocol = conf.communicationProtocol;
             idtc.bw = conf.bw;
             idtc.max_battery_capacity = conf.max_battery_capacity;
             idtc.battery_sensing_rate = conf.battery_sensing_rate;
             idtc.battery_sending_rate = conf.battery_sending_rate;
             idtc.ioTClassName = conf.ioTClassName;
-            pb.step();
-
+            if (pb != null) {
+                pb.step();
+            }
             IDTCList.add(idtc);
         }
         System.out.print("IoT from SQL Configuration Completed\n");

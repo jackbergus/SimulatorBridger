@@ -8,29 +8,29 @@
 
 package org.cloudbus.cloudsim.core;
 
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectWriter;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.reflect.TypeToken;
+import io.vavr.control.Try;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.io.*;
+import java.lang.reflect.Type;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.cloudbus.cloudsim.core.predicates.PredicateAny;
 import org.cloudbus.cloudsim.core.predicates.PredicateNone;
+import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
-
-import javax.sql.DataSource;
-
-import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 /**
  * This class extends the CloudSimCore to enable network simulation in CloudSim. Also, it disables
@@ -84,6 +84,7 @@ public class MainEventManager {
 
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = Double.MIN_NORMAL*2;
+	private static boolean swap = true;
 	
 	/**
 	 * Initialises all the common attributes.
@@ -531,6 +532,55 @@ public class MainEventManager {
 	 * 
 	 * @return true, if successful otherwise
 	 */
+	private static void serializeEventQueue(String name, Object object){
+		try {
+			FileOutputStream fos = new FileOutputStream(name);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			// write object to file
+			oos.writeObject(object);
+			//System.out.println("Done");
+			// closing resources
+			oos.close();
+			fos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
+	private static TreeSet<SimEvent> deserializeEventQueue(String name){
+		FileInputStream is = null;
+		TreeSet<SimEvent> eventQueue = new TreeSet<>(Collections.reverseOrder());
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			eventQueue = (TreeSet<SimEvent>) ois.readObject();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return eventQueue;
+	}
+
 	public static boolean runClockTick(Connection conn, DSLContext context) {
 		SimEntity ent;
 		boolean queue_empty;
@@ -543,6 +593,15 @@ public class MainEventManager {
 				ent.run(conn, context);
 			}
 		}
+
+		if(OsmoticBroker.getEventQueueSize() >= 12 && swap) {
+			swap = false;
+			TreeSet<SimEvent> queue = OsmoticBroker.getEventQueue();
+			String name = "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\queue.ser";
+			serializeEventQueue(name, queue);
+			TreeSet<SimEvent> queue2 = deserializeEventQueue(name);
+			OsmoticBroker.setEventQueue(queue2);
+        }
 				
 		// If there are more future events then deal with them
 		if (future.size() > 0) {
@@ -554,7 +613,6 @@ public class MainEventManager {
 			future.remove(first);
 
 			fit = future.iterator();
-
 			// Check if next events are at same time...
 			boolean trymore = fit.hasNext();
 			while (trymore) {

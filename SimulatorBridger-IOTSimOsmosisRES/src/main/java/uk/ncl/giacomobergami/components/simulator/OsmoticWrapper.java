@@ -301,7 +301,7 @@ public class OsmoticWrapper {
                 pr.dumpCSV(new File(conf.output_simulation_file));
 
             try {
-                pr.write_to_SQL(conn, context);
+                pr.write_to_SQL(conn);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }

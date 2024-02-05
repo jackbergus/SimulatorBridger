@@ -11,6 +11,7 @@
 
 package org.cloudbus.osmosis.core;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ import org.cloudbus.cloudsim.sdwan.UDP;
  * 
 **/
 
-public class Flow {
+public class Flow implements Serializable{
 	
 	private String appName;	
 	private int flowId;	

@@ -14,7 +14,6 @@ package org.cloudbus.cloudsim.osmesis.examples.uti;
 
 import java.io.File;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -33,8 +32,6 @@ import org.cloudbus.osmosis.core.WorkflowInfo;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
-
-import javax.sql.DataSource;
 
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
@@ -113,43 +110,43 @@ public class PrintResults {
 //		}
 	}
 
-	public void write_to_SQL(Connection conn, DSLContext context) throws SQLException {
+	public void write_to_SQL(Connection conn) throws SQLException {
 		emptyTABLE(conn, "accurateBatteryInfo");
-		INSERTAccurateBatteryInfo(conn, battInfo);
+		INSERTAccurateBatteryInfo(conn);
 		emptyTABLE(conn, "accurateBatteryInfo_import");
 		emptyTABLE(conn, "appList");
-		INSERTAppList(conn, appList);
+		INSERTAppList(conn);
 		emptyTABLE(conn, "appList_import");
 		emptyTABLE(conn, "osmoticAppsStats");
-		INSERTOsmoticAppsStats(conn, osmoticAppsStats);
+		INSERTOsmoticAppsStats(conn);
 		emptyTABLE(conn, "osmoticAppsStats_import");
 		emptyTABLE(conn, "overallAppResults");
-		INSERTOverallAppResults(conn, overallAppResults);
+		INSERTOverallAppResults(conn);
 		emptyTABLE(conn, "overallAppResults_import");
 		emptyTABLE(conn, "dataCenterEnergyConsumption");
-		INSERTDataCenterEnergyConsumption(conn, dataCenterEnergyConsumption);
+		INSERTDataCenterEnergyConsumption(conn);
 		emptyTABLE(conn, "dataCenterEnergyConsumption_import");
 		emptyTABLE(conn, "HostPowerConsumption");
-		INSERTHostPowerConsumption(conn, hpc);
+		INSERTHostPowerConsumption(conn);
 		emptyTABLE(conn, "HostPowerConsumption_import");
 		emptyTABLE(conn, "SwitchPowerConsumption");
-		INSERTSwitchPowerConsumption(conn, spc);
+		INSERTSwitchPowerConsumption(conn);
 		emptyTABLE(conn, "SwitchPowerConsumption_import");
 		emptyTABLE(conn, "PowerUtilisationHistory");
-		INSERTPowerUtilisationHistory(conn, puhe);
+		INSERTPowerUtilisationHistory(conn);
 		emptyTABLE(conn, "PowerUtilisationHistory_import");
 		emptyTABLE(conn, "HistoryEntry");
-		INSERTHistoryEntry(conn, ahe);
+		INSERTHistoryEntry(conn);
 		emptyTABLE(conn, "HistoryEntry_import");
 		emptyTABLE(conn, "connectionPerSimTime");
-		INSERTConnectionPerSimTime(conn, connectionPerSimTime);
+		INSERTConnectionPerSimTime(conn);
 		emptyTABLE(conn, "connectionPerSimTime_import");
 		emptyTABLE(conn, "bandwidthShareInfo");
-		INSERTBandwidthShareInfo(conn, bsi);
+		INSERTBandwidthShareInfo(conn);
 		emptyTABLE(conn, "bandwidthShareInfo_import");
 	}
 
-	protected void INSERTAccurateBatteryInfo(Connection conn, Object writable) throws SQLException {
+	protected void INSERTAccurateBatteryInfo(Connection conn) {
 		String targetTABLE = "accurateBatteryInfo";
 		if (TABLEsize(conn, targetTABLE) != 0) {
 			return;
@@ -164,26 +161,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending accurateBatteryInfo data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			AccurateBatteryInformation entry = (AccurateBatteryInformation) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "accurateBatteryInfo(unique_entry_id, iotdevicename, consumption, flowid, nopackets, time)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int iotdevicename = INSERTString(insertStmt, 2, entry.getIoTDeviceName());
-			int consumption = INSERTDouble(insertStmt, 3, entry.getConsumption());
-			int flowid = INSERTInt(insertStmt, 4, entry.getFlowId());
-			int nopackets = INSERTDouble(insertStmt, 5, entry.getNoPackets());
-			int time = INSERTDouble(insertStmt, 6, entry.getTime());
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTAppList(Connection conn, Object writable) throws SQLException {
+	protected void INSERTAppList(Connection conn) {
 		String targetTABLE = "appList";
 		if (TABLEsize(conn, targetTABLE) != 0) {
 			return;
@@ -202,60 +182,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending appList data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-
-		/*if (TABLEsize(conn, "appList") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			OsmoticAppDescription entry = (OsmoticAppDescription) ((ArrayList) writable).get(i);
-			String EdgeLetsfromList = "";
-			for (int j = 0; j < entry.getEdgeLetList().size(); j++) {
-				if(j != 0) EdgeLetsfromList += ", ";
-				EdgeLetsfromList += entry.getEdgeLetList().get(j);
-			}
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "appList(unique_entry_id,appid,appname,appstarttime,clouddatacentername," +
-					"clouddcid,datarate,edgedatacentername,edgedcid,edgeletlist,endtime,iotdevicebatteryconsumption,\n" +
-					"\tiotdevicebatterystatus,iotdeviceid,iotdevicename,iotdeviceoutputsize,isiotdevicedied,melid,melname,meloutputsize,osmesiscloudletsize,osmesisedgeletsize,\n" +
-					"\tstartdatagenerationtime,stopdatagenerationtime,vmcloudid,vmname,workflowid)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int appID = INSERTInt(insertStmt, 2, entry.getAppID());
-			int appName = INSERTString(insertStmt, 3, entry.getAppName());
-			int appStartTime = INSERTDouble(insertStmt, 4, entry.getAppStartTime());
-			int cloudDatacenterName = INSERTString(insertStmt, 5, entry.getCloudDatacenterName());
-			int cloudDcId = INSERTInt(insertStmt, 6, entry.getCloudDcId());
-			int dataRate = INSERTDouble(insertStmt, 7, entry.getDataRate());
-			int edgeDatacenterName = INSERTString(insertStmt, 8, entry.getEdgeDatacenterName());
-			int edgeDcId = INSERTInt(insertStmt, 9, entry.getEdgeDcId());
-			int edgeLetList = entry.getEdgeLetList().size() > 0 ? INSERTString(insertStmt, 10, EdgeLetsfromList) : INSERTString(insertStmt, 10, "null");
-			int endTime = INSERTDouble(insertStmt, 11, entry.getEndTime());
-			int ioTDeviceBatteryConsumption = INSERTDouble(insertStmt, 12, entry.getIoTDeviceBatteryConsumption());
-			int ioTDeviceBatteryStatus = INSERTString(insertStmt, 13, entry.getIoTDeviceBatteryStatus());
-			int ioTDeviceId = INSERTInt(insertStmt, 14, entry.getIoTDeviceId());
-			int ioTDeviceName = INSERTString(insertStmt, 15, entry.getIoTDeviceName());
-			int ioTDeviceOutputSize = INSERTInt(insertStmt, 16, (int) entry.getIoTDeviceOutputSize());
-			int isIoTDeviceDied = INSERTString(insertStmt, 17, String.valueOf(entry.getIsIoTDeviceDied()));
-			int melId = INSERTInt(insertStmt, 18, entry.getMelId());
-			int melname = INSERTString(insertStmt, 19, entry.getMELName());
-			int meloutputSize = INSERTInt(insertStmt, 20, (int) entry.getMELOutputSize());
-			int osmesisCloudletSize = INSERTInt(insertStmt, 21, (int) entry.getOsmesisCloudletSize());
-			int osmesisEdgeletSize = INSERTInt(insertStmt, 22, (int) entry.getOsmesisEdgeletSize());
-			int startDataGenerationTime = INSERTDouble(insertStmt, 23, entry.getStartDataGenerationTime());
-			int stopDataGenerationTime = INSERTDouble(insertStmt, 24, entry.getStopDataGenerationTime());
-			int vmCloudId = INSERTInt(insertStmt, 25, entry.getVmCloudId());
-			int vmName = INSERTString(insertStmt, 26, entry.getVmName());
-			int workflowId = INSERTInt(insertStmt, 27, entry.getWorkflowId());
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTOsmoticAppsStats(Connection conn, Object writable) throws SQLException {
+	protected void INSERTOsmoticAppsStats(Connection conn) {
 		String targetTABLE = "osmoticAppsStats";
 		if (TABLEsize(conn, targetTABLE) != 0) {
 			return;
@@ -274,54 +203,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending osmoticAppsStats data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "osmoticAppsStats") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			PrintOsmosisAppFromTags entry = (PrintOsmosisAppFromTags) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "osmoticAppsStats(unique_entry_id,appid,appname,cloudletmisize,cloudletproccessingtimebyvm" +
-					",datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel" +
-					",edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime," +
-					"oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int appID = INSERTInt(insertStmt, 2, entry.APP_ID);
-			int appname = INSERTString(insertStmt, 3, entry.AppName);
-			int cloudletmisize = INSERTDouble(insertStmt, 4, entry.CloudLetMISize);
-			int cloudletproccessingtimebyvm = INSERTDouble(insertStmt, 5, entry.CloudLetProccessingTimeByVM);
-			int datasizeiotdevicetomel_mb = INSERTInt(insertStmt, 6, (int) entry.DataSizeIoTDeviceToMEL_Mb);
-			int datasizemeltovm_mb = INSERTInt(insertStmt, 7, (int) entry.DataSizeMELToVM_Mb);
-			int destinationvmname = INSERTString(insertStmt, 8, entry.DestinationVmName);
-			int edgeletmisize = INSERTDouble(insertStmt, 9, entry.EdgeLetMISize);
-			int edgeletproccessingtimebymel = INSERTDouble(insertStmt, 10, entry.EdgeLetProccessingTimeByMEL);
-			int edgelet_mel_finishtime = INSERTDouble(insertStmt, 11, entry.EdgeLet_MEL_FinishTime);
-			int edgelet_mel_starttime = INSERTDouble(insertStmt, 12, entry.EdgeLet_MEL_StartTime);
-			int finishtime = INSERTDouble(insertStmt, 13, entry.FinishTime);
-			int iotdevicename = INSERTString(insertStmt, 14, entry.IoTDeviceName);
-			int melname = INSERTString(insertStmt, 15, entry.MELName);
-			int melendtransmissiontime = INSERTDouble(insertStmt, 16, entry.MelEndTransmissionTime);
-			int melstarttransmissiontime = INSERTDouble(insertStmt,  17, entry.MelStartTransmissionTime);
-			int starttime = INSERTDouble(insertStmt, 18, entry.StartTime);
-			int oas_transaction = INSERTInt(insertStmt, 19, entry.Transaction);
-			int transactiontotaltime = INSERTDouble(insertStmt, 20, entry.TransactionTotalTime);
-			int transmissiontimeiotdevicetomel = INSERTDouble(insertStmt, 21, entry.TransmissionTimeIoTDeviceToMEL);
-			int transmissiontimemeltovm = INSERTDouble(insertStmt, 22, entry.TransmissionTimeMELToVM);
-			int flowiotmelappid = INSERTInt(insertStmt, 23, entry.flowIoTMelAppId);
-			int flowmelcloudappid = INSERTInt(insertStmt, 24, entry.flowMELCloudAppId);
-			int path_dst = INSERTString(insertStmt, 25, entry.path_dst);
-			int path_src = INSERTString(insertStmt, 26, entry.path_src);
-			int edgetowanbw = INSERTDouble(insertStmt, 27, entry.zEdgeToWANBW);
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTOverallAppResults(Connection conn, Object writable) throws SQLException {
+	protected void INSERTOverallAppResults(Connection conn) {
 		String targetTABLE = "overallAppResults";
 		if (TABLEsize(conn, targetTABLE) != 0) {
 			return;
@@ -338,38 +222,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending overallAppResults data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "overallAppResults") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			OsmesisOverallAppsResults entry = (OsmesisOverallAppsResults) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "overallAppResults(unique_entry_id,appname,endtime," +
-					"iotdevicebatteryconsumption,iotdevicedrained,simluationtime,starttime,totalcloudletsizes,totaledgeletsizes," +
-					"totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int appname = INSERTString(insertStmt, 2, entry.App_Name);
-			int endtime = INSERTDouble(insertStmt, 3, entry.EndTime);
-			int iotdevicebatteryconsumption = INSERTDouble(insertStmt, 4, entry.IoTDeviceBatteryConsumption);
-			int iotdevicedrained = INSERTString(insertStmt, 5, entry.IoTDeviceDrained);
-			int simluationtime = INSERTDouble(insertStmt, 6, entry.SimluationTime);
-			int starttime = INSERTDouble(insertStmt, 7, entry.StartTime);
-			int totalcloudletsizes = INSERTInt(insertStmt, 8, (int) entry.TotalCloudLetSizes);
-			int totaledgeletsizes = INSERTInt(insertStmt, 9, (int) entry.TotalEdgeLetSizes);
-			int totaliotgenerateddata = INSERTInt(insertStmt, 10, (int) entry.TotalIoTGeneratedData);
-			int totalmelgenerateddata = INSERTInt(insertStmt, 11, (int) entry.TotalMELGeneratedData);
-			int apptotalrunningtime = INSERTDouble(insertStmt, 12, entry.appTotalRunningTime);
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTDataCenterEnergyConsumption(Connection conn, Object writable) throws SQLException {
+	protected void INSERTDataCenterEnergyConsumption(Connection conn) {
 
 		String targetTABLE = "dataCenterEnergyConsumption";
 		if (TABLEsize(conn, targetTABLE) != 0) {
@@ -386,30 +241,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending dataCenterEnergyConsumption data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "dataCenterEnergyConsumption") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			EnergyConsumption entry = (EnergyConsumption) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "dataCenterEnergyConsumption(unique_entry_id,hostenergyconsumed,switchenergyconsumed,totalenergyconsumed,dcname,finishtime)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int hostenergyconsumed = INSERTDouble(insertStmt, 2, entry.HostEnergyConsumed);
-			int switchenergyconsumed = INSERTDouble(insertStmt, 3, entry.SwitchEnergyConsumed);
-			int totalenergyconsumed = INSERTDouble(insertStmt, 4, entry.TotalEnergyConsumed);
-			int dcname = INSERTString(insertStmt, 5, entry.dcName);
-			int finishtime = INSERTDouble(insertStmt, 6, entry.finishTime);
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTHostPowerConsumption(Connection conn, Object writable) throws SQLException {
+	protected void INSERTHostPowerConsumption(Connection conn) {
 
 		String targetTABLE = "HostPowerConsumption";
 		if (TABLEsize(conn, targetTABLE) != 0) {
@@ -426,28 +260,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending HostPowerConsumption data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "HostPowerConsumption") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			PowerConsumption entry = (PowerConsumption) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "HostPowerConsumption(unique_entry_id,dcname,energy,hpc_name)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int dcname = INSERTString(insertStmt, 2, entry.dcName);
-			int energy = INSERTDouble(insertStmt, 3, entry.energy);
-			int hpc_name = INSERTString(insertStmt, 4, entry.name);
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTSwitchPowerConsumption(Connection conn, Object writable) throws SQLException {
+	protected void INSERTSwitchPowerConsumption(Connection conn) {
 
 		String targetTABLE = "SwitchPowerConsumption";
 		if (TABLEsize(conn, targetTABLE) != 0) {
@@ -464,28 +279,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending SwitchPowerConsumption data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "SwitchPowerConsumption") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			PowerConsumption entry = (PowerConsumption) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "SwitchPowerConsumption(unique_entry_id,dcname,energy,spc_name)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int dcname = INSERTString(insertStmt, 2, entry.dcName);
-			int energy = INSERTDouble(insertStmt, 3, entry.energy);
-			int spc_name = INSERTString(insertStmt, 4, entry.name);
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTPowerUtilisationHistory(Connection conn, Object writable) throws SQLException {
+	protected void INSERTPowerUtilisationHistory(Connection conn) {
 
 		String targetTABLE = "PowerUtilisationHistory";
 		if (TABLEsize(conn, targetTABLE) != 0) {
@@ -502,29 +298,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending PowerUtilisationHistory data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "PowerUtilisationHistory") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			ActualPowerUtilizationHistoryEntry entry = (ActualPowerUtilizationHistoryEntry) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "PowerUtilisationHistory(unique_entry_id,dcname, puh_name, starttime, usedmips)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int dcname = INSERTString(insertStmt, 2, entry.dcName);
-			int puh_name = INSERTString(insertStmt, 3, entry.name);
-			int starttime = INSERTDouble(insertStmt, 4, entry.startTime);
-			int usedmips = INSERTDouble(insertStmt, 5, entry.usedMips);
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTHistoryEntry(Connection conn, Object writable) throws SQLException {
+	protected void INSERTHistoryEntry(Connection conn) {
 
 		String targetTABLE = "HistoryEntry";
 		if (TABLEsize(conn, targetTABLE) != 0) {
@@ -541,28 +317,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending HistoryEntry data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "HistoryEntry") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			ActualHistoryEntry entry = (ActualHistoryEntry) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "HistoryEntry(unique_entry_id,numactiveports, starttime)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int numactiveports = INSERTInt(insertStmt, 2, (int) entry.numActivePorts);
-			int starttime = INSERTDouble(insertStmt, 3, entry.startTime);
-
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTConnectionPerSimTime(Connection conn, Object writable) throws SQLException {
+	protected void INSERTConnectionPerSimTime(Connection conn) {
 
 		String targetTABLE = "ConnectionPerSimTime";
 		if (TABLEsize(conn, targetTABLE) != 0) {
@@ -579,29 +336,9 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending ConnectionPerSimTime data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "ConnectionPerSimTime") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			EdgeConnectionsPerSimulationTime entry = (EdgeConnectionsPerSimulationTime) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "ConnectionPerSimTime(unique_entry_id,iotdevices, edgehost, cps_time)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int iotdevices = INSERTInt(insertStmt, 2, entry.IoTDevices);
-			int edgehost = INSERTString(insertStmt, 3, entry.edge_host);
-			int cps_time = INSERTDouble(insertStmt, 4, entry.time);
-
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
-	protected void INSERTBandwidthShareInfo(Connection conn, Object writable) throws SQLException {
+	protected void INSERTBandwidthShareInfo(Connection conn) {
 
 		String targetTABLE = "bandwidthShareInfo";
 		if (TABLEsize(conn, targetTABLE) != 0) {
@@ -618,28 +355,6 @@ public class PrintResults {
 		long executionTime = (endTime - startTime) / 1000000;
 		System.out.print("Sending bandwidthShareInfo data to SQL Database\n");
 		System.out.println("This takes " + executionTime + "ms");
-
-		/*if (TABLEsize(conn, "bandwidthShareInfo") != 0) {
-			return;
-		}
-
-		int start_ID = 1;
-
-		int noEntries = ((ArrayList) writable).size();
-		for (int i = 0; i < noEntries; i++) {
-			BandShareInfo entry = (BandShareInfo) ((ArrayList) writable).get(i);
-			PreparedStatement insertStmt = StartINSERTtoTable(conn, "bandwidthShareInfo(unique_entry_id,bandwidthshare, channelid, edgename, melname, timestamp)");
-			int unique_entry_ID = INSERTInt(insertStmt, 1, start_ID);
-			int bandwidthshare = INSERTDouble(insertStmt, 2, entry.bandWidthShare);
-			int channelid = INSERTString(insertStmt, 3, entry.channelID);
-			int edgename = INSERTString(insertStmt, 4, entry.edgeName);
-			int melname = INSERTString(insertStmt, 5, entry.melName);
-			int timestamp = INSERTDouble(insertStmt, 6, entry.timeStamp);
-
-			boolean finishedInsert = EndINSERTtoTable(insertStmt);
-
-			start_ID++;
-		}*/
 	}
 
 	public void addHostPowerConsumption(String dcName, String name, double energy) {

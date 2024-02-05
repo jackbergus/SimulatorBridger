@@ -24,7 +24,9 @@ import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 import org.cloudbus.osmosis.core.WorkflowInfo;
 
-public class EdgeLet extends Cloudlet {
+import java.io.Serializable;
+
+public class EdgeLet extends Cloudlet implements Serializable{
 	private int osmesisAppId;
 	private int id;	
 	private String datacenterName;

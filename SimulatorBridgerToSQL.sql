@@ -14,6 +14,8 @@ CREATE TABLE vehInformation (
 
 SELECT * FROM vehInformation;
 
+CREATE INDEX idx_vehInfo_simtime ON vehInformation(simtime);
+
 CREATE TABLE vehInformation_import (
 	dI_entry_ID serial PRIMARY KEY,
 	angle float NOT NULL,

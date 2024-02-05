@@ -218,7 +218,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		workflowTag.setSourceDCName(app.getEdgeDatacenterName());
 		workflowTag.setDestinationDCName(app.getCloudDatacenterName());
 		flow.setWorkflowTag(workflowTag);
-		OsmoticBroker.workflowTag.add(workflowTag);
+		//OsmoticBroker.workflowTag.add(workflowTag);
 		flow.addPacketSize(app.getIoTDeviceOutputSize());			
 		updateBandwidth();
 

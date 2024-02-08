@@ -9,6 +9,10 @@ public class TrafficConfiguration {
     public boolean outputVehicleCsvFile;
     public long begin, end;
     public double step;
+    boolean isBatch;
+    boolean isFirstBatch;
+    String queueFilePath;
+    double batchStart, batchEnd;
 
     public long getBegin() {
         return begin;
@@ -80,5 +84,45 @@ public class TrafficConfiguration {
 
     public boolean isOutputVehicleCsvFile() {
         return outputVehicleCsvFile;
+    }
+
+    public boolean getIsBatch() {
+        return isBatch;
+    }
+
+    public void setBatch(boolean isBatch) {
+        this.isBatch = isBatch;
+    }
+
+    public boolean getIsFirstBatch() {
+        return isFirstBatch;
+    }
+
+    public void setFirstBatch(boolean firstBatch) {
+        isFirstBatch = firstBatch;
+    }
+
+    public String getQueueFilePath() {
+        return queueFilePath;
+    }
+
+    public void setQueueFilePath(String queueFilePath) {
+        this.queueFilePath = queueFilePath;
+    }
+
+    public double getBatchStart() {
+        return batchStart;
+    }
+
+    public void setBatchStart(double batchStart) {
+        this.batchStart = batchStart;
+    }
+
+    public double getBatchEnd() {
+        return batchEnd;
+    }
+
+    public void setBatchEnd(double batchEnd) {
+        this.batchEnd = batchEnd;
     }
 }

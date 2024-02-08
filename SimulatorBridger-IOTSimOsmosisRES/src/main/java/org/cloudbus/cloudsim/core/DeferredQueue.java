@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.core;
 
+import java.io.Serializable;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.ListIterator;
  * @see Simulation
  * @see SimEvent
  */
-public class DeferredQueue {
+public class DeferredQueue implements Serializable {
 
 	/** The list. */
 	private final List<SimEvent> list = new LinkedList<SimEvent>();

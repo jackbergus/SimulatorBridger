@@ -1,10 +1,14 @@
 package uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.from_traffic_data;
 
+import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.MutablePair;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class TimeTicker {
 
@@ -12,17 +16,25 @@ public class TimeTicker {
     private final double end;
     private final double step;
     List<ImmutablePair<Double, Double>> traffic_simulation_ticks;
+    private static final File converter_file = new File("clean_example/converter.yaml");
+    protected static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 
     public TimeTicker(double begin,
-                      double end,
-                      double step) {
+                      double step,
+                      double end) {
         traffic_simulation_ticks = new ArrayList<>((int)Math.ceil((end-begin)/step));
-        this.begin = begin;
+        if(time_conf.get().getIsBatch()) {
+            begin = time_conf.get().getBatchStart();
+            end = time_conf.get().getBatchEnd();
+        }
+        this.begin = Math.ceil(begin / step) * step;
         this.end = end;
         this.step = step;
-        double current = begin;
-        while (current < end) {
-            traffic_simulation_ticks.add(new ImmutablePair<>(current, current+step));
+        double current = this.begin;
+        while (current + step < end) {
+            current = (double) Math.round((current) * 1000) / 1000;
+            double next = (double) Math.round((current + step) * 1000) / 1000;
+            traffic_simulation_ticks.add(new ImmutablePair<>(current, next));
             current += step;
         }
     }
@@ -70,6 +82,7 @@ public class TimeTicker {
         if (ls.isEmpty())
             return null;
         else
+            //return new ImmutablePair<>(low, high);
             return new ImmutablePair<>(traffic_simulation_ticks.get(ls.get(0)).getLeft(), traffic_simulation_ticks.get(ls.get(ls.size()-1)).getRight());
     }
 

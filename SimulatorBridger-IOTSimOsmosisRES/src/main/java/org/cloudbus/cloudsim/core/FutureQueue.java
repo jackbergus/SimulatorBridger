@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.core;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.SortedSet;
@@ -22,7 +23,7 @@ import java.util.TreeSet;
  * @see Simulation
  * @see java.util.TreeSet
  */
-public class FutureQueue {
+public class FutureQueue implements Serializable {
 
 	/** The sorted set. */
 	private final SortedSet<SimEvent> sortedSet = new TreeSet<SimEvent>();

@@ -9,3 +9,11 @@ RSUCsvFile:         #dynamically defined
 VehicleCsvFile:     #dynamically defined
 outputRSUCsvFile: true #true to output this CSV file, false to avoid outputting this file
 outputVehicleCsvFile: true #true to output this CSV file, false to avoid outputting this file
+
+## Batch
+isBatch: false
+isFirstBatch: true
+queueFilePath: "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\"
+batchStart: 0
+batchEnd: 20
+

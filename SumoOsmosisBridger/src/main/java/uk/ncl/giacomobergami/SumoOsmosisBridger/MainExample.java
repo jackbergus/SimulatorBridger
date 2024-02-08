@@ -49,7 +49,7 @@ public class MainExample {
         DSLContext context = getDSLContext(conn);
 
         boolean generate = false;
-        boolean step1 = true;
+        boolean step1 = false;
         boolean step2 = false;
         boolean step3 = true;
 

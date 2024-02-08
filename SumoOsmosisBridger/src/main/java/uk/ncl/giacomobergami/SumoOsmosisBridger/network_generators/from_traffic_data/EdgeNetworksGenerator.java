@@ -8,8 +8,10 @@ import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EdgeInfrastru
 import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.algorithms.ReconstructorIterator;
 import uk.ncl.giacomobergami.utils.algorithms.StringComparator;
+import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Rsuinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.RsuinformationRecord;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.Edge;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
@@ -34,6 +36,8 @@ public class EdgeNetworksGenerator {
     public HashMap<Double, HashMultimap<String, String>> timed_connectivity;
     public List<ImmutablePair<Double, Double>> chron;
     public TreeSet<MutablePair<Double, Double>> simulation_intervals;
+    private static final File converter_file = new File("clean_example/converter.yaml");
+    protected static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 
     public TimedEdge retriveEdgeLocationInTime(double time, String rsu) {
         var map = retrieved_basic_information.get(time);
@@ -99,7 +103,13 @@ public class EdgeNetworksGenerator {
                     var curr = cp.poll();
                     while (!cp.isEmpty()) {
                         var next = cp.poll();
-                        ls.add(traffic_simulator_ticker.reconstructIntervals(curr, next));
+                        if(!time_conf.get().getIsBatch()) {
+                            ls.add(traffic_simulator_ticker.reconstructIntervals(curr, next));
+                        }else {
+                            if (curr >= time_conf.get().getBatchStart() && next <= time_conf.get().getBatchEnd()) {
+                                ls.add(traffic_simulator_ticker.reconstructIntervals(curr, next));
+                            }
+                        }
                         curr = next;
                     }
                 }
@@ -140,6 +150,8 @@ public class EdgeNetworksGenerator {
                         rbi_entry.put(entry.getRsuId(), currentRSUInfo);
                         currentTime = entry.getSimtime();
                     }
+                    double entryTime = Math.ceil(time_conf.get().getBatchStart()/time_conf.get().getStep()) * time_conf.get().getStep();
+                    currentTime = time_conf.get().getIsBatch() ? entryTime : currentTime;
                     retrieved_basic_information.put(currentTime, rbi_entry);
                 }
                 System.out.print("RSU data organised\n");

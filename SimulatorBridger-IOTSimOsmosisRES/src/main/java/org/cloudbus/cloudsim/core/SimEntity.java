@@ -17,6 +17,7 @@ import org.cloudbus.cloudsim.NetworkTopology;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.jooq.DSLContext;
 
+import java.io.Serializable;
 import java.sql.Connection;
 
 /**
@@ -35,7 +36,7 @@ import java.sql.Connection;
  * @author Marcos Dias de Assuncao
  * @since CloudSim Toolkit 1.0
  */
-public abstract class SimEntity implements Cloneable {
+public abstract class SimEntity implements Cloneable, Serializable {
 
 	protected static Logger logger = LogManager.getRootLogger();
 

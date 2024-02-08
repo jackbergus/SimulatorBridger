@@ -612,41 +612,43 @@ public class PrintResults {
 
 
 			PrintOsmosisAppFromTags fromTag = new PrintOsmosisAppFromTags();
-			fromTag.APP_ID = workflowTag.getAppId();
-			fromTag.AppName = workflowTag.getAppName();
-			fromTag.Transaction = workflowTag.getWorkflowId();
-			fromTag.StartTime = workflowTag.getSartTime();
-		countingMapPerSimTime.putIfAbsent(fromTag.StartTime, HashMultimap.create());
-			fromTag.FinishTime = workflowTag.getFinishTime();
-			fromTag.IoTDeviceName = workflowTag.getIotDeviceFlow().getAppNameSrc();
-			fromTag.MELName = workflowTag.getIotDeviceFlow().getAppNameDest() + " (" +workflowTag.getSourceDCName() + ")";
-			var srcHost = MELResolverToHostingHost.resolveHostFromMELId(workflowTag.getIotDeviceFlow().getAppNameDest());
-			if (srcHost == null) return; // skipping the communications that never happened
-			if (!(srcHost instanceof EdgeDevice))
-				throw new RuntimeException("ERROR: wrong assumption");
-			fromTag.path_src = ((EdgeDevice)srcHost).getDeviceName();
-			countingMapPerSimTime.get(fromTag.StartTime).put(fromTag.path_src, fromTag.IoTDeviceName);
-			fromTag.DataSizeIoTDeviceToMEL_Mb = workflowTag.getIotDeviceFlow().getSize();
-			fromTag.TransmissionTimeIoTDeviceToMEL = workflowTag.getIotDeviceFlow().getTransmissionTime();
-			fromTag.EdgeLetMISize = workflowTag.getEdgeLet().getCloudletLength();
-			fromTag.EdgeLet_MEL_StartTime = workflowTag.getEdgeLet().getExecStartTime();
-			fromTag.EdgeLet_MEL_FinishTime = workflowTag.getEdgeLet().getFinishTime();
-			fromTag.EdgeLetProccessingTimeByMEL = workflowTag.getEdgeLet().getActualCPUTime();
-			fromTag.DestinationVmName = workflowTag.getEdgeToCloudFlow().getAppNameDest() + " (" +workflowTag.getDestinationDCName() + ")";
-			var dstHost = MELResolverToHostingHost.resolveHostFromMELId(workflowTag.getEdgeToCloudFlow().getAppNameDest());
-			fromTag.path_dst = "Host#"+dstHost.getId()+"@"+workflowTag.getDestinationDCName();
-			fromTag.DataSizeMELToVM_Mb = workflowTag.getEdgeToCloudFlow().getSize();
-			fromTag.flowMELCloudAppId = workflowTag.getEdgeToCloudFlow().getApp().getAppID();
-			fromTag.flowIoTMelAppId = workflowTag.getIotDeviceFlow().getApp().getAppID();
-			fromTag.MelStartTransmissionTime =  workflowTag.getEdgeToCloudFlow().getStartTime();
-			fromTag.TransmissionTimeMELToVM = workflowTag.getEdgeToCloudFlow().getTransmissionTime();
-			fromTag.MelEndTransmissionTime = fromTag.TransmissionTimeMELToVM + fromTag.MelStartTransmissionTime;
-			fromTag.CloudLetMISize = workflowTag.getCloudLet().getCloudletLength();
-			fromTag.CloudLetProccessingTimeByVM = workflowTag.getCloudLet().getActualCPUTime();
-			fromTag.TransactionTotalTime =  workflowTag.getIotDeviceFlow().getTransmissionTime() + workflowTag.getEdgeLet().getActualCPUTime()
-					+ workflowTag.getEdgeToCloudFlow().getTransmissionTime() + workflowTag.getCloudLet().getActualCPUTime();
-			list.add(fromTag);
-			fromTag.zEdgeToWANBW = workflowTag.getEdgeToCloudFlow().getEdgeToWANBW();
+			if(workflowTag.getCloudLet() != null) {
+				fromTag.APP_ID = workflowTag.getAppId();
+				fromTag.AppName = workflowTag.getAppName();
+				fromTag.Transaction = workflowTag.getWorkflowId();
+				fromTag.StartTime = workflowTag.getSartTime();
+				countingMapPerSimTime.putIfAbsent(fromTag.StartTime, HashMultimap.create());
+				fromTag.FinishTime = workflowTag.getFinishTime();
+				fromTag.IoTDeviceName = workflowTag.getIotDeviceFlow().getAppNameSrc();
+				fromTag.MELName = workflowTag.getIotDeviceFlow().getAppNameDest() + " (" + workflowTag.getSourceDCName() + ")";
+				var srcHost = MELResolverToHostingHost.resolveHostFromMELId(workflowTag.getIotDeviceFlow().getAppNameDest());
+				if (srcHost == null) return; // skipping the communications that never happened
+				if (!(srcHost instanceof EdgeDevice))
+					throw new RuntimeException("ERROR: wrong assumption");
+				fromTag.path_src = ((EdgeDevice) srcHost).getDeviceName();
+				countingMapPerSimTime.get(fromTag.StartTime).put(fromTag.path_src, fromTag.IoTDeviceName);
+				fromTag.DataSizeIoTDeviceToMEL_Mb = workflowTag.getIotDeviceFlow().getSize();
+				fromTag.TransmissionTimeIoTDeviceToMEL = workflowTag.getIotDeviceFlow().getTransmissionTime();
+				fromTag.EdgeLetMISize = workflowTag.getEdgeLet().getCloudletLength();
+				fromTag.EdgeLet_MEL_StartTime = workflowTag.getEdgeLet().getExecStartTime();
+				fromTag.EdgeLet_MEL_FinishTime = workflowTag.getEdgeLet().getFinishTime();
+				fromTag.EdgeLetProccessingTimeByMEL = workflowTag.getEdgeLet().getActualCPUTime();
+				fromTag.DestinationVmName = workflowTag.getEdgeToCloudFlow().getAppNameDest() + " (" + workflowTag.getDestinationDCName() + ")";
+				var dstHost = MELResolverToHostingHost.resolveHostFromMELId(workflowTag.getEdgeToCloudFlow().getAppNameDest());
+				fromTag.path_dst = "Host#" + dstHost.getId() + "@" + workflowTag.getDestinationDCName();
+				fromTag.DataSizeMELToVM_Mb = workflowTag.getEdgeToCloudFlow().getSize();
+				fromTag.flowMELCloudAppId = workflowTag.getEdgeToCloudFlow().getApp().getAppID();
+				fromTag.flowIoTMelAppId = workflowTag.getIotDeviceFlow().getApp().getAppID();
+				fromTag.MelStartTransmissionTime = workflowTag.getEdgeToCloudFlow().getStartTime();
+				fromTag.TransmissionTimeMELToVM = workflowTag.getEdgeToCloudFlow().getTransmissionTime();
+				fromTag.MelEndTransmissionTime = fromTag.TransmissionTimeMELToVM + fromTag.MelStartTransmissionTime;
+				fromTag.CloudLetMISize = workflowTag.getCloudLet().getCloudletLength();
+				fromTag.CloudLetProccessingTimeByVM = workflowTag.getCloudLet().getActualCPUTime();
+				fromTag.TransactionTotalTime = workflowTag.getIotDeviceFlow().getTransmissionTime() + workflowTag.getEdgeLet().getActualCPUTime()
+						+ workflowTag.getEdgeToCloudFlow().getTransmissionTime() + workflowTag.getCloudLet().getActualCPUTime();
+				list.add(fromTag);
+				fromTag.zEdgeToWANBW = workflowTag.getEdgeToCloudFlow().getEdgeToWANBW();
+			}
 	}
 
 	public static class PowerConsumption {

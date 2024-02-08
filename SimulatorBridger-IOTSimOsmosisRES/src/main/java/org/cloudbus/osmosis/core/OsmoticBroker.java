@@ -113,10 +113,12 @@ public class OsmoticBroker extends DatacenterBroker {
 	private AtomicInteger flowId;
 	private IoTEntityGenerator ioTEntityGenerator;
 	public static double deltaVehUpdate;
-	private int collectSQLInfo = 0;
-	private final int collectionInterval = (int) Math.min(1, endSUMO);
-	private int intervalStart = 0;
-	private int intervalEnd = collectionInterval;
+	private double startTime = time_conf.get().getIsBatch() ? time_conf.get().getBatchStart() : time_conf.get().getBegin();
+	private double endTime = time_conf.get().getIsBatch() ? time_conf.get().getBatchEnd() : time_conf.get().getEnd();
+	private final int collectionInterval = (int) Math.min(1, endTime);
+	private int collectSQLInfo = (int) startTime / collectionInterval;
+	private int intervalStart = (int) Math.floor(startTime);
+	private int intervalEnd = intervalStart + collectionInterval;
 	private Result<VehinformationRecord> dataRange = null;
 	//private Result<Record4<String, Double, Double, Double>> dataNowRange = null;
 	//private Result<Record4<String, Double, Double, Double>> dataFutureRange = null;
@@ -125,6 +127,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	private final double[] notUpdated = new double[]{-1.0, -1.0};
 	private List<String> vehsToUpdate = null;
 	private final float maxEdgeBW = 100;
+
 
 	private static OsmoticBroker OBINSTANCE;
 
@@ -137,6 +140,10 @@ public class OsmoticBroker extends DatacenterBroker {
 		this.appList = new ArrayList<>();
 		brokerID = this.getId();
 		isWakeupStartSet = false;
+		if(time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) {
+			String queuePath = time_conf.get().getQueueFilePath() + "eventQ.ser";
+			eventQueue = MainEventManager.deserializeEventQueue(queuePath);
+		}
 	}
 
 	public static OsmoticBroker getInstance(String name,
@@ -162,7 +169,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			for (Double forcedWakeUpTime :
 					ioTEntityGenerator.collectionOfWakeUpTimes()) {
 				double time = forcedWakeUpTime - chron;
-				if (time > 0.0 && chron + getDeltaVehUpdate() <= endSUMO) {
+				if (time > 0.0 && chron + getDeltaVehUpdate() <= endTime) {
 					schedule(OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);
 				}
 			}
@@ -173,7 +180,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			logger.trace("WakeUp Call @"+ chron);
 		}
 
-		if(chron <= IoTEntityGenerator.endTime && chron > lastTime) {
+		if(chron <= endTime && chron > lastTime && chron >= startTime) {
 			var ab = AgentBroker.getInstance();
 			//info used to update IoT devices' positions
 			double now = (double) Math.round((chron / IoTEntityGenerator.lat) * IoTEntityGenerator.lat * 1000) / 1000;
@@ -184,7 +191,7 @@ public class OsmoticBroker extends DatacenterBroker {
 				//System.out.print("Collecting new batch of vehicle information from SQL table...\n");
 				//dataNowRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min((double) intervalEnd, endSUMO) + "'").orderBy(field("simtime")).fetch();
 				//dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + ((double) intervalStart + (2 * deltaVehUpdate)) + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endSUMO) + "'").orderBy(field("simtime")).fetch();
-				dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endSUMO) + "'").orderBy(field("simtime")).fetchInto(Vehinformation.VEHINFORMATION);
+				dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endTime) + "'").orderBy(field("simtime")).fetchInto(Vehinformation.VEHINFORMATION);
 				vehsToUpdate = dataRange.getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
 				collectSQLInfo++;
 				intervalStart += collectionInterval;

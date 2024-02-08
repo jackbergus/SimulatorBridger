@@ -9,28 +9,20 @@
 package org.cloudbus.cloudsim.core;
 
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.ObjectWriter;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.reflect.TypeToken;
-import io.vavr.control.Try;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.*;
-import java.lang.reflect.Type;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.sql.Connection;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.cloudbus.cloudsim.core.predicates.PredicateAny;
 import org.cloudbus.cloudsim.core.predicates.PredicateNone;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
+import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
+
+import java.io.*;
+import java.sql.Connection;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * This class extends the CloudSimCore to enable network simulation in CloudSim. Also, it disables
@@ -78,9 +70,10 @@ public class MainEventManager {
 
 	/** The calendar. */
 	private static Calendar calendar = null;
-
+	private static final File converter_file = new File("clean_example/converter.yaml");
+	protected static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 	/** The termination time. */
-	private static double terminateAt = -1;
+	private static double terminateAt = time_conf.get().getIsBatch() ? time_conf.get().getBatchEnd() :-1;
 
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = Double.MIN_NORMAL*2;
@@ -138,6 +131,7 @@ public class MainEventManager {
 	 * @post $none
 	 */
 	public static void init(int numUser, Calendar cal, boolean traceFlag) {
+		terminateAt = time_conf.get().getEnd() == time_conf.get().getBatchEnd() ? -1 : terminateAt;
 		try {
 			initCommonVariable(cal, traceFlag, numUser);
 
@@ -370,11 +364,23 @@ public class MainEventManager {
 	 */
 	protected static void initialize() {
 		logger.trace("Initialising...");
-		if (entities == null) entities = new ArrayList<>(); else entities.clear();
-		if (entitiesByName == null) entitiesByName = new LinkedHashMap<>(); else entitiesByName.clear();
-		if (future == null) future = new FutureQueue(); else future.clear();
-		if (deferred == null) deferred = new DeferredQueue(); deferred.clear();
-		if (waitPredicates == null) waitPredicates = new HashMap<>(); else waitPredicates.clear();
+		if (entities == null) entities = new ArrayList<>();
+		else entities.clear();
+		if (entitiesByName == null) entitiesByName = new LinkedHashMap<>();
+		else entitiesByName.clear();
+		if (future == null) future = new FutureQueue();
+		else future.clear();
+		if (deferred == null) deferred = new DeferredQueue();
+		deferred.clear();
+		if (time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) {
+			String name = time_conf.get().getQueueFilePath();
+			String futureQ = "futureQ.ser";
+			String deferredQ = "deferredQ.ser";
+			future = deserializeFutureQueue(name + futureQ);
+			deferred = deserializeDeferredQueue(name + deferredQ);
+		}
+		if (waitPredicates == null) waitPredicates = new HashMap<>();
+		else waitPredicates.clear();
 		clock = 0;
 		running = false;
 	}
@@ -532,7 +538,7 @@ public class MainEventManager {
 	 * 
 	 * @return true, if successful otherwise
 	 */
-	private static void serializeEventQueue(String name, Object object){
+	private static void serializeQueue(String name, Object object){
 		try {
 			FileOutputStream fos = new FileOutputStream(name);
 			ObjectOutputStream oos = new ObjectOutputStream(fos);
@@ -547,7 +553,7 @@ public class MainEventManager {
 		}
 	}
 
-	private static TreeSet<SimEvent> deserializeEventQueue(String name){
+	public static TreeSet<SimEvent> deserializeEventQueue(String name){
 		FileInputStream is = null;
 		TreeSet<SimEvent> eventQueue = new TreeSet<>(Collections.reverseOrder());
 		try {
@@ -563,12 +569,10 @@ public class MainEventManager {
 		}
 		try {
 			eventQueue = (TreeSet<SimEvent>) ois.readObject();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		} catch (ClassNotFoundException e) {
+		} catch (IOException | ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
-		try {
+        try {
 			ois.close();
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -579,6 +583,70 @@ public class MainEventManager {
 			throw new RuntimeException(e);
 		}
 		return eventQueue;
+	}
+
+	private static FutureQueue deserializeFutureQueue(String name){
+		FileInputStream is = null;
+		FutureQueue futureQueue;
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			futureQueue = (FutureQueue) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+        try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return futureQueue;
+	}
+
+	private static DeferredQueue deserializeDeferredQueue(String name){
+		FileInputStream is = null;
+		DeferredQueue deferredQueue;
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			deferredQueue = (DeferredQueue) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+        try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return deferredQueue;
 	}
 
 	public static boolean runClockTick(Connection conn, DSLContext context) {
@@ -594,14 +662,28 @@ public class MainEventManager {
 			}
 		}
 
-		if(OsmoticBroker.getEventQueueSize() >= 12 && swap) {
+		/*if(OsmoticBroker.getEventQueueSize() >= 12 && swap) {
 			swap = false;
 			TreeSet<SimEvent> queue = OsmoticBroker.getEventQueue();
-			String name = "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\queue.ser";
-			serializeEventQueue(name, queue);
-			TreeSet<SimEvent> queue2 = deserializeEventQueue(name);
+			String name = "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\";
+			String eventQ = "eventQ.ser";
+			String futureQ = "futureQ.ser";
+			String deferredQ = "deferredQ.ser";
+			serializeQueue(name + eventQ, queue);
+			serializeQueue(name + futureQ, future);
+			serializeQueue(name + deferredQ, deferred);
+			TreeSet<SimEvent> queue2 = deserializeEventQueue(name + eventQ);
+			FutureQueue queue3 = deserializeFutureQueue(name+futureQ);
+			DeferredQueue queue4 = deserializeDeferredQueue(name+deferredQ);
 			OsmoticBroker.setEventQueue(queue2);
-        }
+			future.clear();
+			future = queue3;
+			deferred.clear();
+			deferred = queue4;
+			var temp = 5;
+        }*/
+
+
 				
 		// If there are more future events then deal with them
 		if (future.size() > 0) {
@@ -981,6 +1063,15 @@ public class MainEventManager {
 			// this block allows termination of simulation at a specific time
 			if (terminateAt > 0.0 && clock >= terminateAt) {
 				terminateSimulation();
+				if(time_conf.get().getIsBatch()) {
+					String name = "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\";
+					String eventQ = "eventQ.ser";
+					String futureQ = "futureQ.ser";
+					String deferredQ = "deferredQ.ser";
+					serializeQueue(name + eventQ, OsmoticBroker.getEventQueue());
+					serializeQueue(name + futureQ, future);
+					serializeQueue(name + deferredQ, deferred);
+				}
 				clock = terminateAt;
 				break;
 			}

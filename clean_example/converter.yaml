@@ -7,7 +7,7 @@ step: 0.001 # needs to be changed to match network latency if match is "true"  i
 ## Output
 RSUCsvFile:         #dynamically defined
 VehicleCsvFile:     #dynamically defined
-outputRSUCsvFile: true #true to output this CSV file, false to avoid outputting this file, currently needs to be true for simulator 
+outputRSUCsvFile: true #true to output this CSV file, false to avoid outputting this file, currently needs to be true for simulator
 outputVehicleCsvFile: true #true to output this CSV file, false to avoid outputting this file, currently needs to be true for simulator
 
 ## Batch

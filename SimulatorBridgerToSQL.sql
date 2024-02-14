@@ -30,7 +30,7 @@ CREATE TABLE vehInformation_import (
 	y float NOT NULL
 );
 
-SELECT * FROM vehInformation_import
+SELECT * FROM vehInformation_import;
 
 CREATE TABLE rsuInformation (
 	unique_entry_ID serial PRIMARY KEY,
@@ -70,7 +70,7 @@ CREATE TABLE neighboursChange (
 	change4 VARCHAR(50)
 );
 
-SELECT * FROM neighboursChange
+SELECT * FROM neighboursChange;
 
 CREATE TABLE timed_scc (
 	unique_entry_ID serial PRIMARY KEY,
@@ -81,7 +81,7 @@ CREATE TABLE timed_scc (
 	networkNeighbours4 VARCHAR(50)
 );
 
-SELECT * FROM timed_scc
+SELECT * FROM timed_scc;
 
 CREATE TABLE accurateBatteryInfo (
 	unique_entry_ID serial PRIMARY KEY,
@@ -90,10 +90,10 @@ CREATE TABLE accurateBatteryInfo (
 	flowID INTEGER NOT NULL,
 	noPackets float NOT NULL,
 	time float NOT NULL
-	
+
 );
 
-SELECT * FROM accurateBatteryInfo
+SELECT * FROM accurateBatteryInfo;
 
 CREATE TABLE accurateBatteryInfo_import (
 	IoTDeviceName VARCHAR(50) NOT NULL,
@@ -104,11 +104,11 @@ CREATE TABLE accurateBatteryInfo_import (
 
 );
 
-SELECT * FROM accurateBatteryInfo_import
+SELECT * FROM accurateBatteryInfo_import;
 
 CREATE TABLE appList (
 	unique_entry_ID serial PRIMARY KEY,
-	appID INTEGER NOT NULL, 
+	appID INTEGER NOT NULL,
 	appName VARCHAR(50) NOT NULL,
 	appStartTime float NOT NULL,
 	cloudDatacenterName VARCHAR(50) NOT NULL,
@@ -132,10 +132,10 @@ CREATE TABLE appList (
 	stopDataGenerationTime float NOT NULL,
 	vmCloudId INTEGER NOT NULL,
 	vmName VARCHAR(50) NOT NULL,
-	workflowId INTEGER NOT NULL	
+	workflowId INTEGER NOT NULL
 );
 
-SELECT * FROM appList
+SELECT * FROM appList;
 
 CREATE TABLE appList_import (
 	appID INTEGER NOT NULL,
@@ -165,11 +165,11 @@ CREATE TABLE appList_import (
 	workflowId INTEGER NOT NULL
 );
 
-SELECT * FROM appList_import
+SELECT * FROM appList_import;
 
 CREATE TABLE osmoticAppsStats (
 	unique_entry_ID serial PRIMARY KEY,
-	appID INTEGER NOT NULL, 
+	appID INTEGER NOT NULL,
 	appName VARCHAR(50) NOT NULL,
 	CloudLetMISize float NOT NULL,
 	CloudLetProcessingTimeByVM float NOT NULL,
@@ -178,7 +178,7 @@ CREATE TABLE osmoticAppsStats (
 	DestinationVmName VARCHAR (50) NOT NULL,
 	EdgeLetMISize float NOT NULL,
 	EdgeLetProcessingTimeByMEL float NOT NULL,
-	EdgeLet_MEL_FinishTime float NOT NULL, 
+	EdgeLet_MEL_FinishTime float NOT NULL,
 	EdgeLet_MEL_StartTime float NOT NULL,
 	FinishTime float NOT NULL,
 	IoTDeviceName VARCHAR(50) NOT NULL,
@@ -197,7 +197,7 @@ CREATE TABLE osmoticAppsStats (
 	EdgeToWANBW float NOT NULL
 );
 
-SELECT * FROM osmoticAppsStats
+SELECT * FROM osmoticAppsStats;
 
 CREATE TABLE osmoticAppsStats_import (
 	appID INTEGER NOT NULL,
@@ -228,7 +228,7 @@ CREATE TABLE osmoticAppsStats_import (
 	EdgeToWANBW float NOT NULL
 );
 
-SELECT * FROM osmoticAppsStats_import
+SELECT * FROM osmoticAppsStats_import;
 
 CREATE TABLE overallAppResults (
 	unique_entry_ID serial PRIMARY KEY,
@@ -245,7 +245,7 @@ CREATE TABLE overallAppResults (
 	appTotalRunningTime float NOT NULL
 );
 
-SELECT * FROM overallAppResults
+SELECT * FROM overallAppResults;
 
 CREATE TABLE overallAppResults_import (
 	appname VARCHAR(50) NOT NULL,
@@ -261,7 +261,7 @@ CREATE TABLE overallAppResults_import (
 	appTotalRunningTime float NOT NULL
 );
 
-SELECT * FROM overallAppResults_import
+SELECT * FROM overallAppResults_import;
 
 CREATE TABLE dataCenterEnergyConsumption (
 	unique_entry_ID serial PRIMARY KEY,
@@ -272,7 +272,7 @@ CREATE TABLE dataCenterEnergyConsumption (
 	finishTime float NOT NULL
 );
 
-SELECT * FROM dataCenterEnergyConsumption
+SELECT * FROM dataCenterEnergyConsumption;
 
 CREATE TABLE dataCenterEnergyConsumption_import (
 	HostEnergyConsumed float NOT NULL,
@@ -282,7 +282,7 @@ CREATE TABLE dataCenterEnergyConsumption_import (
 	finishTime float NOT NULL
 );
 
-SELECT * FROM dataCenterEnergyConsumption_import
+SELECT * FROM dataCenterEnergyConsumption_import;
 
 CREATE TABLE HostPowerConsumption (
 	unique_entry_ID serial PRIMARY KEY,
@@ -291,7 +291,7 @@ CREATE TABLE HostPowerConsumption (
 	hpc_name VARCHAR(50) NOT NULL
 );
 
-SELECT * FROM HostPowerConsumption
+SELECT * FROM HostPowerConsumption;
 
 CREATE TABLE HostPowerConsumption_import (
 	dcname VARCHAR(50) NOT NULL,
@@ -299,7 +299,7 @@ CREATE TABLE HostPowerConsumption_import (
 	hpc_name VARCHAR(50) NOT NULL
 );
 
-SELECT * FROM HostPowerConsumption_import
+SELECT * FROM HostPowerConsumption_import;
 
 CREATE TABLE SwitchPowerConsumption (
 	unique_entry_ID serial PRIMARY KEY,
@@ -308,7 +308,7 @@ CREATE TABLE SwitchPowerConsumption (
 	spc_name VARCHAR(50) NOT NULL
 );
 
-SELECT * FROM SwitchPowerConsumption
+SELECT * FROM SwitchPowerConsumption;
 
 CREATE TABLE SwitchPowerConsumption_import (
 	dcname VARCHAR(50) NOT NULL,
@@ -316,7 +316,7 @@ CREATE TABLE SwitchPowerConsumption_import (
 	spc_name VARCHAR(50) NOT NULL
 );
 
-SELECT * FROM SwitchPowerConsumption_import
+SELECT * FROM SwitchPowerConsumption_import;
 
 CREATE TABLE PowerUtilisationHistory (
 	unique_entry_ID serial PRIMARY KEY,
@@ -326,7 +326,7 @@ CREATE TABLE PowerUtilisationHistory (
 	usedmips float NOT NULL
 );
 
-SELECT * FROM PowerUtilisationHistory
+SELECT * FROM PowerUtilisationHistory;
 
 CREATE TABLE PowerUtilisationHistory_import (
 	dcname VARCHAR(50) NOT NULL,
@@ -335,7 +335,7 @@ CREATE TABLE PowerUtilisationHistory_import (
 	usedmips float NOT NULL
 );
 
-SELECT * FROM PowerUtilisationHistory_import
+SELECT * FROM PowerUtilisationHistory_import;
 
 CREATE TABLE HistoryEntry (
 	unique_entry_ID serial PRIMARY KEY,
@@ -343,14 +343,14 @@ CREATE TABLE HistoryEntry (
 	starttime float
 );
 
-SELECT * FROM HistoryEntry
+SELECT * FROM HistoryEntry;
 
 CREATE TABLE HistoryEntry_import (
 	numactiveports INTEGER,
 	starttime float
 );
 
-SELECT * FROM HistoryEntry_import
+SELECT * FROM HistoryEntry_import;
 
 CREATE TABLE ConnectionPerSimTime (
 	unique_entry_ID serial PRIMARY KEY,
@@ -359,7 +359,7 @@ CREATE TABLE ConnectionPerSimTime (
 	cps_time float NOT NULL
 );
 
-SELECT * FROM ConnectionPerSimTime
+SELECT * FROM ConnectionPerSimTime;
 
 CREATE TABLE ConnectionPerSimTime_import (
 	iotdevices INTEGER NOT NULL,
@@ -367,7 +367,7 @@ CREATE TABLE ConnectionPerSimTime_import (
 	cps_time float NOT NULL
 );
 
-SELECT * FROM ConnectionPerSimTime_import
+SELECT * FROM ConnectionPerSimTime_import;
 
 CREATE TABLE bandwidthShareInfo (
 	unique_entry_ID serial PRIMARY KEY,
@@ -378,7 +378,7 @@ CREATE TABLE bandwidthShareInfo (
 	timestamp float NOT NULL
 );
 
-SELECT * FROM bandwidthShareInfo
+SELECT * FROM bandwidthShareInfo;
 
 CREATE TABLE bandwidthShareInfo_import (
 	bandwidthshare float NOT NULL,
@@ -388,12 +388,4 @@ CREATE TABLE bandwidthShareInfo_import (
 	timestamp float NOT NULL
 );
 
-SELECT * FROM bandwidthShareInfo_import
-
-truncate vehInformation RESTART IDENTITY;
-
-INSERT INTO vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime)
-SELECT vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime
-FROM vehInformation_import;
-
-SELECT * FROM vehInformation;
+SELECT * FROM bandwidthShareInfo_import;

@@ -55,7 +55,7 @@ import static org.jooq.impl.DSL.field;
 public class OsmoticBroker extends DatacenterBroker {
 //	public EdgeSDNController edgeController;
 	public List<Cloudlet> edgeletList = new ArrayList<>();
-	public List<OsmoticAppDescription> appList;
+	public static List<OsmoticAppDescription> appList;
 	public Map<String, Integer> iotDeviceNameToId = new HashMap<>();
 	public Map<String, IoTDevice> iotDeviceNameToObject = new HashMap<>();
 	public Map<Integer, List<? extends Vm>> mapVmsToDatacenter  = new HashMap<>();
@@ -66,18 +66,32 @@ public class OsmoticBroker extends DatacenterBroker {
 	private final AtomicInteger edgeLetId;
 	public boolean isWakeupStartSet;
 
+	public void setIsWakeupStartSet(boolean isWakeupStartSet) {
+		this.isWakeupStartSet = isWakeupStartSet;
+	}
+	public List<Cloudlet> getEdgeletList() {
+		return edgeletList;
+	}
+	public static List<OsmoticAppDescription> getAppList() {
+		return appList;
+	}
+
+	public void setAppList(List<OsmoticAppDescription> appList) {
+		this.appList = appList;
+	}
+
 	public Map<String, IoTDevice> getDevices() {
 		return iotDeviceNameToObject;
 	}
-	protected static int activeCount = 0;
-	protected static int comCount = 0;
-	public static int getActiveCount() {
+	protected int activeCount = 0;
+	protected int comCount = 0;
+	public int getActiveCount() {
 		return activeCount;
 	}
-	public static int getComCount() {
+	public int getComCount() {
 		return comCount;
 	}
-	public static void setActiveCount(int newCount) {
+	public void setActiveCount(int newCount) {
 		activeCount = newCount;
 	}
 	//private Map<String, Integer> roundRobinMelMap = new HashMap<>();
@@ -104,29 +118,34 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 	public static String choice = DataCenterWithController.getLimiting();
 	protected static String change;
-	private final File converter_file = new File("clean_example/converter.yaml");
-	private final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
-	double beginSUMO = time_conf.get().getBegin();
-	double endSUMO = time_conf.get().getEnd();
+	private static final File converter_file = new File("clean_example/converter.yaml");
+	private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+	static double beginSUMO = time_conf.get().getBegin();
+	static double endSUMO = time_conf.get().getEnd();
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	public CentralAgent osmoticCentralAgent;
 	private AtomicInteger flowId;
 	private IoTEntityGenerator ioTEntityGenerator;
-	public static double deltaVehUpdate;
-	private double startTime = time_conf.get().getIsBatch() ? time_conf.get().getBatchStart() : time_conf.get().getBegin();
-	private double endTime = time_conf.get().getIsBatch() ? time_conf.get().getBatchEnd() : time_conf.get().getEnd();
+	public static double deltaVehUpdate = time_conf.get().step;
+	private double startTime = time_conf.get().getBegin();
+	private double endTime = time_conf.get().getEnd();
+	public void setFullInterval(double startTime, double endTime){
+		this.startTime = startTime;
+		this.endTime = endTime;
+	}
 	private final int collectionInterval = (int) Math.min(1, endTime);
 	private int collectSQLInfo = (int) startTime / collectionInterval;
 	private int intervalStart = (int) Math.floor(startTime);
 	private int intervalEnd = intervalStart + collectionInterval;
-	private Result<VehinformationRecord> dataRange = null;
+	private transient Result<VehinformationRecord> dataRange = null;
 	//private Result<Record4<String, Double, Double, Double>> dataNowRange = null;
 	//private Result<Record4<String, Double, Double, Double>> dataFutureRange = null;
-	private ProgressBar pb = null;
+	private transient ProgressBar pb = null;
 	private double lastTime = 0;
 	private final double[] notUpdated = new double[]{-1.0, -1.0};
 	private List<String> vehsToUpdate = null;
 	private final float maxEdgeBW = 100;
+	public transient Collection<Double> wakeUpTimes;
 
 
 	private static OsmoticBroker OBINSTANCE;
@@ -137,6 +156,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		super(name);
 		this.edgeLetId = edgeLetId;
 		this.flowId = flowId;
+		String pathname = time_conf.get().getQueueFilePath();
 		this.appList = new ArrayList<>();
 		brokerID = this.getId();
 		isWakeupStartSet = false;
@@ -149,12 +169,12 @@ public class OsmoticBroker extends DatacenterBroker {
 	public static OsmoticBroker getInstance(String name,
 											AtomicInteger edgeLetId,
 											AtomicInteger flowId) {
+
 		if (OBINSTANCE == null) {
 			OBINSTANCE = new OsmoticBroker(name, edgeLetId, flowId);
 		}
 		return OBINSTANCE;
 	}
-
 	@Override
 	public void startEntity() {
 		super.startEntity();
@@ -166,8 +186,9 @@ public class OsmoticBroker extends DatacenterBroker {
 
 		// Setting up the forced times when the simulator has to wake up, as new messages have to be sent
 		if (!isWakeupStartSet) {
+			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes();
 			for (Double forcedWakeUpTime :
-					ioTEntityGenerator.collectionOfWakeUpTimes()) {
+					wakeUpTimes) {
 				double time = forcedWakeUpTime - chron;
 				if (time > 0.0 && chron + getDeltaVehUpdate() <= endTime) {
 					schedule(OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);

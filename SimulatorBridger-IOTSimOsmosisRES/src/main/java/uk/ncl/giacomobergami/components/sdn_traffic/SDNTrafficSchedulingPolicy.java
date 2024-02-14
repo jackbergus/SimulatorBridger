@@ -10,6 +10,7 @@
  */
 
 package uk.ncl.giacomobergami.components.sdn_traffic;
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,7 +24,7 @@ import org.cloudbus.osmosis.core.Flow;
  * @since BigDataSDNSim 1.0
  */
 
-public abstract class SDNTrafficSchedulingPolicy {
+public abstract class SDNTrafficSchedulingPolicy implements Serializable {
 	private String policyName;	
 	
 	public abstract void setFlowPriority(Flow flow);

@@ -19,6 +19,8 @@ import org.jooq.DSLContext;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * This class represents a simulation entity. An entity handles events and can send events to other
@@ -414,6 +416,15 @@ public abstract class SimEntity implements Cloneable, Serializable {
 	 * to save data in log files this is the method in which the corresponding code would be placed.
 	 */
 	public abstract void shutdownEntity();
+
+	public List<SimEvent> run(List<SimEvent> nl) {
+		SimEvent ev = evbuf != null ? evbuf : getNextEvent();
+		while (ev != null) {
+			nl.add(ev);
+			ev = getNextEvent();
+		}
+		return nl;
+	}
 
 	public void run(Connection conn, DSLContext context) {
 		SimEvent ev = evbuf != null ? evbuf : getNextEvent();

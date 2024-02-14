@@ -10,6 +10,8 @@ package org.cloudbus.cloudsim.provisioners;
 
 import org.cloudbus.cloudsim.Vm;
 
+import java.io.Serializable;
+
 /**
  * BwProvisioner is an abstract class that represents the provisioning policy of bandwidth to
  * virtual machines inside a Host. When extending this class, care must be taken to guarantee that
@@ -20,7 +22,7 @@ import org.cloudbus.cloudsim.Vm;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public abstract class BwProvisioner {
+public abstract class BwProvisioner implements Serializable {
 
 	/** The bw. */
 	private double bw;

@@ -22,13 +22,14 @@ package uk.ncl.giacomobergami.components.mel_routing;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import static org.cloudbus.cloudsim.edge.utils.LogUtil.logger;
 
-public class RoundRobinMELSwitchPolicy implements MELSwitchPolicy {
+public class RoundRobinMELSwitchPolicy implements MELSwitchPolicy, Serializable {
     private Map<String, Integer> roundRobinMelMap;
     public RoundRobinMELSwitchPolicy() { roundRobinMelMap = new HashMap<>(); }
     @Override

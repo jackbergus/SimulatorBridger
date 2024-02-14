@@ -11,6 +11,8 @@
 
 package uk.ncl.giacomobergami.components.iot_protocol;
 
+import java.io.Serializable;
+
 /**
  * 
  * @author Khaled Alwasel
@@ -19,7 +21,7 @@ package uk.ncl.giacomobergami.components.iot_protocol;
  * 
 **/
 
-public  abstract class IoTProtocol   {
+public abstract class IoTProtocol implements Serializable {
 
     protected String name;    
     protected float batteryConsumptionSpeed;

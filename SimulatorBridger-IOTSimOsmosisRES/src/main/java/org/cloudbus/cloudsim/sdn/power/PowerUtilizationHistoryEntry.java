@@ -8,13 +8,15 @@
 
 package org.cloudbus.cloudsim.sdn.power;
 
+import java.io.Serializable;
+
 /**
  *  To log utilization history, this class holds power utilization information
  * 
  * @author Jungmin Son
  * @since CloudSimSDN 1.0
  */
-public class PowerUtilizationHistoryEntry {
+public class PowerUtilizationHistoryEntry implements Serializable {
 	public double startTime;
 	public double usedMips;
 	public PowerUtilizationHistoryEntry(double t, double m) { startTime=t; usedMips=m;}

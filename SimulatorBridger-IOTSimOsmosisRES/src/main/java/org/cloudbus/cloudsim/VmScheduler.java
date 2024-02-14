@@ -7,6 +7,7 @@
 
 package org.cloudbus.cloudsim;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,7 @@ import org.cloudbus.cloudsim.lists.PeList;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public abstract class VmScheduler {
+public abstract class VmScheduler implements Serializable {
 
 	/** The peList. */
 	private List<? extends Pe> peList;

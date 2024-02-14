@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import java.io.Serializable;
 import java.util.*;
 
 import org.cloudbus.osmosis.core.Flow;
@@ -28,7 +29,7 @@ import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
  */
  
 
-public class Channel {
+public class Channel implements Serializable {
 	private List<NetworkNIC> nodes;
 	private List<Link> links;
 	private double allocatedBandwidth = 0; // Actual bandwidth allocated to the channel

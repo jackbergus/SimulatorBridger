@@ -9,11 +9,19 @@
 package org.cloudbus.cloudsim.core;
 
 
+import com.sun.tools.javac.Main;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.cloudbus.cloudsim.core.predicates.PredicateAny;
 import org.cloudbus.cloudsim.core.predicates.PredicateNone;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
+import org.cloudbus.cloudsim.edge.core.edge.MEL;
+import org.cloudbus.cloudsim.sdn.SDNHost;
+import org.cloudbus.osmosis.core.Flow;
+import org.cloudbus.osmosis.core.OsmoticAppDescription;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.utils.data.YAML;
@@ -70,8 +78,8 @@ public class MainEventManager {
 
 	/** The calendar. */
 	private static Calendar calendar = null;
-	private static final File converter_file = new File("clean_example/converter.yaml");
-	protected static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+	private static transient File converter_file = new File("clean_example/converter.yaml");
+	protected static transient final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 	/** The termination time. */
 	private static double terminateAt = time_conf.get().getIsBatch() ? time_conf.get().getBatchEnd() :-1;
 
@@ -321,6 +329,7 @@ public class MainEventManager {
 
 	/** The entities. */
 	private static List<SimEntity> entities;
+	private static List<SimEntity> newEntities;
 
 	/** The future event queue. */
 	protected static FutureQueue future;
@@ -328,8 +337,14 @@ public class MainEventManager {
 	/** The deferred event queue. */
 	protected static DeferredQueue deferred;
 
+	protected static List<SimEntity> cSensors = new ArrayList<>();
+	private static Map<String, SimEntity> cSensorsByName = new HashMap<>();
+
+	protected static ArrayList<SDNHost> SDNhosts = new ArrayList<>();
+	private static Map<String, SDNHost> SDNhostsByName = new HashMap<>();
+
 	/** The simulation clock. */
-	public static double clock;
+	public static double clock = 0.0;
 
 	/** Flag for checking if the simulation is running. */
 	private static boolean running;
@@ -357,6 +372,14 @@ public class MainEventManager {
 
 	/** The abrupt terminate. */
 	private static boolean abruptTerminate = false;
+	private static boolean clear = true;
+	protected static String name = time_conf.get().getQueueFilePath();
+	protected static String eventQ = "eventQ.ser";
+	protected static String futureQ = "futureQ.ser";
+	protected static String deferredQ = "deferredQ.ser";
+	protected static String entitiesList = "entities.ser";
+	protected static String AppList = "appList.ser";
+	protected static String FinalTime = "time.ser";
 
 	/**
 	 * Initialise the simulation for stand alone simulations. This function should be called at the
@@ -373,20 +396,17 @@ public class MainEventManager {
 		if (deferred == null) deferred = new DeferredQueue();
 		deferred.clear();
 		if (time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) {
-			String name = time_conf.get().getQueueFilePath();
-			String futureQ = "futureQ.ser";
-			String deferredQ = "deferredQ.ser";
 			future = deserializeFutureQueue(name + futureQ);
 			deferred = deserializeDeferredQueue(name + deferredQ);
+			newEntities = deserializeEntities(name + entitiesList);
+			clock = deserializeTime(name + FinalTime);
 		}
 		if (waitPredicates == null) waitPredicates = new HashMap<>();
 		else waitPredicates.clear();
-		clock = 0;
+		clock = time_conf.get().getIsBatch() & !time_conf.get().getIsFirstBatch() ? clock : time_conf.get().getBegin();
 		running = false;
 	}
-
 	// The two standard predicates
-
 	/** A standard predicate that matches any event. */
 	public final static PredicateAny SIM_ANY = new PredicateAny();
 
@@ -510,6 +530,33 @@ public class MainEventManager {
 			future.addEvent(evt);
 		}
 		if (e.getId() == -1) { // Only add once!
+			/*if(Objects.equals(e.getClass().getName(), "uk.ncl.giacomobergami.components.iot.CarSensor")) {
+				if(time_conf.get().getIsFirstBatch()) {
+					int id = entities.size();
+					e.setId(id);
+					entities.add(e);
+					entitiesByName.put(e.getName(), e);
+				} else {
+					SimEntity newE = cSensorsByName.get(e.getName());
+					entities.add(newE);
+					entitiesByName.put(newE.getName(), newE);
+				}*/
+			}
+		if(time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) {
+			if (Objects.equals(e.getClass().getName(), "org.cloudbus.osmosis.core.OsmoticBroker")) {
+				newEntities.remove(0);
+				int id = entities.size();
+				e.setId(id);
+				entities.add(e);
+				entitiesByName.put(e.getName(), e);
+			} else {
+				var temp = newEntities.get(0);
+				temp.setId(entities.size());
+				newEntities.remove(0);
+				entities.add(temp);
+				entitiesByName.put(temp.getName(), temp);
+			}
+		} else {
 			int id = entities.size();
 			e.setId(id);
 			entities.add(e);
@@ -550,6 +597,101 @@ public class MainEventManager {
 			fos.close();
 		} catch (IOException e) {
 			e.printStackTrace();
+		}
+	}
+
+	private static void serializeEntities(String name, ArrayList object){
+		try {
+			FileOutputStream fos = new FileOutputStream(name);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			// write object to file
+			oos.writeObject(object);
+			//System.out.println("Done");
+			// closing resources
+			oos.close();
+			fos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
+		}
+	}
+
+	private static void serializeAppList(String name, List<OsmoticAppDescription> object){
+		try {
+			FileOutputStream fos = new FileOutputStream(name);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			// write object to file
+			oos.writeObject(object);
+			//System.out.println("Done");
+			// closing resources
+			oos.close();
+			fos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
+		}
+	}
+	private static void serializeHashMap(String name, HashMap object){
+		try {
+			FileOutputStream fos = new FileOutputStream(name);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			// write object to file
+			oos.writeObject(object);
+			//System.out.println("Done");
+			// closing resources
+			oos.close();
+			fos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
+		}
+	}
+
+	private static void serializeHosts(String name, List<SDNHost> object){
+		try {
+			FileOutputStream fos = new FileOutputStream(name);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			// write object to file
+			oos.writeObject(object);
+			//System.out.println("Done");
+			// closing resources
+			oos.close();
+			fos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
+		}
+	}
+
+	private static void serializeEdgeDataCenter(String name, List<EdgeDataCenter> object){
+		try {
+			FileOutputStream fos = new FileOutputStream(name);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			// write object to file
+			oos.writeObject(object);
+			//System.out.println("Done");
+			// closing resources
+			oos.close();
+			fos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
+		}
+	}
+
+	private static void serializeTime(String name, double object){
+		try {
+			FileOutputStream fos = new FileOutputStream(name);
+			ObjectOutputStream oos = new ObjectOutputStream(fos);
+			// write object to file
+			oos.writeObject(object);
+			//System.out.println("Done");
+			// closing resources
+			oos.close();
+			fos.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+			throw new RuntimeException(e.getMessage());
 		}
 	}
 
@@ -649,6 +791,198 @@ public class MainEventManager {
 		return deferredQueue;
 	}
 
+	public static List<SimEntity> deserializeEntities(String name){
+		FileInputStream is = null;
+		List<SimEntity> entityList;
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			entityList = (List<SimEntity>) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return entityList;
+	}
+
+	public static double deserializeTime(String name){
+		FileInputStream is = null;
+		double entityList;
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			entityList = (double) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return entityList;
+	}
+
+	public static ArrayList<SDNHost> deserializeHosts(String name){
+		FileInputStream is = null;
+		ArrayList<SDNHost> entityList;
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			entityList = (ArrayList<SDNHost>) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return entityList;
+	}
+
+	public static ArrayList<OsmoticAppDescription> deserializeAppList(String name){
+		FileInputStream is = null;
+		ArrayList<OsmoticAppDescription> entityList;
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			entityList = (ArrayList<OsmoticAppDescription>) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return entityList;
+	}
+
+	public static HashMap<Integer, List<Vm>> deserializeVMS(String name){
+		FileInputStream is = null;
+		HashMap<Integer, List<Vm>> entityList;
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			entityList = (HashMap<Integer, List<Vm>>) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return entityList;
+	}
+
+	public static HashMap<Integer, List<MEL>> deserializeMELS(String name){
+		FileInputStream is = null;
+		HashMap<Integer, List<MEL>> entityList;
+		try {
+			is = new FileInputStream(name);
+		} catch (FileNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		ObjectInputStream ois = null;
+		try {
+			ois = new ObjectInputStream(is);
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			entityList = (HashMap<Integer, List<MEL>>) ois.readObject();
+		} catch (IOException | ClassNotFoundException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			ois.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		try {
+			is.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return entityList;
+	}
+
 	public static boolean runClockTick(Connection conn, DSLContext context) {
 		SimEntity ent;
 		boolean queue_empty;
@@ -662,29 +996,6 @@ public class MainEventManager {
 			}
 		}
 
-		/*if(OsmoticBroker.getEventQueueSize() >= 12 && swap) {
-			swap = false;
-			TreeSet<SimEvent> queue = OsmoticBroker.getEventQueue();
-			String name = "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\";
-			String eventQ = "eventQ.ser";
-			String futureQ = "futureQ.ser";
-			String deferredQ = "deferredQ.ser";
-			serializeQueue(name + eventQ, queue);
-			serializeQueue(name + futureQ, future);
-			serializeQueue(name + deferredQ, deferred);
-			TreeSet<SimEvent> queue2 = deserializeEventQueue(name + eventQ);
-			FutureQueue queue3 = deserializeFutureQueue(name+futureQ);
-			DeferredQueue queue4 = deserializeDeferredQueue(name+deferredQ);
-			OsmoticBroker.setEventQueue(queue2);
-			future.clear();
-			future = queue3;
-			deferred.clear();
-			deferred = queue4;
-			var temp = 5;
-        }*/
-
-
-				
 		// If there are more future events then deal with them
 		if (future.size() > 0) {
 			List<SimEvent> toRemove = new ArrayList<SimEvent>();
@@ -914,13 +1225,18 @@ public class MainEventManager {
 	 */
 	private static void processEvent(SimEvent e) {
 		
-		
-		
 		int dest, src;
 		SimEntity dest_ent;
 		// Update the system's clock
-		if (e.eventTime() < clock) {
+		if ((double)Math.round(e.eventTime() * 1000) / 1000 < (double)Math.round(clock * 1000) / 1000) {
 			throw new IllegalArgumentException("Past event detected.");
+		}
+		String name = null;
+		if(e.getData() != null) {
+			if (e.getData().getClass().getName().equals("org.cloudbus.osmosis.core.Flow")) {
+				name = ((Flow) e.getData()).getAppName();
+				var temp = 5;
+			}
 		}
 		clock = e.eventTime();
 								
@@ -1059,18 +1375,16 @@ public class MainEventManager {
 				curr = Math.floor(clock());
 				System.out.println(curr);
 			}
-
 			// this block allows termination of simulation at a specific time
 			if (terminateAt > 0.0 && clock >= terminateAt) {
 				terminateSimulation();
 				if(time_conf.get().getIsBatch()) {
-					String name = "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\";
-					String eventQ = "eventQ.ser";
-					String futureQ = "futureQ.ser";
-					String deferredQ = "deferredQ.ser";
 					serializeQueue(name + eventQ, OsmoticBroker.getEventQueue());
 					serializeQueue(name + futureQ, future);
 					serializeQueue(name + deferredQ, deferred);
+					serializeAppList(name + AppList, OsmoticBroker.getAppList());
+					serializeEntities(name + entitiesList, (ArrayList) entities);
+					serializeTime(name + FinalTime, MainEventManager.clock());
 				}
 				clock = terminateAt;
 				break;

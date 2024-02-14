@@ -10,6 +10,8 @@ package org.cloudbus.cloudsim;
 
 import org.cloudbus.cloudsim.provisioners.PeProvisioner;
 
+import java.io.Serializable;
+
 /**
  * CloudSim Pe (Processing Element) class represents CPU unit, defined in terms of Millions
  * Instructions Per Second (MIPS) rating.<br>
@@ -19,7 +21,7 @@ import org.cloudbus.cloudsim.provisioners.PeProvisioner;
  * @author Rajkumar Buyya
  * @since CloudSim Toolkit 1.0
  */
-public class Pe {
+public class Pe implements Serializable {
 
 	/** Denotes Pe is FREE for allocation. */
 	public static final int FREE = 1;

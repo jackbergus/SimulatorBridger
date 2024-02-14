@@ -2,7 +2,9 @@ package org.cloudbus.cloudsim.edge.core.edge;
 
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
 
-public class Mobility {
+import java.io.Serializable;
+
+public class Mobility implements Serializable {
 	public boolean movable;
 	public double velocity;
 	public double totalMovingDistance;
@@ -28,7 +30,7 @@ public class Mobility {
 		}
     }
 
-    public static class MovingRange{
+    public static class MovingRange implements Serializable{
 		public int beginX, beginY;
 		public int endX, endY;
 
@@ -46,7 +48,7 @@ public class Mobility {
 
 	}
 
-	public static class Location implements CartesianPoint {
+	public static class Location implements CartesianPoint, Serializable {
 		public double x;
 		public double y;
 		public double z;

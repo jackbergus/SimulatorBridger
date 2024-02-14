@@ -10,6 +10,8 @@ package org.cloudbus.cloudsim.provisioners;
 
 import org.cloudbus.cloudsim.Vm;
 
+import java.io.Serializable;
+
 /**
  * RamProvisioner is an abstract class that represents the provisioning policy of memory to virtual
  * machines inside a Host. When extending this class, care must be taken to guarantee that the field
@@ -19,7 +21,7 @@ import org.cloudbus.cloudsim.Vm;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public abstract class RamProvisioner {
+public abstract class RamProvisioner implements Serializable {
 
 	/** The ram. */
 	private int ram;

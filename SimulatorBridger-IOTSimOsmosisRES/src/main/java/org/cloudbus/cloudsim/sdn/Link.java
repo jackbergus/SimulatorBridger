@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -27,7 +28,7 @@ import java.util.Objects;
  * @since BigDataSDNSim 1.0
  */
 
-public class Link {
+public class Link implements Serializable {
 	// bi-directional link (one link = both ways)
 	NetworkNIC highOrder; // order starts from core SW, to aggr SW, to edge SW, to Hosts
 	NetworkNIC lowOrder;  // order starts from Hosts, to edge SW, to aggr SW, to core SW
@@ -123,9 +124,9 @@ public class Link {
 		return Objects.equals(highOrder, link.highOrder) && Objects.equals(lowOrder, link.lowOrder);
 	}
 
-	@Override
+	/*@Override
 	public int hashCode() {
 		return src().hashCode()^ dst().hashCode();
-	}
+	}*/
 	
 }

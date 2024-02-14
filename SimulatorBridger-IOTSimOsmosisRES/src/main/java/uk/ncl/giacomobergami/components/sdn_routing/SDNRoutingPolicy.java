@@ -11,6 +11,7 @@
 
 package uk.ncl.giacomobergami.components.sdn_routing;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -34,7 +35,7 @@ import com.google.common.collect.Multimap;
  * @since BigDataSDNSim 1.0
  */
 
-public abstract class SDNRoutingPolicy {
+public abstract class SDNRoutingPolicy implements Serializable {
 	private List<NetworkNIC> nodeList = new ArrayList<>();
 	protected Topology topology;
 	private String policyName;

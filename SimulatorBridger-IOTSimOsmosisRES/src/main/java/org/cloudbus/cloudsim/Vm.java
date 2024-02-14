@@ -12,6 +12,7 @@ import org.cloudbus.osmosis.core.OsmoticBroker;
 import uk.ncl.giacomobergami.components.cloudlet_scheduler.CloudletScheduler;
 import uk.ncl.giacomobergami.components.cloudlet_scheduler.CloudletSchedulerGeneratorFactory;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -27,7 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public class Vm {
+public class Vm implements Serializable {
 
 	protected String vmName;
 	
@@ -90,7 +91,7 @@ public class Vm {
 	private CloudletScheduler cloudletScheduler;
 
 	/** The host. */
-	private Host host;
+	private transient Host host;
 
 	/** In migration flag. */
 	private boolean inMigration;
@@ -111,7 +112,7 @@ public class Vm {
 	private boolean beingInstantiated;
 
 	/** The mips allocation history. */
-	private final List<VmStateHistoryEntry> stateHistory = new LinkedList<VmStateHistoryEntry>();
+	private transient final List<VmStateHistoryEntry> stateHistory = new LinkedList<VmStateHistoryEntry>();
 
 	private int vmType;
 

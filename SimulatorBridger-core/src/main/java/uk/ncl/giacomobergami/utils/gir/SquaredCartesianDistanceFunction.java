@@ -22,7 +22,9 @@ package uk.ncl.giacomobergami.utils.gir;
 
 import com.eatthepath.jvptree.DistanceFunction;
 
-public class SquaredCartesianDistanceFunction implements DistanceFunction<CartesianPoint> {
+import java.io.Serializable;
+
+public class SquaredCartesianDistanceFunction implements DistanceFunction<CartesianPoint>, Serializable {
 
     private SquaredCartesianDistanceFunction() {}
     private static SquaredCartesianDistanceFunction self = null;

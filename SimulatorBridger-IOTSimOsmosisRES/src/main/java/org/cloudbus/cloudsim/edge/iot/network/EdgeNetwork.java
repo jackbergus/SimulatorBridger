@@ -11,6 +11,8 @@
 
 package org.cloudbus.cloudsim.edge.iot.network;
 
+import java.io.Serializable;
+
 /**
  * 
  * @author Khaled Alwasel
@@ -19,7 +21,7 @@ package org.cloudbus.cloudsim.edge.iot.network;
  * 
 **/
 
-public class EdgeNetwork {
+public class EdgeNetwork implements Serializable {
 	private double speed;
 	private String networkType;
 

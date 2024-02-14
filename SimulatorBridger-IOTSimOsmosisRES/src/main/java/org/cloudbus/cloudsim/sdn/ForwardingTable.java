@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,7 +29,7 @@ import com.google.common.collect.Table;
  * @since BigDataSDNSim 1.0
  */
  
-public class ForwardingTable {
+public class ForwardingTable implements Serializable {
 	
 	Table<Integer, Integer, Map<Integer,NetworkNIC>> table;
 	

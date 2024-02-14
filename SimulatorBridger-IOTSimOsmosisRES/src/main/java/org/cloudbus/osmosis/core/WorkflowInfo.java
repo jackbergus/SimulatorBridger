@@ -97,7 +97,7 @@ public class WorkflowInfo implements Serializable {
 		this.DestinationDatacenterName = DestinationDatacenterName;
 	}
 	
-	public double getSartTime() {
+	public double getStartTime() {
 		// TODO Auto-generated method stub
 		return this.startTime;
 	}

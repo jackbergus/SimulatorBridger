@@ -25,11 +25,12 @@ import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.osmosis.core.Topology;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 @JsonPropertyOrder({"name", "type", "iops"})
-public class Switch {
+public class Switch implements Serializable {
     public String type;  // enum
     public String name;
     public Long iops;

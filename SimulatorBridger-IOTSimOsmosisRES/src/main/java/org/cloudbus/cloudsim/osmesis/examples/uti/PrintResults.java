@@ -29,7 +29,6 @@ import org.cloudbus.cloudsim.sdn.power.PowerUtilizationInterface;
 import org.cloudbus.osmosis.core.OsmoticAppDescription;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.cloudbus.osmosis.core.WorkflowInfo;
-import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
 
@@ -536,11 +535,11 @@ public class PrintResults {
 		WorkflowInfo firstWorkflow = tags.get(0);
 		WorkflowInfo secondWorkflow = tags.size() > 1 ? tags.get(1) : null;
 		
-		if((secondWorkflow != null) && (firstWorkflow.getFinishTime() > secondWorkflow.getSartTime())) {
+		if((secondWorkflow != null) && (firstWorkflow.getFinishTime() > secondWorkflow.getStartTime())) {
 			appTotalRunningTmie = EndTime - StartTime;			
 		} else {
 			for(WorkflowInfo workflowTag : tags){
-				appTotalRunningTmie += workflowTag.getFinishTime() - workflowTag.getSartTime(); 
+				appTotalRunningTmie += workflowTag.getFinishTime() - workflowTag.getStartTime();
 			}
 		}
 		if (StartTime < 0.0) {
@@ -616,7 +615,7 @@ public class PrintResults {
 				fromTag.APP_ID = workflowTag.getAppId();
 				fromTag.AppName = workflowTag.getAppName();
 				fromTag.Transaction = workflowTag.getWorkflowId();
-				fromTag.StartTime = workflowTag.getSartTime();
+				fromTag.StartTime = workflowTag.getStartTime();
 				countingMapPerSimTime.putIfAbsent(fromTag.StartTime, HashMultimap.create());
 				fromTag.FinishTime = workflowTag.getFinishTime();
 				fromTag.IoTDeviceName = workflowTag.getIotDeviceFlow().getAppNameSrc();

@@ -10,6 +10,8 @@ package org.cloudbus.cloudsim;
 
 import org.cloudbus.cloudsim.core.MainEventManager;
 
+import java.io.Serializable;
+
 /**
  * CloudSim ResCloudlet represents a Cloudlet submitted to CloudResource for processing. This class
  * keeps track the time for all activities in the CloudResource for a specific Cloudlet. Before a
@@ -24,7 +26,7 @@ import org.cloudbus.cloudsim.core.MainEventManager;
  * @author Rajkumar Buyya
  * @since CloudSim Toolkit 1.0
  */
-public class ResCloudlet {
+public class ResCloudlet implements Serializable {
 
 	/** The Cloudlet object. */
 	private final Cloudlet cloudlet;

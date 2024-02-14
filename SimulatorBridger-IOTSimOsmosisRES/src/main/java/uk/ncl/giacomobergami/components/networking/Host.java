@@ -4,7 +4,9 @@ import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.cloudsim.edge.core.edge.Mobility;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
 
-public class Host {
+import java.io.Serializable;
+
+public class Host implements Serializable {
     public String name;
     public int pes;
     public int ram;

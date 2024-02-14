@@ -27,9 +27,10 @@ import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.osmosis.core.CloudSDNController;
 import org.cloudbus.osmosis.core.EdgeSDNController;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class DataCenterWithController {
+public class DataCenterWithController implements Serializable {
     public static String limiting;
     public static int communication_limit;
     public double scheduling_interval;

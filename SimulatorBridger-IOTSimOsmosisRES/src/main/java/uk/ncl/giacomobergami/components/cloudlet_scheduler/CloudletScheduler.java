@@ -11,6 +11,7 @@ package uk.ncl.giacomobergami.components.cloudlet_scheduler;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.ResCloudlet;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,7 +25,7 @@ import java.util.List;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public abstract class CloudletScheduler {
+public abstract class CloudletScheduler implements Serializable {
 
 	/** The previous time. */
 	private double previousTime;

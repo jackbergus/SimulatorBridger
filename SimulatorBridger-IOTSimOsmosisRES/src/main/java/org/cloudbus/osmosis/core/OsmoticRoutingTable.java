@@ -1,9 +1,10 @@
 package org.cloudbus.osmosis.core;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
-public class OsmoticRoutingTable {
+public class OsmoticRoutingTable implements Serializable {
     Map<String, String> table;
 
     public OsmoticRoutingTable() {

@@ -25,6 +25,7 @@ import org.cloudbus.agent.config.AgentConfigLoader;
 import org.cloudbus.agent.config.AgentConfigProvider;
 import org.cloudbus.agent.config.TopologyLink;
 import org.cloudbus.cloudsim.core.MainEventManager;
+import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.cloudsim.edge.utils.LogUtil;
 import org.cloudbus.cloudsim.osmesis.examples.uti.PrintResults;
@@ -39,16 +40,15 @@ import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELRoutingPolicyGeneratorFacade;
 import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
+import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -67,6 +67,8 @@ public class OsmoticWrapper {
     private double runTime;
     List<OsmoticAppDescription> appList;
     List<PrintResults.BandwidthInfo> bandwidthInfoList;
+    private static final File converter_file = new File("clean_example/converter.yaml");
+    private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 
 
 
@@ -329,7 +331,19 @@ public class OsmoticWrapper {
         if (agentBrokerageInitFails()) return init;
         allocateOrClearDataStructures(calendar);
 
-        osmoticBroker = conf.newBroker();
+        String name = null, entitiesList;
+        List<SimEntity> newEntities = new ArrayList<>();
+        if(time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) {
+            name = time_conf.get().getQueueFilePath();
+            entitiesList = "entities.ser";
+            newEntities = MainEventManager.deserializeEntities(name + entitiesList);
+        }
+        osmoticBroker = (time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) ? (OsmoticBroker) newEntities.get(2) :  conf.newBroker();
+        if(time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) {
+            MainEventManager.addEntity(osmoticBroker);
+            osmoticBroker.setIsWakeupStartSet(false);
+            osmoticBroker.setFullInterval(time_conf.get().getBatchStart(), time_conf.get().getBatchEnd());
+        }
         MELSwitchPolicy melSwitchPolicy = MELRoutingPolicyGeneratorFacade.generateFacade(conf.mel_switch_policy);
         osmoticBroker.setMelRouting(melSwitchPolicy);
         conf.buildTopologyForSimulator(osmoticBroker);
@@ -344,7 +358,8 @@ public class OsmoticWrapper {
 
         controllers.add(conf.sdWanController);
         conductor.setSdnControllers(controllers);
-        appList = osmoticBroker.submitWorkloadCSVApps(conf.apps);
+        appList = (time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) ?  MainEventManager.deserializeAppList(name +"appList.ser") : osmoticBroker.submitWorkloadCSVApps(conf.apps);
+        osmoticBroker.setAppList(appList);
         osmoticBroker.setDatacenters(conf.conf.osmesisDatacentres);
         osmoticBroker.setDeltaVehUpdate(conf.simulation_step);
         osmoticBroker.setIoTTraces(new IoTEntityGenerator(new File(conf.iot_traces), null, conn, context));

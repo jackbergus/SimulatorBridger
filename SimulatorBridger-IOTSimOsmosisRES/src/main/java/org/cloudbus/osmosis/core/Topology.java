@@ -11,6 +11,7 @@
 
 package org.cloudbus.osmosis.core;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Hashtable;
@@ -31,7 +32,7 @@ import com.google.common.collect.Table;
  * @since BigDataSDNSim 1.0
  */
 
-public class Topology {
+public class Topology implements Serializable {
 
 	Hashtable<Integer,NetworkNIC> nodesTable;	
 	Table<Integer, Integer, Link> links; 	

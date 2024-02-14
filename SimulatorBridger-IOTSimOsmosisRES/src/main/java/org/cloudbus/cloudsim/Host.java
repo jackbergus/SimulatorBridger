@@ -7,6 +7,7 @@
 
 package org.cloudbus.cloudsim;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +29,7 @@ import org.cloudbus.cloudsim.provisioners.RamProvisioner;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public class Host implements Comparable<Host> {
+public class Host implements Comparable<Host>, Serializable {
 
 	/** The id. */
 	private int id;

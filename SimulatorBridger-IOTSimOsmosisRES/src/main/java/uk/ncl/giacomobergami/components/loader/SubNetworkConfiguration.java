@@ -17,13 +17,14 @@ import uk.ncl.giacomobergami.components.networking.VM;
 import uk.ncl.giacomobergami.utils.data.YAML;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static org.cloudbus.cloudsim.edge.utils.LogUtil.logger;
 
-public class SubNetworkConfiguration {
+public class SubNetworkConfiguration implements Serializable {
     public List<Host> hosts;
     public List<VM> vms_or_mels;
     public List<Switch> switches;

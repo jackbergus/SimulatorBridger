@@ -13,6 +13,7 @@ import org.apache.logging.log4j.Logger;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
@@ -25,7 +26,7 @@ import java.util.Map;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public abstract class VmAllocationPolicy {
+public abstract class VmAllocationPolicy implements Serializable {
 
 	protected static Logger logger = LogManager.getRootLogger();
 

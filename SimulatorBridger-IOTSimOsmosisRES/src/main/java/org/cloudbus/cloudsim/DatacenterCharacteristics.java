@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.cloudbus.cloudsim.core.MainEventManager;
@@ -27,7 +28,7 @@ import org.cloudbus.cloudsim.lists.PeList;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 1.0
  */
-public class DatacenterCharacteristics {
+public class DatacenterCharacteristics implements Serializable {
 
 	/** The resource id -- setup when Resource is created. */
 	private int id;

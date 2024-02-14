@@ -21,14 +21,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
 
-public class IoTEntityGenerator {
+public class IoTEntityGenerator implements Serializable{
     public static double lat;
     public static double endTime;
     //final TreeMap<String, IoT> timed_iots;
-    final IoTGlobalConfiguration conf;
+    transient final IoTGlobalConfiguration conf;
     static final HashSet<Double> setWUT = new HashSet<>();
-    final File converter_file = new File("clean_example/converter.yaml");
-    final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+    transient final File converter_file = new File("clean_example/converter.yaml");
+    transient final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
     final double begin = time_conf.get().getBegin();
     final double end = time_conf.get().getEnd();
     double latency = time_conf.get().getStep();

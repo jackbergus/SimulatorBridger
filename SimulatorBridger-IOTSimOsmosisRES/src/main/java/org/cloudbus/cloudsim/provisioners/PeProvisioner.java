@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.provisioners;
 
+import java.io.Serializable;
 import java.util.List;
 
 import org.cloudbus.cloudsim.Vm;
@@ -18,7 +19,7 @@ import org.cloudbus.cloudsim.Vm;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 2.0
  */
-public abstract class PeProvisioner {
+public abstract class PeProvisioner implements Serializable {
 
 	/** The mips. */
 	private double mips;

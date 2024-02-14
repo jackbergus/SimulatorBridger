@@ -24,10 +24,11 @@ import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
 
 import java.io.File;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
-public class VM {
+public class VM implements Serializable {
     public String name;
     public double bw;
     public double mips;

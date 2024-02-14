@@ -11,6 +11,8 @@
 
 package org.cloudbus.cloudsim.edge.core.edge;
 
+import java.io.Serializable;
+
 /**
  * 
  * @author Khaled Alwasel, Tomasz Szydlo
@@ -19,7 +21,7 @@ package org.cloudbus.cloudsim.edge.core.edge;
  * 
 **/
 
-public class Battery {
+public class Battery implements Serializable {
 	private double maxCapacity;
 	private double currentCapacity;
 	private double batterySensingRate;

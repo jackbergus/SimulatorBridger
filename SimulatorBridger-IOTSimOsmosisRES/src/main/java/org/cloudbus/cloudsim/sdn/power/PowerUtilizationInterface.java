@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim.sdn.power;
 
+import java.io.Serializable;
 import java.util.List;
 
 
@@ -17,7 +18,7 @@ import java.util.List;
  * @author Jungmin Son
  * @since CloudSimSDN 1.0
  */
-public interface PowerUtilizationInterface {
+public interface PowerUtilizationInterface extends Serializable {
 	public void addUtilizationEntryTermination(double terminatedTime);
 	public List<PowerUtilizationHistoryEntry> getUtilizationHisotry();
 	public double getUtilizationEnergyConsumption();

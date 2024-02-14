@@ -13,6 +13,8 @@ package org.cloudbus.cloudsim.edge.iot.network;
 
 import uk.ncl.giacomobergami.components.iot_protocol.IoTProtocol;
 
+import java.io.Serializable;
+
 /**
  * 
  * @author Khaled Alwasel
@@ -21,7 +23,7 @@ import uk.ncl.giacomobergami.components.iot_protocol.IoTProtocol;
  * 
 **/
 
-public class EdgeNetworkInfo {
+public class EdgeNetworkInfo implements Serializable {
 
     private EdgeNetwork networkType; // wifi, etc. 
     private IoTProtocol IoTProtocol; // XMPP, etc.

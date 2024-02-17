@@ -195,13 +195,12 @@ public class EdgeNetworksGenerator {
         DSLContext context = getDSLContext(conn);
 
         boolean isRSUJSON = false;
-
-
         boolean isMovingEdges = false;
+
         new EdgeNetworksGenerator(
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/rsu.csv_timed_scc.json"),
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/stats/test_rsu.json"),
                 new File("/home/giacomo/IdeaProjects/SimulatorBridger/rsu.csv_neighboursChange.json"),
-                new TimeTicker(0, 100, 1), context, false, isMovingEdges);
+                new TimeTicker(0, 100, 1), context, isRSUJSON, isMovingEdges);
     }
 }

@@ -114,7 +114,6 @@ public class JavaPostGres {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-
     }
 
     public static void emptyTABLE(Connection conn, String tableName) {
@@ -127,13 +126,27 @@ public class JavaPostGres {
         }
     }
 
+    public static void indexVEHINFORMATION(Connection conn) {
+        System.out.print("Starting indexing of vehInformation SQL table...\n");
+        PreparedStatement stmt;
+        try {
+            stmt = conn.prepareStatement("DROP INDEX CONCURRENTLY IF EXISTS mysearchIndex; CREATE INDEX mysearchIndex ON vehInformation(simtime, vehicle_id, x, y);");
+            int rs = stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.print("vehInformation SQL table indexing complete\n");
+    }
+
     public static DSLContext getDSLContext (Connection conn) {
         DSLContext context =  DSL.using(conn, SQLDialect.POSTGRES);
         return context;
     }
 
     public static void copyCSVDATA(Connection conn, String file, String origin) {
+
         origin = origin + "_import";
+
         CopyManager copyManager = null;
         try {
             copyManager = new CopyManager((BaseConnection) conn);

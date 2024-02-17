@@ -15,19 +15,20 @@ CREATE TABLE vehInformation (
 SELECT * FROM vehInformation;
 
 CREATE INDEX idx_vehInfo_simtime ON vehInformation(simtime);
+CREATE INDEX idx_vehInfo_vehIDs ON vehInformation(vehicle_id);
+CREATE INDEX mysearchIndex ON vehInformation(simtime, vehicle_id, x, y);
 
 CREATE TABLE vehInformation_import (
-	dI_entry_ID serial PRIMARY KEY,
-	angle float NOT NULL,
 	vehicle_ID VARCHAR(50) NOT NULL,
-	lane VARCHAR (50) NOT NULL,
-	pos float NOT NULL,
-	simtime float NOT NULL,
-	slope float NOT NULL,
-	speed float NOT NULL,
-	vehicle_type VARCHAR (50) NOT NULL,
-	x float NOT NULL,
-	y float NOT NULL
+    x float NOT NULL,
+    y float NOT NULL,
+    angle float NOT NULL,
+    vehicle_type VARCHAR (50) NOT NULL,
+    speed float NOT NULL,
+    pos float NOT NULL,
+    lane VARCHAR (50) NOT NULL,
+    slope float NOT NULL,
+    simtime float NOT NULL
 );
 
 SELECT * FROM vehInformation_import;

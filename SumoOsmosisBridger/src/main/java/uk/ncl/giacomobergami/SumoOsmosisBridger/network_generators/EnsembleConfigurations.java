@@ -20,7 +20,7 @@ import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 
 import javax.sql.DataSource;
-import java.io.File;
+import java.io.*;
 import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -177,7 +177,7 @@ public class EnsembleConfigurations {
         public int reset_max_vehicle_communication;
 
         public IoTEntityGenerator first() {
-            return new IoTEntityGenerator(new File(iots), new File(iot_generators));
+            return new IoTEntityGenerator(new File(iot_generators));
         }
 
         public TimeTicker ticker() {
@@ -215,9 +215,45 @@ public class EnsembleConfigurations {
         }
     }
 
+    public static List<IoTDeviceTabularConfiguration> deserializeIoTDevices(String name){
+        System.out.print("Starting Deserialization of IoT Device Config Info...\n");
+        FileInputStream is = null;
+        List<IoTDeviceTabularConfiguration> entityList;
+        try {
+            is = new FileInputStream(name);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(is);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            entityList = (List<IoTDeviceTabularConfiguration>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            ois.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            is.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.print("IoT Device Config Info Deserialization Complete\n");
+        return entityList;
+    }
+
     public List<GlobalConfigurationSettings> getTimedPossibleConfigurations(EnsembleConfigurations.Configuration conf, Connection conn, DSLContext context) {
         List<GlobalConfigurationSettings> ls = new ArrayList<>();
-        List<IoTDeviceTabularConfiguration> iotDevices = ioTEntityGenerator.asIoTSQLCongigurationList(context);
+        String name = "clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser";
+        List<IoTDeviceTabularConfiguration> iotDevices = deserializeIoTDevices("clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser");
+        //ioTEntityGenerator.asIoTSQLCongigurationList(context);
         AtomicInteger global_program_counter = new AtomicInteger(1);
         List<WorkloadCSV> globalApps = ioTEntityGenerator.generateAppSetUp(conf.simulation_step, global_program_counter);
         MEL_APP_POLICY casus = MEL_APP_POLICY.valueOf(conf.mel_app_policy);

@@ -631,53 +631,6 @@ public class MainEventManager {
 			throw new RuntimeException(e.getMessage());
 		}
 	}
-	private static void serializeHashMap(String name, HashMap object){
-		try {
-			FileOutputStream fos = new FileOutputStream(name);
-			ObjectOutputStream oos = new ObjectOutputStream(fos);
-			// write object to file
-			oos.writeObject(object);
-			//System.out.println("Done");
-			// closing resources
-			oos.close();
-			fos.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
-	}
-
-	private static void serializeHosts(String name, List<SDNHost> object){
-		try {
-			FileOutputStream fos = new FileOutputStream(name);
-			ObjectOutputStream oos = new ObjectOutputStream(fos);
-			// write object to file
-			oos.writeObject(object);
-			//System.out.println("Done");
-			// closing resources
-			oos.close();
-			fos.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
-	}
-
-	private static void serializeEdgeDataCenter(String name, List<EdgeDataCenter> object){
-		try {
-			FileOutputStream fos = new FileOutputStream(name);
-			ObjectOutputStream oos = new ObjectOutputStream(fos);
-			// write object to file
-			oos.writeObject(object);
-			//System.out.println("Done");
-			// closing resources
-			oos.close();
-			fos.close();
-		} catch (IOException e) {
-			e.printStackTrace();
-			throw new RuntimeException(e.getMessage());
-		}
-	}
 
 	private static void serializeTime(String name, double object){
 		try {
@@ -855,38 +808,6 @@ public class MainEventManager {
 		return entityList;
 	}
 
-	public static ArrayList<SDNHost> deserializeHosts(String name){
-		FileInputStream is = null;
-		ArrayList<SDNHost> entityList;
-		try {
-			is = new FileInputStream(name);
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		ObjectInputStream ois = null;
-		try {
-			ois = new ObjectInputStream(is);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			entityList = (ArrayList<SDNHost>) ois.readObject();
-		} catch (IOException | ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			ois.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			is.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		return entityList;
-	}
-
 	public static ArrayList<OsmoticAppDescription> deserializeAppList(String name){
 		FileInputStream is = null;
 		ArrayList<OsmoticAppDescription> entityList;
@@ -903,70 +824,6 @@ public class MainEventManager {
 		}
 		try {
 			entityList = (ArrayList<OsmoticAppDescription>) ois.readObject();
-		} catch (IOException | ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			ois.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			is.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		return entityList;
-	}
-
-	public static HashMap<Integer, List<Vm>> deserializeVMS(String name){
-		FileInputStream is = null;
-		HashMap<Integer, List<Vm>> entityList;
-		try {
-			is = new FileInputStream(name);
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		ObjectInputStream ois = null;
-		try {
-			ois = new ObjectInputStream(is);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			entityList = (HashMap<Integer, List<Vm>>) ois.readObject();
-		} catch (IOException | ClassNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			ois.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			is.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		return entityList;
-	}
-
-	public static HashMap<Integer, List<MEL>> deserializeMELS(String name){
-		FileInputStream is = null;
-		HashMap<Integer, List<MEL>> entityList;
-		try {
-			is = new FileInputStream(name);
-		} catch (FileNotFoundException e) {
-			throw new RuntimeException(e);
-		}
-		ObjectInputStream ois = null;
-		try {
-			ois = new ObjectInputStream(is);
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		try {
-			entityList = (HashMap<Integer, List<MEL>>) ois.readObject();
 		} catch (IOException | ClassNotFoundException e) {
 			throw new RuntimeException(e);
 		}
@@ -1364,7 +1221,7 @@ public class MainEventManager {
 		if (!running) {
 			runStart(); // Starting all of the entities that should be started!
 		}
-
+		System.out.print("Starting Simulation\n");
 		double curr = Math.floor(clock());
 		while (true) {
 			if (runClockTick(conn, context) || abruptTerminate) {

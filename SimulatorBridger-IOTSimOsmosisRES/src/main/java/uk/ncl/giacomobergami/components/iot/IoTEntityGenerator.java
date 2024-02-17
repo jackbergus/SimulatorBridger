@@ -2,14 +2,12 @@ package uk.ncl.giacomobergami.components.iot;
 
 import me.tongfei.progressbar.ProgressBar;
 import org.jooq.DSLContext;
-import org.jooq.Result;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadFromVehicularProgram;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
-import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
 
@@ -32,7 +30,8 @@ public class IoTEntityGenerator implements Serializable{
     final double begin = time_conf.get().getBegin();
     final double end = time_conf.get().getEnd();
     double latency = time_conf.get().getStep();
-    HashMap<String, TreeSet> vehicleTimes = new HashMap<String, TreeSet>();
+    private TreeSet<Double> wakeupTimes = new TreeSet<>();
+    HashMap<String, TreeSet<Double>> vehicleTimes = new HashMap<>();
 
     public static HashSet<Double> getSetWUT() {
         return setWUT;
@@ -58,8 +57,7 @@ public class IoTEntityGenerator implements Serializable{
         this.conf = conf;
     }
 
-    public IoTEntityGenerator(File iotFiles,
-                              File configuration) {
+    public IoTEntityGenerator(File configuration) {
         if (configuration != null)
             conf = YAML.parse(IoTGlobalConfiguration.class, configuration).orElseThrow();
         else
@@ -101,19 +99,59 @@ public class IoTEntityGenerator implements Serializable{
         lat = latency;
         endTime = end;
 
-        List allVehs = context.select(field("vehicle_id")).distinctOn(field("vehicle_id")).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+        String name = "clean_example\\1_traffic_information_collector_output\\WakeupTimes.ser";
+        wakeupTimes = deserializeWakeupTimes(name);
+
+        /*List<String> allVehs = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID).distinctOn(field(Vehinformation.VEHINFORMATION.VEHICLE_ID)).from(Vehinformation.VEHINFORMATION).fetchInto(Vehinformation.VEHINFORMATION).getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
         ProgressBar pb = null;
-        if(latency == 0.01) {
+        if(latency == 0.001) {
             pb = new ProgressBar("Collecting vehicle active times from SQL table", allVehs.size());
         }
-        for (int i = 0; i < allVehs.size(); i++) {
-            TreeSet timesForCurrentVehicle = new TreeSet(context.select(field("simtime")).distinctOn(field("simtime")).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVehs.get(i) + "'").fetch().getValues(0));
-            vehicleTimes.put((String) allVehs.get(i), timesForCurrentVehicle);
-            if(pb != null) {
+        for (String allVeh : allVehs) {
+            TreeSet<Double> timesForCurrentVehicle = new TreeSet<>(context.select(Vehinformation.VEHINFORMATION.SIMTIME).distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "'").fetchInto(Vehinformation.VEHINFORMATION).getValues(Vehinformation.VEHINFORMATION.SIMTIME));
+            vehicleTimes.put(allVeh, timesForCurrentVehicle);
+            if (pb != null) {
                 pb.step();
             }
         }
+        if(pb != null) {
+            pb.close();
+        }*/
         System.out.print("Vehicle Active Times Collected\n");
+    }
+
+    public static TreeSet<Double> deserializeWakeupTimes(String name){
+        System.out.print("Starting Deserialization of Wakeup Times...\n");
+        FileInputStream is = null;
+        TreeSet<Double> entityList;
+        try {
+            is = new FileInputStream(name);
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        ObjectInputStream ois = null;
+        try {
+            ois = new ObjectInputStream(is);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            entityList = (TreeSet<Double>) ois.readObject();
+        } catch (IOException | ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            ois.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            is.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.print("IoT Device Config Info Deserialization Complete\n");
+        return entityList;
     }
 
     /*private TreeMap<String, IoT> readLargeJson(String path) throws IOException {
@@ -423,21 +461,15 @@ public class IoTEntityGenerator implements Serializable{
         for (double i = begin; i <= end; i = i + latency) {
             setWUT.add((double) Math.round(i * 1000) / 1000);
         }
-        for (int j = 0; j < vehicleTimes.size(); j++) {
+        setWUT.addAll(wakeupTimes);
+        /*for (int j = 0; j < vehicleTimes.size(); j++) {
             setWUT.addAll((Collection<? extends Double>) vehicleTimes.values().toArray()[j]);
-        }
+        }*/
         System.out.print("Wake Up Times Collected\n");
         return setWUT;
     }
 
-    public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
-                                double[] currentPosition, double[] expectedPosition) {
-
-        /*if(currentPosition[0] == -1) {
-            toUpdateWithTime.transmit = false;
-            return;
-        }*/
-
+    public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,double[] currentPosition, double[] expectedPosition) {
         toUpdateWithTime.transmit = true;
         toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];
         toUpdateWithTime.mobility.range.beginY = (int) currentPosition[1];
@@ -529,25 +561,26 @@ public class IoTEntityGenerator implements Serializable{
         return allVehs.size();
     }
 
-    public List<IoTDeviceTabularConfiguration> asIoTSQLCongigurationList(DSLContext context) {
+    /*public List<IoTDeviceTabularConfiguration> asIoTSQLCongigurationList(DSLContext context) {
         System.out.print("Starting IoT from SQL Configuration...\n");
         List<IoTDeviceTabularConfiguration> IDTCList = new ArrayList<>();
-        List<?> allVehs = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID).distinctOn(Vehinformation.VEHINFORMATION.VEHICLE_ID).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+        List<String> allVehs = (List<String>) context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID).distinctOn(Vehinformation.VEHINFORMATION.VEHICLE_ID).from(Vehinformation.VEHINFORMATION).fetch().getValues(0);
+
         ProgressBar pb = null;
         if(latency == 0.001) {
             pb = new ProgressBar("Collecting IoT device info from SQL table", allVehs.size());
         }
-        for (Object allVeh : allVehs) {
-            List timesForCurrentVehicle = context.select(Vehinformation.VEHINFORMATION.SIMTIME).distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "'").fetchInto(Vehinformation.VEHINFORMATION).getValues(Vehinformation.VEHINFORMATION.SIMTIME);
+        for (String allVeh : allVehs) {
+            List<Double> timesForCurrentVehicle = context.select(Vehinformation.VEHINFORMATION.SIMTIME).distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "'").fetchInto(Vehinformation.VEHINFORMATION).getValues(Vehinformation.VEHINFORMATION.SIMTIME);
             int endPoint = timesForCurrentVehicle.size() > 1 ? 1 : 0;
-            Result<VehinformationRecord> thisVehicleBeginInfo = context.select(Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SPEED).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").fetchInto(Vehinformation.VEHINFORMATION);
-            Result<VehinformationRecord> thisVehicleEndInfo = endPoint == 0 ? thisVehicleBeginInfo : context.select(Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "' AND simtime = '" + timesForCurrentVehicle.get(endPoint) + "'").fetchInto(Vehinformation.VEHINFORMATION);
-            IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
+            Result<VehinformationRecord> thisVehicleBeginInfo = context.select(Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SPEED).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "' AND simtime = '" + timesForCurrentVehicle.get(0) + "'").limit(1).fetchInto(Vehinformation.VEHINFORMATION);
+             IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
             idtc.beginX = (int) Math.floor(thisVehicleBeginInfo.getValues(Vehinformation.VEHINFORMATION.X).get(0));
             idtc.beginY = (int) Math.floor(thisVehicleBeginInfo.getValues(Vehinformation.VEHINFORMATION.Y).get(0));
             idtc.movable = !timesForCurrentVehicle.isEmpty();
             if (idtc.movable) {
                 idtc.hasMovingRange = true;
+                Result<VehinformationRecord> thisVehicleEndInfo = endPoint == 0 ? thisVehicleBeginInfo : context.select(Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y).from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + allVeh + "' AND simtime = '" + timesForCurrentVehicle.get(endPoint) + "'").limit(1).fetchInto(Vehinformation.VEHINFORMATION);
                 idtc.endX = (int) Math.floor(thisVehicleEndInfo.getValues(Vehinformation.VEHINFORMATION.X).get(0));
                 idtc.endY = (int) Math.floor(thisVehicleEndInfo.getValues(Vehinformation.VEHINFORMATION.Y).get(0));
             }
@@ -572,7 +605,7 @@ public class IoTEntityGenerator implements Serializable{
         }
         System.out.print("IoT from SQL Configuration Completed\n");
         return IDTCList;
-    }
+    }*/
 
     /*public List<IoTDeviceTabularConfiguration> asIoTJSONConfigurationList() {
 

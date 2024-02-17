@@ -2,21 +2,16 @@ package uk.ncl.giacomobergami.traffic_converter.abstracted;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import me.tongfei.progressbar.ProgressBar;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jooq.BatchBindStep;
 import org.jooq.DSLContext;
-import org.postgresql.copy.CopyManager;
-import org.postgresql.core.BaseConnection;
 import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.algorithms.StringComparator;
 import uk.ncl.giacomobergami.utils.algorithms.Tarjan;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Neighbourschange;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
-import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
-import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdgeMediator;
@@ -25,29 +20,29 @@ import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoTMediator;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.StraightforwardAdjacencyList;
 
-import javax.sql.DataSource;
-import java.io.*;
+import java.io.File;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
+
 
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public abstract class TrafficConverter {
 
     private final String RSUCsvFile;
-    private final String vehicleCSVFile;
+    protected final String vehicleCSVFile;
     private final TrafficConfiguration conf;
-    private final Gson gson;
     protected TimedEdgeMediator rsum;
     protected TimedIoTMediator vehm;
     protected CSVMediator<TimedEdge>.CSVWriter rsuwrite;
     protected CSVMediator<TimedIoT>.CSVWriter vehwrite;
     private static Logger logger = LogManager.getRootLogger();
+    private static Gson gson;
 
     public TrafficConverter(TrafficConfiguration conf) {
         logger.info("=== TRAFFIC CONVERTER ===");
@@ -85,11 +80,12 @@ public abstract class TrafficConverter {
         TreeMap<Double, Map<String, List<String>>> timedNodeAdjacency = new TreeMap<>();
         HashSet<String> allTlsS = new HashSet<>();
         ArrayList<TimedEdge> timedEdgeFullSet = new ArrayList<>();
+        System.out.print("Starting collection and upload of traffic information to SQL database...\n");
         for (Double tick : timeUnits) {
             // Writing IoT Devices
-            if(conf.isOutputVehicleCsvFile()) {
+            /*if(conf.isOutputVehicleCsvFile()) {
                 getTimedIoT(tick).forEach(this::writeTimedIoT);
-            }
+            }*/
             // Getting all of the IoT Devices
             HashSet<TimedEdge> allEdgeNodes = getTimedEdgeNodes(tick);
             allEdgeNodes.forEach(x -> {
@@ -121,19 +117,21 @@ public abstract class TrafficConverter {
             e.printStackTrace();
             return false;
         }
-        closeWritingTimedIoT();
+        //closeWritingTimedIoT();
         closeWritingTimedEdge();
         logger.trace("Transferring results to SQL Database...");
-        write_to_SQL(conn, context, getAllTimedIoT(), true, timedEdgeFullSet, true, sccPerTimeComponent, true, delta_network_neighbours, true);
+        write_to_SQL(conn, context,  true, true, sccPerTimeComponent, true, delta_network_neighbours, true);
         logger.trace("quitting...");
         endReadSimulatorOutput();
+        System.out.print("Traffic information uploaded to SQL database\n");
         logger.info("=========================");
         return true;
     }
 
-    protected void write_to_SQL(Connection conn, DSLContext context, Object TimedIoTData, boolean deleteIoTSQLData, Object TimedEdgeData, boolean deleteEdgeSQLData, Object Timed_SCCData, boolean deleteTimed_SCCData, Object NeighbourData, boolean deleteNeighbourData) {
+    protected void write_to_SQL(Connection conn, DSLContext context, boolean deleteIoTSQLData, boolean deleteEdgeSQLData, Object Timed_SCCData, boolean deleteTimed_SCCData, Object NeighbourData, boolean deleteNeighbourData) {
         if (deleteIoTSQLData) emptyTABLE(conn, "vehInformation");
         INSERTTimedIoTData(conn);
+        indexVEHINFORMATION(conn);
         emptyTABLE(conn, "vehInformation_import");
         if (deleteEdgeSQLData) emptyTABLE(conn, "rsuInformation");
         INSERTTimedEdgeData(conn);

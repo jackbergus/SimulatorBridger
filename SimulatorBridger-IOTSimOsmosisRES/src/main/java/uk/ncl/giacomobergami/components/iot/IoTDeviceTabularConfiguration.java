@@ -6,12 +6,14 @@ import org.cloudbus.cloudsim.edge.core.edge.Mobility;
 import uk.ncl.giacomobergami.components.networking.Host;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
 
+import java.io.Serializable;
+
 @JsonPropertyOrder({"name", "ioTClassName", "bw", "pesNumber", "movable", "hasMovingRange", "beginX", "beginY", "z", "endX", "endY", "velocity", "totalMovingDistance", "signalRange",
         "initial_battery_capacity", "battery_voltage", "max_battery_capacity", "battery_sensing_rate", "max_charging_current",
         "battery_sending_rate", "res_powered", "solar_peak_power"
         ,"communicationProtocol", "networkType", "data_frequency", "dataGenerationTime", "complexityOfDataPackage", "dataSize", "processingAbility",
 "cloudletId", "cloudletLength", "cloudletFileSize", "cloudletOutputSize", "utilizationModelCpu", "utilizationModelRam", "utilizationModelBw", "associatedEdge"})
-public class IoTDeviceTabularConfiguration {
+public class IoTDeviceTabularConfiguration implements Serializable {
     public String name;
     public double bw;
     public double max_battery_capacity;

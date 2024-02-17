@@ -112,7 +112,6 @@ public class OsmoticBroker extends DatacenterBroker {
 	public static HashMap<String, Integer> activePerSource = new HashMap<>();
 	private static TreeSet<SimEvent> waitQueue = new TreeSet<>();
 	protected static HashMap<String, Float> edgeToCloudBandwidth = new HashMap<>();
-	public static HashMap<String, Float> getEdgeToCloudBandwidth() { return edgeToCloudBandwidth; }
 	public static void updateEdgeTOCloudBandwidth(String id, float bw) {
 		edgeToCloudBandwidth.replace(id, bw);
 	}
@@ -133,13 +132,11 @@ public class OsmoticBroker extends DatacenterBroker {
 		this.startTime = startTime;
 		this.endTime = endTime;
 	}
-	private final int collectionInterval = (int) Math.min(1, endTime);
-	private int collectSQLInfo = (int) startTime / collectionInterval;
-	private int intervalStart = (int) Math.floor(startTime);
-	private int intervalEnd = intervalStart + collectionInterval;
+	private final double collectionInterval = /*(int)*/ Math.min(Math.max(0.01, deltaVehUpdate), endTime);
+	private double collectSQLInfo = /*(int)*/ startTime / collectionInterval;
+	private double intervalStart = /*(int)*/ Math.floor(startTime);
+	private double intervalEnd = intervalStart + collectionInterval;
 	private transient Result<VehinformationRecord> dataRange = null;
-	//private Result<Record4<String, Double, Double, Double>> dataNowRange = null;
-	//private Result<Record4<String, Double, Double, Double>> dataFutureRange = null;
 	private transient ProgressBar pb = null;
 	private double lastTime = 0;
 	private final double[] notUpdated = new double[]{-1.0, -1.0};
@@ -156,8 +153,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		super(name);
 		this.edgeLetId = edgeLetId;
 		this.flowId = flowId;
-		String pathname = time_conf.get().getQueueFilePath();
-		this.appList = new ArrayList<>();
+		appList = new ArrayList<>();
 		brokerID = this.getId();
 		isWakeupStartSet = false;
 		if(time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) {
@@ -208,13 +204,13 @@ public class OsmoticBroker extends DatacenterBroker {
 			double future = now + (2 * deltaVehUpdate);
 			lastTime = now;
 
-			if (collectSQLInfo == (int) now / collectionInterval) {
+			if (collectSQLInfo <= now) {
 				//System.out.print("Collecting new batch of vehicle information from SQL table...\n");
 				//dataNowRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min((double) intervalEnd, endSUMO) + "'").orderBy(field("simtime")).fetch();
 				//dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + ((double) intervalStart + (2 * deltaVehUpdate)) + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endSUMO) + "'").orderBy(field("simtime")).fetch();
 				dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endTime) + "'").orderBy(field("simtime")).fetchInto(Vehinformation.VEHINFORMATION);
 				vehsToUpdate = dataRange.getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
-				collectSQLInfo++;
+				collectSQLInfo += collectionInterval;
 				intervalStart += collectionInterval;
 				intervalEnd += collectionInterval;
 				//System.out.print("Batch collected from SQL table\n");

@@ -42,7 +42,7 @@ public class MainExample {
         context.setConfigLocation(file.toURI());
     }
 
-    public static void main(String args[]) {
+    public static void main(String[] args) {
 
         DataSource dataSource = createDataSource();
         Connection conn = ConnectToSource(dataSource);
@@ -148,6 +148,7 @@ public class MainExample {
                     var configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3, conn, context);
 
                     for (GlobalConfigurationSettings globalConfigurationSettings : configuration_for_each_network_change) {
+                        System.out.print("Starting Running from Configuration\n");
                         OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context);
                     }
                 }

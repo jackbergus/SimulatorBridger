@@ -111,16 +111,12 @@ public class Channel implements Serializable {
 			return false; //nothing changed
 		
 		boolean isChanged = this.updateFlowProcessing();
-
 		this.allocatedBandwidth = newBandwidth;
-		var name = this.nodes.toArray()[1];
 
 		this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
 		if(!this.inTransmission.isEmpty()) {
-			//this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
 			var choice = DataCenterWithController.getLimiting();
 			var change = choice.equals("MEL") ? this.inTransmission.getFirst().getWorkflowTag().getIotDeviceFlow().getAppNameDest() : this.inTransmission.getFirst().getAppNameSrc();
-
 			OsmoticBroker.updateEdgeTOCloudBandwidth(change, (float) this.allocatedBandwidth);
 		}
 		return isChanged;

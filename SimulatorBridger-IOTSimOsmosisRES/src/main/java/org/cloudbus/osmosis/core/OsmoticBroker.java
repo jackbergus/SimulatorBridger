@@ -110,8 +110,9 @@ public class OsmoticBroker extends DatacenterBroker {
 	public static  int getEventMapSize(){return eventMap.size();}
 	public static TreeMap<SimEvent, String> getEventMap() {return eventMap; }
 	public static HashMap<String, Integer> activePerSource = new HashMap<>();
-	private static TreeSet<SimEvent> waitQueue = new TreeSet<>();
+	private static final HashSet<SimEvent> waitQueue = new HashSet<>();
 	protected static HashMap<String, Float> edgeToCloudBandwidth = new HashMap<>();
+	private final int limit = DataCenterWithController.getCommunication_limit() == 0 ? Integer.MAX_VALUE : DataCenterWithController.getCommunication_limit();
 	public static void updateEdgeTOCloudBandwidth(String id, float bw) {
 		edgeToCloudBandwidth.replace(id, bw);
 	}
@@ -132,7 +133,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		this.startTime = startTime;
 		this.endTime = endTime;
 	}
-	private final double collectionInterval = /*(int)*/ Math.min(Math.max(0.01, deltaVehUpdate), endTime);
+	private final double collectionInterval = /*(int)*/ Math.min(Math.max(deltaVehUpdate, 0.05), endTime);
 	private double collectSQLInfo = /*(int)*/ startTime / collectionInterval;
 	private double intervalStart = /*(int)*/ Math.floor(startTime);
 	private double intervalEnd = intervalStart + collectionInterval;
@@ -141,7 +142,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	private double lastTime = 0;
 	private final double[] notUpdated = new double[]{-1.0, -1.0};
 	private List<String> vehsToUpdate = null;
-	private final float maxEdgeBW = 100;
+	private final float maxEdgeBW = 100; 
 	public transient Collection<Double> wakeUpTimes;
 
 
@@ -182,15 +183,17 @@ public class OsmoticBroker extends DatacenterBroker {
 
 		// Setting up the forced times when the simulator has to wake up, as new messages have to be sent
 		if (!isWakeupStartSet) {
+			System.out.print("Collecting Wakeup Times...\n");
 			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes();
 			for (Double forcedWakeUpTime :
 					wakeUpTimes) {
 				double time = forcedWakeUpTime - chron;
-				if (time > 0.0 && chron + getDeltaVehUpdate() <= endTime) {
+				if (time > 0.0 && chron + deltaVehUpdate <= endTime) {
 					schedule(OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);
 				}
 			}
 			isWakeupStartSet = true;
+			System.out.print("Wakeup Times Collected\n");
 		}
 
 		if (ev.getTag() == MAPE_WAKEUP_FOR_COMMUNICATION) {
@@ -205,19 +208,14 @@ public class OsmoticBroker extends DatacenterBroker {
 			lastTime = now;
 
 			if (collectSQLInfo <= now) {
-				//System.out.print("Collecting new batch of vehicle information from SQL table...\n");
-				//dataNowRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min((double) intervalEnd, endSUMO) + "'").orderBy(field("simtime")).fetch();
-				//dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + ((double) intervalStart + (2 * deltaVehUpdate)) + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endSUMO) + "'").orderBy(field("simtime")).fetch();
-				dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endTime) + "'").orderBy(field("simtime")).fetchInto(Vehinformation.VEHINFORMATION);
+				dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endTime) + "'").orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
 				vehsToUpdate = dataRange.getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
 				collectSQLInfo += collectionInterval;
 				intervalStart += collectionInterval;
 				intervalEnd += collectionInterval;
-				//System.out.print("Batch collected from SQL table\n");
 			}
 
-            var Times = dataRange.getValues(Vehinformation.VEHINFORMATION.SIMTIME);//dataRange.getValues(3);
-			//var nowTimes = Times; //dataNowRange.getValues(3);
+            var Times = dataRange.getValues(Vehinformation.VEHINFORMATION.SIMTIME);
 			HashMap<String, double[]> nowData = new HashMap<>();
 			var nowFirst = Times.indexOf(now);
 			var nowLast = Times.lastIndexOf(now);
@@ -237,9 +235,6 @@ public class OsmoticBroker extends DatacenterBroker {
 					futureData.put(name, futurePos);
 				}
 
-				//var dataNow = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + now + "'").fetch();
-				//var dataFuture = context.select(field("vehicle_id"), field("x"), field("y")).from(Vehinformation.VEHINFORMATION).where("simtime = '" + future + "'").fetch();
-
 				// Updates the IoT Device with the geo-location information
 				for (int i = 0; i < nowData.keySet().size(); i++) {
 					String id = (String) nowData.keySet().toArray()[i];
@@ -250,14 +245,7 @@ public class OsmoticBroker extends DatacenterBroker {
 				}
 			}
 
-			/*iotDeviceNameToObject.forEach((id, obj) -> {
-				double[] nowDouble = nowData.containsKey(id) ? nowData.get(id) : notUpdated;				//double[] nowDouble = dataNow.getValues(0).indexOf(id) == -1 ? new double[]{-1.0, -1.0} : new double[]{(double) dataNow.getValue(dataNow.getValues(0).indexOf(id), 1), (double) dataNow.getValue(dataNow.getValues(0).indexOf(id), 2)};
-				double[] futureDouble = futureData.containsKey(id) ? futureData.get(id) : notUpdated;
-				//double[] futureDouble = dataFuture.getValues(0).indexOf(id) == -1 ? new double[]{-1.0, -1.0} : new double[]{(double) dataFuture.getValue(dataFuture.getValues(0).indexOf(id), 1), (double) dataFuture.getValue(dataFuture.getValues(0).indexOf(id), 2)};
-				ioTEntityGenerator.updateIoTDevice(obj, nowDouble, futureDouble);
-			});*/
-
-			if (deltaVehUpdate == 0.001 && now >= 1.0) {
+			/*if (deltaVehUpdate == 0.001 && now >= 1.0) {
 				if (now % 1 == 0) {
 					if (pb != null) {
 						pb.stepTo(1000L);
@@ -265,7 +253,7 @@ public class OsmoticBroker extends DatacenterBroker {
 					pb = new ProgressBar("Progress to second " + Math.ceil(now + 1) + " of simtime", 1000L);
 				}
 				pb.step();
-			}
+			}*/
 			//Update simulation time in the AgentBroker
 			ab.updateTime(chron, vehsToUpdate);
 			//Execute MAPE loop at time interval
@@ -415,23 +403,20 @@ public class OsmoticBroker extends DatacenterBroker {
 		} catch (RocksDBException e) {
 			throw new RuntimeException(e);
 		}*/
+		/*if(limit == Integer.MAX_VALUE) {
+			askMelToSendDataToCloud(ev);
+		}*/
 
 		float maxEdgeBW = 100;
-		int messageSize = (int) this.getAppById(1).getMELOutputSize();
-
 		change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
 
 		edgeToCloudBandwidth.putIfAbsent(change, maxEdgeBW);
 		activePerSource.putIfAbsent(change, 0);
 		eventQueue.add(ev);
 
-		float bw = edgeToCloudBandwidth.get(change);
-		int limit = DataCenterWithController.getCommunication_limit() == 0 ? Integer.MAX_VALUE : DataCenterWithController.getCommunication_limit();
-		/*if(activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName()) < limit) {
-			limit = bw >= messageSize ? Integer.MAX_VALUE : 10;
-		}*/
+		//float bw = edgeToCloudBandwidth.get(change);
 
-		var toDelete = new TreeSet<SimEvent>();
+		var toDelete = new HashSet<SimEvent>();
 		for (var x : eventQueue) {
 			var streamMEL = choice.equals("MEL") ? ((EdgeLet) x.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) x.getData()).getOsmesisAppId()).getMELName();
 			if (eventMap.values().stream().filter(v -> v.equals(streamMEL)).count() < limit) {
@@ -444,11 +429,6 @@ public class OsmoticBroker extends DatacenterBroker {
 
 		while(!eventMap.isEmpty()) {
 			SimEvent newEv = eventMap.entrySet().iterator().next().getKey();
-			var dest = ((EdgeLet) newEv.getData()).getWorkflowTag().getEdgeLet().getWorkflowTag().getIotDeviceFlow().getAppNameDest();
-			//bw = edgeToCloudBandwidth.get(dest);
-			/*if(bw > (float) messageSize / 2) {
-				limit = 1;
-			}*/
 			change = choice.equals("MEL") ? ((EdgeLet) newEv.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) newEv.getData()).getOsmesisAppId()).getMELName();
 			eventMap.remove(newEv, change);
 			if (activePerSource.get(change) < limit) {
@@ -458,11 +438,13 @@ public class OsmoticBroker extends DatacenterBroker {
 			}
 		}
 
-		for (var x : waitQueue) {
+		eventQueue.addAll(waitQueue);
+		waitQueue.clear();
+		/*for (var x : waitQueue) {
 			eventQueue.add(x);
 			toDelete.add(x);
 		}
-		waitQueue.removeAll(toDelete);
+		waitQueue.removeAll(toDelete);*/
 	}
 
 	private void askMelToProccessData(SimEvent ev) {
@@ -486,7 +468,6 @@ public class OsmoticBroker extends DatacenterBroker {
 		EdgeLet edgeLet = new EdgeLet(edgeLetId.getAndIncrement(), length, 1, fileSize, outputSize, new UtilizationModelFull(), new UtilizationModelFull(),
 				new UtilizationModelFull());
 		edgeLet.setUserId(this.getId());
-//		LegacyTopologyBuilder.edgeLetId++;
 		return edgeLet;
 	}
 

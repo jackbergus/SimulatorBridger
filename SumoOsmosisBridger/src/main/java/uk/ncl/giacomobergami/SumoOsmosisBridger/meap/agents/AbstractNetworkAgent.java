@@ -252,15 +252,15 @@ public class AbstractNetworkAgent extends AbstractAgent {
                         throw new RuntimeException("We are expecting the opposite, that the mined paths are less than the expected ones");
                     }
                     for (var v : devices.entrySet()) {
-                        if (computedIoTPaths.contains(v.getKey())) continue; // I am not re-computing the paths that were computed before
-                        var iotDeviceId = name_to_id.get(v.getKey());
+                        if (computedIoTPaths.contains(iot_prefix + v.getKey())) continue; // I am not re-computing the paths that were computed before
+                        var iotDeviceId = name_to_id.get(iot_prefix + v.getKey());
                         algorithm.bellman_ford_moore(iotDeviceId);
                         var p = algorithm.map.get(new ImmutablePair<>(iotDeviceId, bogusDst));
                         if (p == null) {
-                            throw new RuntimeException("There should always be a path for the device towards the bogus destination! " + v.getKey()+ " with id  "+ iotDeviceId);
+                            throw new RuntimeException("There should always be a path for the device towards the bogus destination! " + iot_prefix + v.getKey()+ " with id  "+ iotDeviceId);
                         }
                         var pp = p.stream().map(id_to_name::get).collect(Collectors.toList());
-                        paths.put(v.getKey(), pp);
+                        paths.put(iot_prefix + v.getKey(), pp);
                     }
                     if ((paths.size() != niot)) {
                         throw new RuntimeException("That should have fixed the problem! " + paths.size()+ " vs "+ niot);
@@ -283,17 +283,21 @@ public class AbstractNetworkAgent extends AbstractAgent {
                         int j = 0;
                         int min=Integer.MAX_VALUE;
                         String[] array = new String[iotPath.size()];
+                        iotPath = iotPath.stream().filter(Objects::nonNull).collect(Collectors.toList());
 
                         //reversing the strings and finding the length of smallest string
                         for(i=0;i<(iotPath.size());i++)  {
-                            if(iotPath.get(i).length()<min)
-                                min=iotPath.get(i).length();
-                            StringBuilder input1 = new StringBuilder();
-                            input1.append(iotPath.get(i));
-                            array[i] = input1.reverse().toString();
+                            if(iotPath.get(i) != null) {
+                                if (iotPath.get(i).length() < min)
+                                    min = iotPath.get(i).length();
+                                StringBuilder input1 = new StringBuilder();
+                                input1.append(iotPath.get(i));
+                                array[i] = input1.reverse().toString();
+                            }
                         }
 
                         //finding the length of longest suffix
+                        array = Arrays.stream(array).filter(Objects::nonNull).toArray(String[]::new);
                         for(i=0;i<min;i++) {
                             for(j=1;j<(array.length);j++)
                                 if(array[j].charAt(i)!=array[j-1].charAt(i))
@@ -304,7 +308,7 @@ public class AbstractNetworkAgent extends AbstractAgent {
 
                     var tmp = nodeType.get(iotPath.get(0));
                     if (tmp == null)
-                        throw new RuntimeException("Expected that the network contained the node " +iotPath.get(0));
+                        throw new RuntimeException("Expected that the network contained the node " + iotPath.get(0));
                     var y = (CartesianPoint) nodeType.get(iotPath.get(0)).getVal2().getHost();
                     substring_starts_at = i;
                     network = iotPath.get(0).substring(iotPath.get(0).length()-substring_starts_at);
@@ -320,7 +324,7 @@ public class AbstractNetworkAgent extends AbstractAgent {
                         iotPath.set(i,  replaceLast(iotPath.get(i), "@"+network, ""));
                     }
                     var iotConnectToMel = "@"+iotPath.get(0); // Correct specification, determining the precise host
-                    //iotPath.get(0)+".*"; Old, uncorrect specification
+                    //iotPath.get(0)+".*"; Old, incorrect specification
 
                     // Setting the path to the IoT Device
                     paths_for_network.put(network, iotPath);
@@ -351,6 +355,4 @@ public class AbstractNetworkAgent extends AbstractAgent {
             }
         }
     }
-
-
 }

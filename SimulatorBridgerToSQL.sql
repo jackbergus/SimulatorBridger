@@ -20,18 +20,20 @@ CREATE INDEX mysearchIndex ON vehInformation(simtime, vehicle_id, x, y);
 
 CREATE TABLE vehInformation_import (
 	vehicle_ID VARCHAR(50) NOT NULL,
-    x float NOT NULL,
-    y float NOT NULL,
-    angle float NOT NULL,
-    vehicle_type VARCHAR (50) NOT NULL,
-    speed float NOT NULL,
-    pos float NOT NULL,
-    lane VARCHAR (50) NOT NULL,
-    slope float NOT NULL,
-    simtime float NOT NULL
+	x float NOT NULL,
+	y float NOT NULL,
+	angle float NOT NULL,
+	vehicle_type VARCHAR (50) NOT NULL,
+	speed float NOT NULL,
+	pos float NOT NULL,
+	lane VARCHAR (50) NOT NULL,
+	slope float NOT NULL,
+	simtime float NOT NULL
 );
 
 SELECT * FROM vehInformation_import;
+
+
 
 CREATE TABLE rsuInformation (
 	unique_entry_ID serial PRIMARY KEY,

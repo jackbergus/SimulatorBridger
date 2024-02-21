@@ -216,7 +216,7 @@ public class OsmosisOrchestrator extends SimEntity {
 	}
 	
 	private Channel removeChannel(String key) {
-		Channel data = channelTable.get("232-8-24");
+		//Channel data = channelTable.get("232-8-24");
 		Channel ch = this.channelTable.remove(key);		
 		ch.terminate();
 		adjustAllChannels();
@@ -238,7 +238,6 @@ public class OsmosisOrchestrator extends SimEntity {
 				removeCh.add(key);
 			}
 		}
-		
 		for(String key:removeCh) {
 			removeChannel(key);
 		}
@@ -277,7 +276,6 @@ public class OsmosisOrchestrator extends SimEntity {
 	private double nextFinishTime() {
 		double earliestEft = Double.POSITIVE_INFINITY;
 		for(Channel ch:channelTable.values()){
-			
 			double eft = ch.nextFinishTime();
 			if (eft<earliestEft){
 				earliestEft=eft;

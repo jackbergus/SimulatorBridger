@@ -30,8 +30,8 @@ public class MainExample {
     private static final String converter_out_RSUCsvFile = "rsu.csv";
     private static final String converter_out_VehicleCsvFile = "vehicle.csv";
     private static final String orchestrator_out = "2_central_agent_oracle_output";
-    private static final String orchestrator_out_rsujsonFile = "rsu.json";
-    private static final String orchestrator_out_vehiclejsonFile = "vehicle.json";
+    private static final String orchestrator_out_rsuJsonFile = "rsu.json";
+    private static final String orchestrator_out_vehicleJsonFile = "vehicle.json";
     private static final String orchestrator_out_output_stats_folder = "stats";
     private static final String orchestrator_out_output_experiment_name = "test";
     private static final String final_out = "3_extIOTSim_output";
@@ -105,8 +105,8 @@ public class MainExample {
                 }
                 x.RSUCsvFile = y.RSUCsvFile;
                 x.vehicleCSVFile = y.VehicleCsvFile;
-                x.RSUJsonFile = new File(output_folder_2, orchestrator_out_rsujsonFile).getAbsolutePath();
-                x.vehiclejsonFile = new File(output_folder_2, orchestrator_out_vehiclejsonFile).getAbsolutePath();
+                x.RSUJsonFile = new File(output_folder_2, orchestrator_out_rsuJsonFile).getAbsolutePath();
+                x.vehiclejsonFile = new File(output_folder_2, orchestrator_out_vehicleJsonFile).getAbsolutePath();
                 x.output_stats_folder = new File(output_folder_2, orchestrator_out_output_stats_folder).getAbsolutePath();
                 x.experiment_name = orchestrator_out_output_experiment_name;
                 PreSimulatorEstimator conv2 = null;

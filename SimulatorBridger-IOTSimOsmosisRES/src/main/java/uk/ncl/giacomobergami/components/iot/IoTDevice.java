@@ -66,6 +66,10 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	private TreeMap<Double, Integer> actionToFlowId = new TreeMap<>();
 	private HashMap<Integer, Double> flowIdCreationTime = new HashMap<>();
 	private HashSet<Integer> AppIDs = new HashSet<>();
+	private transient File converter_file = new File("clean_example/converter.yaml");
+	private transient Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+	private transient double beginSUMO = time_conf.get().getBegin();
+	private transient double endSUMO = time_conf.get().getEnd();
 
 	public Map<Double, Double> getTrustworthyConsumption() { return consumptionInTime; }
 
@@ -286,10 +290,6 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		int appId = -1;
 		boolean doIncrementPacketSent = flowId != -1;
 		int increment = 1;
-		File converter_file = new File("clean_example/converter.yaml");
-		Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
-		double beginSUMO = time_conf.get().getBegin();
-		double endSUMO = time_conf.get().getEnd();
 
 		if(MainEventManager.clock() > endSUMO) {
 			MainEventManager.cancelAll(getId(), MainEventManager.SIM_ANY);

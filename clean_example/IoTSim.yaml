@@ -3,7 +3,7 @@ IoTMultiplicityForVMs:           3
 global_simulation_terminate:
 start_time:                      "20160901:0000"
 start_vehicle_time:              0.0   #dynamically defined: clean_example/1_traffic_information_collector_configuration/converter.yaml, begin
-simulation_step:                 0.001 #dynamically defined: clean_example/1_traffic_information_collector_configuration/converter.yaml, step
+simulation_step:                 0.075 #dynamically defined: clean_example/1_traffic_information_collector_configuration/converter.yaml, step
 end_vehicle_time:                125   #dynamically defined: clean_example/1_traffic_information_collector_configuration/converter.yaml, end
 only_one_mel_per_edge_network:   no
 mel_routing_policy:              "uk.ncl.giacomobergami.SumoOsmosisBridger.osmotic.mel_routing.MELDelegatedHost"           # MEL switch policy

@@ -27,7 +27,7 @@ hosts_and_vms:
   vm_storage:                     10000
 network_configuration:
   limiting:                       "MEL"          #limits either per "edge", or per "MEL"
-  communication_limit:            0             #integer value; a limit of 0 means no limit is used, as does Integer.MAX_VALUE
+  communication_limit:            3             #integer value; a limit of 0 means no limit is used, as does Integer.MAX_VALUE
   scheduling_interval:            1.0
   datacenter_name:                                #defined dynamically
   datacenter_type:                "edge"
@@ -42,4 +42,4 @@ network_configuration:
   datacenter_costPerBw:           0.0
   controller_name:                                #defined dynamically "edge1_sdn1"
   controller_trafficPolicy:       "uk.ncl.giacomobergami.components.sdn_traffic.SDNTrafficPolicyFairShare"
-  controller_routingPolicy:       "uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingTraditionalShortestPath" #"uk.ncl.giacomobergami.components.sdn_routing.MaximumFlowRoutingPolicy"
+  controller_routingPolicy:       "uk.ncl.giacomobergami.components.sdn_routing.MaximumFlowRoutingPolicy" #"uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingTraditionalShortestPath" #"uk.ncl.giacomobergami.components.sdn_routing.MaximumFlowRoutingPolicy"

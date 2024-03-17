@@ -49,7 +49,7 @@ public class MainExample {
         DSLContext context = getDSLContext(conn);
 
         boolean generate = false;
-        boolean step1 = true;
+        boolean step1 = false;
         boolean step2 = false;
         boolean step3 = true;
 
@@ -64,6 +64,7 @@ public class MainExample {
         String converter = "clean_example/converter.yaml";
         String orchestrator = "clean_example/orchestrator.yaml";
         String simulator_runner = "clean_example/IoTSim.yaml";
+
         if (args.length >= 3) {
             converter = args[0];
             orchestrator = args[1];

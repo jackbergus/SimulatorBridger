@@ -40,6 +40,10 @@ import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELRoutingPolicyGeneratorFacade;
 import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
+import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
+import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
+import uk.ncl.giacomobergami.components.routing_algorithm.RoutingAlgorithmGeneratorFactory;
+import uk.ncl.giacomobergami.components.routing_algorithm.routing_algorithms;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
@@ -69,6 +73,7 @@ public class OsmoticWrapper {
     List<PrintResults.BandwidthInfo> bandwidthInfoList;
     private static final File converter_file = new File("clean_example/converter.yaml");
     private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+    private static final String RA = time_conf.get().getRoutingAlgorithm();
 
 
 
@@ -130,7 +135,7 @@ public class OsmoticWrapper {
         Calendar calendar = Calendar.getInstance();
 
         // Getting configuration from json and entering classes to Agent Broker
-        if (agentBrokerageInitFails()) return init;
+        if (agentBrokerageInitFails(RA)) return init;
 
         allocateOrClearDataStructures(calendar);
 
@@ -182,7 +187,7 @@ public class OsmoticWrapper {
      * This part only initializes the AgentBrokering architecture, and not the actual simulator.
      * @return
      */
-    private boolean agentBrokerageInitFails() {
+    private boolean agentBrokerageInitFails(String RA) {
         if (fileExists(conf.AGENT_CONFIG_FILE) != null) {
             // Set Agent and Message classes
             AgentBroker agentBroker = AgentBroker.getInstance();
@@ -199,9 +204,14 @@ public class OsmoticWrapper {
             // In this example, the Central Agent is not used
             try {
                 agentBroker.setDcAgentClass(provider.getDCAgentClass());
-                agentBroker.setDeviceAgentClass(provider.getDeviceAgentClass());
                 agentBroker.setAgentMessageClass(provider.getAgentMessageClass());
-                agentBroker.setCentralAgentClass(provider.getCentralAgentClass());
+                if (Objects.equals(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getName(), "custom")) {
+                    agentBroker.setDeviceAgentClass(provider.getDeviceAgentClass());
+                    agentBroker.setCentralAgentClass(provider.getCentralAgentClass());
+                } else {
+                    agentBroker.setDeviceAgentClass(Class.forName(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getDevice_agent_class()));
+                    agentBroker.setCentralAgentClass(Class.forName(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getCentral_agent_class()));
+                }
             } catch (ClassNotFoundException e) {
                 e.printStackTrace();
                 return true;
@@ -326,9 +336,8 @@ public class OsmoticWrapper {
         stop(conn, context); // ensuring that the previous simulation was stopped
         if (init) return init;
         Calendar calendar = Calendar.getInstance();
-
         // Getting configuration from json and entering classes to Agent Broker
-        if (agentBrokerageInitFails()) return init;
+        if (agentBrokerageInitFails(RA)) return init;
         allocateOrClearDataStructures(calendar);
 
         String name = null, entitiesList;
@@ -346,7 +355,7 @@ public class OsmoticWrapper {
         }
         MELSwitchPolicy melSwitchPolicy = MELRoutingPolicyGeneratorFacade.generateFacade(conf.mel_switch_policy);
         osmoticBroker.setMelRouting(melSwitchPolicy);
-        conf.buildTopologyForSimulator(osmoticBroker);
+        conf.buildTopologyForSimulator(osmoticBroker, RA);
 
         OsmosisOrchestrator conductor = new OsmosisOrchestrator();
         List<SDNController> controllers = new ArrayList<>();

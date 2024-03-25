@@ -4,6 +4,9 @@ begin: 0    # Start simulator time
 end: 125     # End simulator time
 step: 0.075 # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
 
+#Routing Algorithm
+routingAlgorithm: "uk.ncl.giacomobergami.components.routing_algorithm.SPMB" #choose either "...SPMB" or "...MCFR" to select these algorithms, or choose just "custom" to modify agent_config.json and edge/cloud_generator.yaml files
+
 ## Output
 RSUCsvFile:         #dynamically defined
 VehicleCsvFile:     #dynamically defined

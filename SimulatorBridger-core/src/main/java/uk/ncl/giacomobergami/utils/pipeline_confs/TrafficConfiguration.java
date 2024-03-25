@@ -9,6 +9,7 @@ public class TrafficConfiguration {
     public boolean outputVehicleCsvFile;
     public long begin, end;
     public double step;
+    public String routingAlgorithm;
     boolean isBatch;
     boolean isFirstBatch;
     String queueFilePath;
@@ -36,6 +37,12 @@ public class TrafficConfiguration {
 
     public void setStep(double step) {
         this.step = step;
+    }
+
+    public String getRoutingAlgorithm() { return routingAlgorithm;}
+
+    public void setRoutingAlgorithm(String routingAlgorithm) {
+        this.routingAlgorithm = routingAlgorithm;
     }
 
     public String getClazzPath() {

@@ -14,6 +14,7 @@ import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
 import uk.ncl.giacomobergami.components.networking.Host;
 import uk.ncl.giacomobergami.components.networking.Switch;
 import uk.ncl.giacomobergami.components.networking.VM;
+import uk.ncl.giacomobergami.components.routing_algorithm.RoutingAlgorithmGeneratorFactory;
 import uk.ncl.giacomobergami.utils.data.YAML;
 
 import java.io.File;
@@ -57,9 +58,12 @@ public class SubNetworkConfiguration implements Serializable {
     public CloudDatacenter createCloudDatacenter(OsmoticBroker broker,
                                                  AtomicInteger hostId,
                                                  AtomicInteger vmId,
-                                                 Map<String, Collection<LegacyConfiguration.LinkEntity>> linkMap) {
+                                                 Map<String, Collection<LegacyConfiguration.LinkEntity>> linkMap,
+                                                 String RA) {
         if (conf.scheduling_interval != 0.0)
             throw new RuntimeException("0.0 expected scheduling interval: "+conf.scheduling_interval);
+        if (!Objects.equals(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getName(), "custom"))
+            conf.setController_routingPolicy(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getCloud_routing_policy_class());
         SDNController sdnController = conf.asCloudController();
         List<org.cloudbus.cloudsim.Host> hostList = sdnController.getHostList();
         LinkedList<Storage> storageList = new LinkedList<>();
@@ -107,7 +111,8 @@ public class SubNetworkConfiguration implements Serializable {
     public EdgeDataCenter createEdgeDatacenter(OsmoticBroker broker,
                                                 AtomicInteger hostId,
                                                AtomicInteger vmId,
-                                               Map<String, Collection<LegacyConfiguration.LinkEntity>> linkMap) {
+                                               Map<String, Collection<LegacyConfiguration.LinkEntity>> linkMap,
+                                               String RA) {
         var hostList = hosts
                 .stream()
                 .map(x-> new EdgeDevice(hostId, x.asLegacyEdgeDeviceEntity()))
@@ -125,6 +130,8 @@ public class SubNetworkConfiguration implements Serializable {
                 VmAllocationPolicyGeneratorFactory.generateFacade(conf.datacenter_vmAllocationPolicy),
                 storageList,
                 conf.scheduling_interval);
+        if (!Objects.equals(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getName(), "custom"))
+            conf.setController_routingPolicy(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getEdge_routing_policy_class());
         datacenter.setSdnController(conf.asEdgeSDNController(datacenter));
         datacenter.initEdgeTopology(hostList, s_switch, s_links);
 

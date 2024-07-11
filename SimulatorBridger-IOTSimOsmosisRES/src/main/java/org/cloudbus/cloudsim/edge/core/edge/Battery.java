@@ -11,7 +11,12 @@
 
 package org.cloudbus.cloudsim.edge.core.edge;
 
+import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.pipeline_confs.BatteryConfiguration;
+
+import java.io.File;
 import java.io.Serializable;
+import java.util.Optional;
 
 /**
  * 
@@ -22,6 +27,35 @@ import java.io.Serializable;
 **/
 
 public class Battery implements Serializable {
+	private final transient File battery_file = new File("clean_example/3_extIOTSim_configuration/battery_parameters.yaml");
+	private final transient Optional<BatteryConfiguration> battery_conf = YAML.parse(BatteryConfiguration.class, battery_file);
+
+	private final float a0 = battery_conf.get().getA0();
+	private final float a1 = battery_conf.get().getA1();
+	private final float a2 = battery_conf.get().getA2();
+	private final float a3 = battery_conf.get().getA3();
+	private final float a4 = battery_conf.get().getA4();
+	private final float a5 = battery_conf.get().getA5();
+
+	private final float b0 = battery_conf.get().getB0();
+	private final float b1 = battery_conf.get().getB1();
+	private final float b2 = battery_conf.get().getB2();
+	private final float b3 = battery_conf.get().getB3();
+	private final float b4 = battery_conf.get().getB4();
+	private final float b5 = battery_conf.get().getB5();
+
+	private final float c0 = battery_conf.get().getC0();
+	private final float c1 = battery_conf.get().getC1();
+	private final float c2 = battery_conf.get().getC2();
+
+	private final float d0 = battery_conf.get().getD0();
+	private final float d1 = battery_conf.get().getD1();
+	private final float d2 = battery_conf.get().getD2();
+
+	private final double PB = battery_conf.get().getCharging_DischargingPower();
+	private final double PSB = battery_conf.get().getStandby_Loss();
+	private final double EC = battery_conf.get().getMaximum_Battery_Capacity();
+
 	private double maxCapacity;
 	private double currentCapacity;
 	private double batterySensingRate;
@@ -115,8 +149,10 @@ public class Battery implements Serializable {
 //		}
 		this.currentCapacity = currentCapacity;
 	}
-	public void decrementCapacity(double delta) {
+	public void decrementCapacity(double delta, double deltaTime) {
 		this.currentCapacity -= delta;
+		double reduction = dischargeBattery(deltaTime);
+		this.currentCapacity -= reduction;
 	}
 
 	public void chargeBattery(double energyTransfer, double current){
@@ -136,5 +172,76 @@ public class Battery implements Serializable {
 		}
 		double consum = this.maxCapacity - this.currentCapacity;
 		return consum;
+	}
+
+	public double calculateOpenCircuitVoltage() {
+		double VOC = a0*Math.exp(-a1*currentCapacity) + a2 + a3*currentCapacity - a4*Math.pow(currentCapacity, 2) + a5*Math.pow(currentCapacity, 3);
+		return VOC;
+	}
+
+	private double calculateResistanceOhmicLosses() {
+		double RS = b0*Math.exp(-b1*currentCapacity) + b2 + b3*currentCapacity - b4*Math.pow(currentCapacity, 2) + b5*Math.pow(currentCapacity, 3);
+		return RS;
+	}
+
+	private double calculateResistanceChargeTransfer() {
+		double RTS = c0*Math.exp(-c1*currentCapacity) + c2;
+		return RTS;
+	}
+
+	private double calculateResistanceMembrabeDiffusion() {
+		double RTL = d0*Math.exp(-d1*currentCapacity) + d2;
+		return RTL;
+	}
+
+	public double calculateTotalResistance() {
+		double RS = calculateResistanceOhmicLosses();
+		double RTS = calculateResistanceChargeTransfer();
+		double RTL = calculateResistanceMembrabeDiffusion();
+
+		double RTOT = RS;// + RTS + RTL;
+		return RTOT;
+	}
+
+	public double calculateCircuitCurrent(){
+		double VOC = calculateOpenCircuitVoltage();
+		double RTOT = calculateTotalResistance();
+
+		double IT = (VOC - Math.sqrt(Math.pow(VOC, 2) - 4 * RTOT * PB)) / (2 * RTOT);
+		return IT;
+	}
+
+	public double chargeEfficiency(){
+		double VOC = calculateOpenCircuitVoltage();
+		double RTOT = calculateTotalResistance();
+		double IT = calculateCircuitCurrent();
+
+		double NC = VOC/(VOC - RTOT*IT);
+		return NC;
+	}
+
+	public double dischargeEfficiency(){
+		double VOC = calculateOpenCircuitVoltage();
+		double RTOT = calculateTotalResistance();
+		double IT = calculateCircuitCurrent();
+
+		double NDC = (VOC - RTOT*IT)/ VOC;
+		return NDC;
+	}
+
+	public double dischargeBattery(double deltaTime) {
+		double NDC = dischargeEfficiency();
+		//double NC = chargeEfficiency();
+		double discharge = 0;
+
+		//if(PB > 0) {
+			discharge = (PB*deltaTime)/(EC*NDC);
+		//} else if (PB == 0) {
+			//discharge = (PSB*deltaTime)/(EC*NDC);
+		//}else if(PB < 0) {
+		//	discharge = (PB*deltaTime*NC)/EC;
+		//}
+
+		return discharge;
 	}
 }

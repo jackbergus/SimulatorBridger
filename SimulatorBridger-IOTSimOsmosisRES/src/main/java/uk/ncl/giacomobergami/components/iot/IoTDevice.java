@@ -27,6 +27,7 @@ import uk.ncl.giacomobergami.components.iot_protocol.IoTProtocolGeneratorFactory
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
 import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
+import uk.ncl.giacomobergami.utils.pipeline_confs.BatteryConfiguration;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import java.io.File;
@@ -55,8 +56,8 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	public Mobility mobility;
 	int connectingEdgeDeviceId = -1;
 	private boolean enabled;
-	public abstract boolean updateBatteryBySensing();
-	public abstract boolean updateBatteryByTransmission();
+	public abstract boolean updateBatteryBySensing(double deltaTime);
+	public abstract boolean updateBatteryByTransmission(double deltaTime);
 	private double bw;
 	private double usedBw;
 	private final AtomicInteger flowId;
@@ -68,8 +69,10 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	private HashSet<Integer> AppIDs = new HashSet<>();
 	private transient File converter_file = new File("clean_example/converter.yaml");
 	private transient Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
-	private transient double beginSUMO = time_conf.get().getBegin();
-	private transient double endSUMO = time_conf.get().getEnd();
+
+	protected transient double beginSUMO = time_conf.get().getBegin();
+	protected transient double endSUMO = time_conf.get().getEnd();
+	protected transient double stepSUMO = time_conf.get().getStep();
 
 	public Map<Double, Double> getTrustworthyConsumption() { return consumptionInTime; }
 
@@ -206,7 +209,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	
 	private void sensing(SimEvent ev) {
 		if (ev == null) {
-			this.updateBatteryBySensing();
+			this.updateBatteryBySensing(stepSUMO);
 			consumptionInTime.put(MainEventManager.clock(), this.battery.getBatteryTotalConsumption());
 			return;
 		}
@@ -300,7 +303,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 			// If there is no flow, then the device is not communicating, and therefore the battery should be
 			// updated as only in sensing
 
-			isDrained = this.updateBatteryBySensing();
+			isDrained = this.updateBatteryBySensing(stepSUMO);
 			isCommunicating = false;
 		} else {
 			if (doIncrementPacketSent) {
@@ -328,11 +331,11 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 					appId = app.getAppID();
 				}
 			}
-			isDrained = this.updateBatteryBySensing();
+			isDrained = this.updateBatteryBySensing(stepSUMO);
 			if (!isDrained) {
 				if (doIncrementPacketSent && (!AppIDs.contains((appId)))) {
 					for (int i = 0; i<increment; i++)
-						isDrained |= this.updateBatteryByTransmission();
+						isDrained |= this.updateBatteryByTransmission(stepSUMO);
 				}
 			}
 			if (app != null)

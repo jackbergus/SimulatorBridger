@@ -1,8 +1,8 @@
 clazzPath: "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter" # Simulator Class
 YAMLConverterConfiguration: "clean_example/sumo.yaml" # Simulator Configuration for the Class
 begin: 0    # Start simulator time
-end: 125     # End simulator time
-step: 0.075 # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
+end: 25     # End simulator time
+step: 0.212 # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
 
 #Routing Algorithm
 routingAlgorithm: "uk.ncl.giacomobergami.components.routing_algorithm.SPMB" #choose either "...SPMB" or "...MCFR" to select these algorithms, or choose just "custom" to modify agent_config.json and edge/cloud_generator.yaml files
@@ -13,7 +13,7 @@ VehicleCsvFile:     #dynamically defined
 outputRSUCsvFile: true #true to output this CSV file, false to avoid outputting this file, currently needs to be true for simulator
 outputVehicleCsvFile: true #true to output this CSV file, false to avoid outputting this file, currently needs to be true for simulator
 
-## Batch
+## Batch TODO: make this work, this is currently broken
 isBatch: false
 isFirstBatch: true
 queueFilePath: "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\PersistingBatchData\\"

@@ -33,7 +33,7 @@ public class TemperatureSensor extends IoTDevice {
 	}
 
 	@Override
-	public boolean updateBatteryBySensing() {
+	public boolean updateBatteryBySensing(double deltaTime) {
 		battery.setCurrentCapacity(battery.getCurrentCapacity() - battery.getBatterySensingRate());
 		if(battery.getCurrentCapacity()<0)
 			return  true;
@@ -41,7 +41,7 @@ public class TemperatureSensor extends IoTDevice {
 	}
 
 	@Override
-	public boolean updateBatteryByTransmission() {
+	public boolean updateBatteryByTransmission(double deltaTime) {
 		battery.setCurrentCapacity(battery.getCurrentCapacity() - battery.getBatterySendingRate());
 		if(battery.getCurrentCapacity()<0)
 			return  true;

@@ -32,16 +32,16 @@ public class CarSensor extends IoTDevice {
 		super( onta, flowid);
 	}
 	@Override
-	public boolean updateBatteryBySensing() {
-		battery.decrementCapacity(battery.getBatterySensingRate());
+	public boolean updateBatteryBySensing(double deltaTime) {
+		battery.decrementCapacity(battery.getBatterySensingRate(), deltaTime);
 		if(battery.getCurrentCapacity()<0)
 			return  true;
 		return false;
 	}
 
 	@Override
-	public boolean updateBatteryByTransmission() {
-		battery.decrementCapacity(battery.getBatterySendingRate());
+	public boolean updateBatteryByTransmission(double deltaTime) {
+		battery.decrementCapacity(battery.getBatterySendingRate(), deltaTime);
 		if(battery.getCurrentCapacity()<0)
 			return  true;
 		return false;

@@ -477,7 +477,6 @@ public class IoTEntityGenerator implements Serializable{
         toUpdateWithTime.mobility.location.y = currentPosition[1];
         toUpdateWithTime.mobility.range.endX = (int) expectedPosition[0];
         toUpdateWithTime.mobility.range.endY = (int) expectedPosition[1];
-
     }
 
     /*public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,

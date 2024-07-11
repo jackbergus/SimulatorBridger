@@ -137,7 +137,7 @@ public class EdgeNetworksGenerator {
                 var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).where("simtime = 0.0").orderBy(field("simtime")).fetch();
                 System.out.print("RSU data fetched\n");
                 System.out.print("Starting organisation of RSU data...\n");
-                int noRSU = Math.max(allRSUData.size()/ticks.size(),16);
+                int noRSU = Math.max(allRSUData.size()/ticks.size(),allRSUData.size());
                 int iterateSize = movingEdges ? ticks.size() : 1;
                 for(int j = 0; j < iterateSize; j++) {
                     HashMap<String, TimedEdge> rbi_entry = new HashMap<>();

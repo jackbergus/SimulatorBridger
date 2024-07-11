@@ -185,8 +185,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		if (!isWakeupStartSet) {
 			System.out.print("Collecting Wakeup Times...\n");
 			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes();
-			for (Double forcedWakeUpTime :
-					wakeUpTimes) {
+			for (Double forcedWakeUpTime : wakeUpTimes) {
 				double time = forcedWakeUpTime - chron;
 				if (time > 0.0 && chron + deltaVehUpdate <= endTime) {
 					schedule(OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);

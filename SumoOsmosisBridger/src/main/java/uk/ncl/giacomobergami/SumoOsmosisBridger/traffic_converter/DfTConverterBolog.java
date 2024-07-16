@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Deprecated
 public class DfTConverterBolog extends TrafficConverter {
     private final SUMOConfiguration concreteConf;
     private long earliestTime;

@@ -16,7 +16,7 @@ import java.sql.*;
 
 public class JavaPostGres {
     public static DataSource createDataSource() {
-        final String url = "jdbc:postgresql://localhost:5432/DfT?user=postgres&password=Reham89";
+        final String url = "jdbc:postgresql://localhost:5432/DfT?user=giacomo&password=gnomes";
         final PGSimpleDataSource dataSource = new PGSimpleDataSource();
         dataSource.setURL(url);
         return dataSource;

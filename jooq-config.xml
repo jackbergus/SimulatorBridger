@@ -4,7 +4,7 @@
     <jdbc>
         <driver>org.postgresql.Driver</driver>
         <url>jdbc:postgresql://localhost:5432/DfT</url>
-        <user>postgres</user>
+        <user>giacomo</user>
         <password>gnomes</password>
     </jdbc>
 

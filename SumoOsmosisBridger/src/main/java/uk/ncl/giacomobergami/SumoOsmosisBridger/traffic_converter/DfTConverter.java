@@ -41,6 +41,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import com.opencsv.*;
 
+
+@Deprecated
 public class DfTConverter extends TrafficConverter {
 
     private final SUMOConfiguration concreteConf;

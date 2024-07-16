@@ -1,8 +1,8 @@
-clazzPath:                  "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.DfTConverterBolog" # Simulator Class
+clazzPath:                  "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.BaseInformationConverter" # Simulator Class
 
 YAMLConverterConfiguration: "clean_example/sumo.yaml" # Simulator Configuration for the Class
 begin: 0    # Start simulator time
-end: 999999999     # End simulator time
+end: 40     # End simulator time
 step: 1.0 # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
 
 ## Output
@@ -14,6 +14,6 @@ outputVehicleCsvFile: true #true to output this CSV file, false to avoid outputt
 ## Batch
 isBatch: false
 isFirstBatch: true
-queueFilePath: "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\PersistingBatchData\\"
+queueFilePath: "./clean_example/PersistingBatchData/"
 batchStart: 0
 batchEnd: 20

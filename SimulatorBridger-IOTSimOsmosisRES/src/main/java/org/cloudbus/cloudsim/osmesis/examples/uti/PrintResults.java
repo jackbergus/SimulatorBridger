@@ -18,6 +18,8 @@ import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import org.cloudbus.cloudsim.Host;
@@ -393,10 +395,43 @@ public class PrintResults {
 		}
 	}
 
+	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class EdgeConnectionsPerSimulationTime {
+		@JsonProperty("time")
 		public double time;
+		@JsonProperty("edge_host")
 		public String edge_host;
+
+		@JsonProperty("IoTDevices")
 		public int    IoTDevices;
+
+		public EdgeConnectionsPerSimulationTime() {
+
+		}
+
+		public double getTime() {
+			return time;
+		}
+
+		public void setTime(double time) {
+			this.time = time;
+		}
+
+		public String getEdge_host() {
+			return edge_host;
+		}
+
+		public void setEdge_host(String edge_host) {
+			this.edge_host = edge_host;
+		}
+
+		public int getIoTDevices() {
+			return IoTDevices;
+		}
+
+		public void setIoTDevices(int ioTDevices) {
+			IoTDevices = ioTDevices;
+		}
 
 		public EdgeConnectionsPerSimulationTime(double time, String edge_host, int ioTDevices) {
 			this.time = time;

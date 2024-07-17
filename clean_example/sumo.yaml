@@ -1,0 +1,11 @@
+
+trace_file: "clean_example/1_sumo_output/sumo_trace_TAVF.xml"
+logger_file: "clean_example/1_sumo_output/sumo_log.txt"
+sumo_program: "sumo"                                                                            # The path via which run the program, OS dependant!
+sumo_configuration_file_path: "/home/giacomo/Scrivania/Bologna/run_simulation.sumocfg"     # The path where the SUMO simulation is run.
+default_rsu_communication_radius: 100.0
+default_max_vehicle_communication:  15
+sumo_detectors_file_path: "/home/giacomo/Scrivania/Bologna/acosta_detectors.add.xml"     #The path to the SUMO detectors file, this file has a "freq" value which needs to a multiple of the step-size
+sumo_vTypes_file_path: "/home/giacomo/Scrivania/Bologna/acosta_vtypes.add.xml"           #The path to the SUMO vTypes file, this file needs a "tau" value above or equal to the step-size
+python_filepath: "python3"
+generateRSUAdjacencyList: "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_orchestrator.TopKConnections"

@@ -171,7 +171,7 @@ public class BaseInformationConverter extends TrafficConverter {
             for (int i = 0; i<x.ioTDevices; i++) {
                 TimedIoT TI = new TimedIoT();
                 double thisTime = BigDecimal.valueOf(x.time).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-                TI.setId("id_" + i);
+                TI.setId("id_" + i + '_' + edge.id);
                 TI.setX(edge.x);
                 TI.setY(edge.y);
                 TI.setSimtime(thisTime);

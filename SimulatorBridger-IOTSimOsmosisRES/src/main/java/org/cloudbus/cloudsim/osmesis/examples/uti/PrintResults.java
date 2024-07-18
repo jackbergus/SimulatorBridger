@@ -401,9 +401,8 @@ public class PrintResults {
 		public double time;
 		@JsonProperty("edge_host")
 		public String edge_host;
-
 		@JsonProperty("IoTDevices")
-		public int    IoTDevices;
+		public int ioTDevices;
 
 		public EdgeConnectionsPerSimulationTime() {
 
@@ -426,17 +425,17 @@ public class PrintResults {
 		}
 
 		public int getIoTDevices() {
-			return IoTDevices;
+			return ioTDevices;
 		}
 
 		public void setIoTDevices(int ioTDevices) {
-			IoTDevices = ioTDevices;
+			this.ioTDevices = ioTDevices;
 		}
 
 		public EdgeConnectionsPerSimulationTime(double time, String edge_host, int ioTDevices) {
 			this.time = time;
 			this.edge_host = edge_host;
-			IoTDevices = ioTDevices;
+			this.ioTDevices = ioTDevices;
 		}
 	}
 		

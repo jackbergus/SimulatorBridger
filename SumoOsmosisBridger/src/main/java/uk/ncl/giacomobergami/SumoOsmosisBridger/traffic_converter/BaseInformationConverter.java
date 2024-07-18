@@ -31,6 +31,7 @@ import uk.ncl.giacomobergami.utils.structures.StraightforwardAdjacencyList;
 import javax.xml.parsers.*;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -54,7 +55,6 @@ public class BaseInformationConverter extends TrafficConverter {
 
     String path = "clean_example/3_extIOTSim_configuration/iot_generators.yaml";
     transient final IoTEntityGenerator.IoTGlobalConfiguration conf = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration .class, new File(path)).orElseThrow();
-
 
     public BaseInformationConverter(TrafficConfiguration conf)  {
         super(conf);
@@ -168,30 +168,31 @@ public class BaseInformationConverter extends TrafficConverter {
         while (iter2.hasNext()) {
             var x = iter2.next();
             var edge = timedEdgeMap.get(x.edge_host);
-            for (int i = 0; i<x.IoTDevices; i++) {
+            for (int i = 0; i<x.ioTDevices; i++) {
                 TimedIoT TI = new TimedIoT();
+                double thisTime = BigDecimal.valueOf(x.time).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
                 TI.setId("id_" + i);
                 TI.setX(edge.x);
                 TI.setY(edge.y);
-                TI.setSimtime(x.time);
+                TI.setSimtime(thisTime);
                 TI.setType("no_type_info");
                 TI.setLane("no_lane_info");
-                multiIots.put(x.time, TI);
+                multiIots.put(thisTime, TI);
             }
         }
 
-        var collctor = new BaseCollectorParser(temporalOrdering, vehicleCSVFile);
-        collctor.startDocument();
+        var collector = new BaseCollectorParser(temporalOrdering, vehicleCSVFile);
+        collector.startDocument();
         for (var t : times) {
-            collctor.addTimestamp(t);
+            collector.addTimestamp(t);
             var x = multiIots.get(t);
             if ((x != null) && (!x.isEmpty())) {
                 for (var y : x) {
-                    collctor.addIoTDevice(y);
+                    collector.addIoTDevice(y);
                 }
             }
         }
-        collctor.endDocument();
+        collector.endDocument();
         System.out.print("SAX parsing of SUMO XML data complete\n");
 
         List<IoTDeviceTabularConfiguration> IoTDevices = generateIoTDeviceConfigList(BaseCollectorParser.getFirstEntry(), BaseCollectorParser.getSecondEntry());

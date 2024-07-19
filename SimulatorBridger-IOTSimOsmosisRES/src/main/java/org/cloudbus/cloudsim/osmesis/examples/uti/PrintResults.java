@@ -15,6 +15,8 @@ package org.cloudbus.cloudsim.osmesis.examples.uti;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -642,16 +644,17 @@ public class PrintResults {
 //			if (app_to_path == null) app_to_path = new TreeMap<>();
 //			var res = sortLinks(new ArrayList<>(ls1));
 //			app_to_path.put(workflowTag.getAppName(), res);
-
+			DecimalFormat df = new DecimalFormat("#.###");
+			df.setRoundingMode(RoundingMode.HALF_UP);
 
 			PrintOsmosisAppFromTags fromTag = new PrintOsmosisAppFromTags();
 			if(workflowTag.getCloudLet() != null) {
 				fromTag.APP_ID = workflowTag.getAppId();
 				fromTag.AppName = workflowTag.getAppName();
 				fromTag.Transaction = workflowTag.getWorkflowId();
-				fromTag.StartTime = workflowTag.getStartTime();
+				fromTag.StartTime = Double.parseDouble(df.format(workflowTag.getStartTime()));
 				countingMapPerSimTime.putIfAbsent(fromTag.StartTime, HashMultimap.create());
-				fromTag.FinishTime = workflowTag.getFinishTime();
+				fromTag.FinishTime =  workflowTag.getFinishTime();
 				fromTag.IoTDeviceName = workflowTag.getIotDeviceFlow().getAppNameSrc();
 				fromTag.MELName = workflowTag.getIotDeviceFlow().getAppNameDest() + " (" + workflowTag.getSourceDCName() + ")";
 				var srcHost = MELResolverToHostingHost.resolveHostFromMELId(workflowTag.getIotDeviceFlow().getAppNameDest());

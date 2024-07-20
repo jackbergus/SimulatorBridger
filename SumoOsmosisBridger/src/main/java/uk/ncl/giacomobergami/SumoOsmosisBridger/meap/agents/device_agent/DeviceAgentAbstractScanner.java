@@ -29,6 +29,8 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 
 import java.io.File;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -50,6 +52,7 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
     private final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
     double beginSUMO = time_conf.get().getBegin();
     double endSUMO = time_conf.get().getEnd();
+    DecimalFormat df = new DecimalFormat("#.###");
 
     @Override
     public void monitor() {
@@ -99,9 +102,10 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
 
             // Starting communicating only if there is a nearest candidate
             if (nearest.isPresent()) {
+                df.setRoundingMode(RoundingMode.HALF_UP);
                 getIoTDevice().transmit = true;
                 var message = nearest.get();
-                double StartDataGenerationTime = MainEventManager.clock();
+                double StartDataGenerationTime = Double.parseDouble(df.format(MainEventManager.clock()));
                 int appID = MainEventManager.getNewAppId();
                 String appName = "App_"+appID;
                 double DataRate = 1.0; //1.0;

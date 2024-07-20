@@ -20,6 +20,8 @@ package org.cloudbus.cloudsim.edge.core.edge;
  * 
 **/
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -43,6 +45,8 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 	
 	private List<Flow> flowList = new ArrayList<>(); 
 	private List<Flow> flowListHis = new ArrayList<>();
+
+	DecimalFormat df = new DecimalFormat("#.###");
 
 	public EdgeDataCenter(String name,
 						  DatacenterCharacteristics characteristics,
@@ -182,7 +186,8 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 		Flow flow = (Flow) ev.getData();
 		flow.setDatacenterName(this.getName());
 		if(flow.getStartTime() == -1){
-			flow.setStartTime(MainEventManager.clock());
+			df.setRoundingMode(RoundingMode.HALF_UP);
+			flow.setStartTime(Double.parseDouble(df.format(MainEventManager.clock())));
 		}
 
 		this.flowList.add(flow);

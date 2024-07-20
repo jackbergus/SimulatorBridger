@@ -30,6 +30,8 @@ import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFacto
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import java.io.File;
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
@@ -66,6 +68,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	private TreeMap<Double, Integer> actionToFlowId = new TreeMap<>();
 	private HashMap<Integer, Double> flowIdCreationTime = new HashMap<>();
 	private HashSet<Integer> AppIDs = new HashSet<>();
+	DecimalFormat df = new DecimalFormat("#.###");
 
 	public Map<Double, Double> getTrustworthyConsumption() { return consumptionInTime; }
 
@@ -208,9 +211,9 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		}
 		OsmoticAppDescription app = (OsmoticAppDescription) ev.getData();
 		Flow flow = this.createFlow(app);
-		
+		df.setRoundingMode(RoundingMode.HALF_UP);
 		WorkflowInfo workflowTag = new WorkflowInfo();
-		workflowTag.setStartTime(MainEventManager.clock());
+		workflowTag.setStartTime(Double.parseDouble(df.format(MainEventManager.clock())));
 		workflowTag.setAppId(app.getAppID());
 		workflowTag.setAppName(app.getAppName());
 		workflowTag.setIotDeviceFlow(flow);
@@ -280,16 +283,17 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		updateEnergyConsumptionInformation(ev, -1);
 	}
 
+	int increment = 1;
+	File converter_file = new File("clean_example/converter.yaml");
+	Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+	double beginSUMO = time_conf.get().getBegin();
+	double endSUMO = time_conf.get().getEnd();
 	private boolean updateEnergyConsumptionInformation(SimEvent ev, int flowId) {
 		boolean isDrained;
 		boolean isCommunicating;
 		int appId = -1;
 		boolean doIncrementPacketSent = flowId != -1;
-		int increment = 1;
-		File converter_file = new File("clean_example/converter.yaml");
-		Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
-		double beginSUMO = time_conf.get().getBegin();
-		double endSUMO = time_conf.get().getEnd();
+
 
 		if(MainEventManager.clock() > endSUMO) {
 			MainEventManager.cancelAll(getId(), MainEventManager.SIM_ANY);
@@ -340,7 +344,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 			isCommunicating = true;
 		}
 		double time = ev == null ? MainEventManager.clock() : ev.eventTime();
-
+		time = (double) Math.round(time * 1000) / 1000;
 		if (doIncrementPacketSent && isCommunicating && (!isDrained) && (!AppIDs.contains((appId)))) {
 			totalPacketsBeingSent += increment;
 			consumptionInTime.put(time, this.battery.getBatteryTotalConsumption());

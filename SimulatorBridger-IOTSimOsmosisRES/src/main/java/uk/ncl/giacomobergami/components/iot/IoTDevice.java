@@ -287,6 +287,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	File converter_file = new File("clean_example/converter.yaml");
 	Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 	double beginSUMO = time_conf.get().getBegin();
+	double step = time_conf.get().getStep();
 	double endSUMO = time_conf.get().getEnd();
 	private boolean updateEnergyConsumptionInformation(SimEvent ev, int flowId) {
 		boolean isDrained;
@@ -299,12 +300,14 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 			MainEventManager.cancelAll(getId(), MainEventManager.SIM_ANY);
 			return true;
 		}
-
+		double time = ev == null ? MainEventManager.clock() : ev.eventTime();
+		time = (double) Math.round(time * 1000) / 1000;
 		if (this.flowList.isEmpty()) {
 			// If there is no flow, then the device is not communicating, and therefore the battery should be
 			// updated as only in sensing
 
 			isDrained = this.updateBatteryBySensing();
+			consumptionInTime.put(time - step, this.battery.getBatteryTotalConsumption());
 			isCommunicating = false;
 		} else {
 			if (doIncrementPacketSent) {
@@ -343,11 +346,8 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 				app.setIoTBatteryConsumption(this.battery.getBatteryTotalConsumption());
 			isCommunicating = true;
 		}
-		double time = ev == null ? MainEventManager.clock() : ev.eventTime();
-		time = (double) Math.round(time * 1000) / 1000;
 		if (doIncrementPacketSent && isCommunicating && (!isDrained) && (!AppIDs.contains((appId)))) {
 			totalPacketsBeingSent += increment;
-			consumptionInTime.put(time, this.battery.getBatteryTotalConsumption());
 			actionToFlowId.put(time, appId);
 		}
 		packetsSentInTime.put(time, totalPacketsBeingSent);

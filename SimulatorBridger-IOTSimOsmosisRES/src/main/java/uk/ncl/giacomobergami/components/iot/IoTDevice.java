@@ -348,6 +348,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		}
 		if (doIncrementPacketSent && isCommunicating && (!isDrained) && (!AppIDs.contains((appId)))) {
 			totalPacketsBeingSent += increment;
+			consumptionInTime.put(time, this.battery.getBatteryTotalConsumption());
 			actionToFlowId.put(time, appId);
 		}
 		packetsSentInTime.put(time, totalPacketsBeingSent);

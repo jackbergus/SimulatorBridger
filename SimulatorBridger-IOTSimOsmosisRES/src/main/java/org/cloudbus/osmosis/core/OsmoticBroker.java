@@ -12,7 +12,9 @@
 package org.cloudbus.osmosis.core;
 
 import java.io.File;
+import java.math.RoundingMode;
 import java.sql.Connection;
+import java.text.DecimalFormat;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -146,7 +148,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	private List<Double> timesToProcess = null;
 	private final float maxEdgeBW = 100;
 	public transient Collection<Double> wakeUpTimes;
-
+	DecimalFormat df = new DecimalFormat("#.###");
 
 	private static OsmoticBroker OBINSTANCE;
 
@@ -163,6 +165,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			String queuePath = time_conf.get().getQueueFilePath() + "eventQ.ser";
 			eventQueue = MainEventManager.deserializeEventQueue(queuePath);
 		}
+		df.setRoundingMode(RoundingMode.HALF_UP);
 	}
 
 	public static OsmoticBroker getInstance(String name,
@@ -181,7 +184,7 @@ public class OsmoticBroker extends DatacenterBroker {
 
 	@Override
 	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
-		double chron = MainEventManager.clock();
+		double chron = Double.parseDouble(df.format(MainEventManager.clock()));
 
 		// Setting up the forced times when the simulator has to wake up, as new messages have to be sent
 		if (!isWakeupStartSet) {

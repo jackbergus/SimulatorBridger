@@ -71,7 +71,7 @@ public class EnsembleConfigurations {
                                                                                          int nSCC,
                                                                                          CloudInfrastructureGenerator.Configuration globalCloud, DSLContext context) {
         List<CloudInfrastructureGenerator.Configuration> ls = new ArrayList<>();
-        int IoTNumber = ioTEntityGenerator.maximumNumberOfCommunicatingVehicles(context);
+        int IoTNumber = globalCloud.IoTNumber == -1 ? ioTEntityGenerator.maximumNumberOfCommunicatingVehicles(context) : globalCloud.IoTNumber;
 
         // Assuming to set VM in the number of IoTNumber * IoTMultiplicityForVMs / numberOfClouds
         globalCloud.hosts_and_vms.n_vm = IoTNumber * IoTMultiplicityForVMs / numberOfClouds;

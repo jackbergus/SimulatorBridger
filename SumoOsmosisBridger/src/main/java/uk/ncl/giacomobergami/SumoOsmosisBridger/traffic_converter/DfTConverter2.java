@@ -341,6 +341,10 @@ public class DfTConverter2 extends TrafficConverter {
 
     @Override
     public boolean runSimulator(TrafficConfiguration conf) {
+        var conf1 = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration.class, new File("clean_example/3_extIOTSim_configuration/iot_generators.yaml")).orElseThrow();
+//        var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
+        var latency = conf1.networkType.equals("custom") ? conf1.latency: NetworkTypingGeneratorFactory.generateFacade(conf1.networkType).getNTLat();
+        conf.step = conf1.match ?  latency : conf.step;
         return true;
     }
 }

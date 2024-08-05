@@ -44,6 +44,10 @@ public abstract class TrafficConverter {
     private static Logger logger = LogManager.getRootLogger();
     private static Gson gson;
 
+    public TrafficConfiguration getConf() {
+        return conf;
+    }
+
     public TrafficConverter(TrafficConfiguration conf) {
         logger.info("=== TRAFFIC CONVERTER ===");
         logger.trace("TRAFFIC CONVERTER: init");

@@ -5,13 +5,11 @@ import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.TreeMultimap;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudbus.cloudsim.osmesis.examples.uti.PrintResults;
-import org.w3c.dom.Document;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
@@ -20,26 +18,28 @@ import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.netgen.NetworkGene
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.netgen.NetworkGeneratorFactory;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.rsu.RSUUpdater;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.rsu.RSUUpdaterFactory;
-import uk.ncl.giacomobergami.utils.data.GZip;
-import uk.ncl.giacomobergami.utils.data.XPathUtil;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
+import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.StraightforwardAdjacencyList;
 
-import javax.xml.parsers.*;
-import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
 import java.math.BigDecimal;
-import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.fasterxml.jackson.dataformat.csv.CsvSchema.emptySchema;
 
-public class BaseInformationConverter extends TrafficConverter {
+public class DfTConverter2 extends TrafficConverter {
     private final NetworkGenerator netGen;
+    private long earliestTime;
     private final RSUUpdater rsuUpdater;
     private SUMOConfiguration concreteConf;
 //    private final DocumentBuilderFactory dbf;
@@ -56,7 +56,7 @@ public class BaseInformationConverter extends TrafficConverter {
     String path = "clean_example/3_extIOTSim_configuration/iot_generators.yaml";
     transient final IoTEntityGenerator.IoTGlobalConfiguration conf = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration .class, new File(path)).orElseThrow();
 
-    public BaseInformationConverter(TrafficConfiguration conf)  {
+    public DfTConverter2(TrafficConfiguration conf)  {
         super(conf);
 //        dbf = DocumentBuilderFactory.newInstance();
 //        try {
@@ -83,48 +83,145 @@ public class BaseInformationConverter extends TrafficConverter {
         temporalOrdering.clear();
         timedIoTDevices.clear();
 
-        HashMap<String, TimedEdge> timedEdgeMap = new HashMap<>();
-        TreeSet<Double> times = new TreeSet<>();
-        File edge_nodes = new File(rsu_csv);
-        File connection_counts = new File(connection_per_sim_time);
-        // Determining the osmotic edges
+        File file = new File(concreteConf.DfT_file_path);
+        CSVReader reader = null;
+        List<String[]> rows;
         try {
-            MappingIterator<TimedEdge> personIter = new CsvMapper().enable(CsvParser.Feature.SKIP_EMPTY_LINES).readerFor(TimedEdge.class)
-                    .with(emptySchema().withHeader().withNullValue("")).readValues(edge_nodes);
-            while (personIter.hasNext()) {
-                var x = personIter.next();
-                if (!timedEdgeMap.containsKey(x.id)) {
-                    timedEdgeMap.put(x.id, new TimedEdge(x.id, x.x, x.y, 0, 0, 0));
-                }
-                times.add(x.simtime);
-            }
-        } catch (Exception e) {
+            reader = new CSVReader(new FileReader(file));
+            rows = reader.readAll();
+        } catch (IOException | CsvException e) {
             throw new RuntimeException(e);
+        }
+        //determining the indices of columns
+        int VehColumnIndex = Arrays.asList(rows.get(0)).indexOf("All_motor_vehicles");
+        int eastColumnIndex = Arrays.asList(rows.get(0)).indexOf("Easting");
+        int northColumnIndex = Arrays.asList(rows.get(0)).indexOf("Northing");
+        int laneColumnIndex = Arrays.asList(rows.get(0)).indexOf("Direction_of_travel");
+        int dateColumnIndex = Arrays.asList(rows.get(0)).indexOf("Count_date");
+        int idColumnIndex = Arrays.asList(rows.get(0)).indexOf("Count_point_id");
+        int hourColumnIndex = Arrays.asList(rows.get(0)).indexOf("hour");
+        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+
+
+        Function<String[], ImmutablePair<LocalDateTime, Integer>> f = o1 -> {
+            String dateString = o1[dateColumnIndex];
+            String hourString = o1[hourColumnIndex];
+            LocalDateTime dateTime = LocalDateTime.parse(dateString, dateFormatter);
+            // dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay();
+            int hour = Integer.parseInt(hourString);
+            dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
+            var id = o1[idColumnIndex];
+            return new ImmutablePair<>(dateTime, Integer.parseInt(id));
+        };
+        var body = rows.subList(1, rows.size());
+
+        // Initialize earliest and latest DateTime to extreme values
+        LocalDateTime earliestDateTime = LocalDateTime.MAX;
+        LocalDateTime latestDateTime = LocalDateTime.MIN;
+
+        for (String[] row : body) {
+            String dateString = row[dateColumnIndex];
+            int hour = Integer.parseInt(row[hourColumnIndex]);
+            LocalDateTime dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay().withHour(hour);
+
+            if (dateTime.isBefore(earliestDateTime)) {
+                earliestDateTime = dateTime;
+            }
+            if (dateTime.isAfter(latestDateTime)) {
+                latestDateTime = dateTime;
+            }
         }
 
-        MappingIterator<PrintResults.EdgeConnectionsPerSimulationTime> iter2 = null;
-        try {
-            iter2 = new CsvMapper().enable(CsvParser.Feature.SKIP_EMPTY_LINES).readerFor(PrintResults.EdgeConnectionsPerSimulationTime.class)
-                    .with(emptySchema().withHeader().withNullValue("")).readValues(connection_counts);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        earliestTime = earliestDateTime.toEpochSecond(ZoneOffset.UTC);
+        earliestTime-=3;
+        long latestTime = latestDateTime.toEpochSecond(ZoneOffset.UTC);
+
+        // Adjust configuration based on the calculated times
+        getConf().begin = 0;
+        getConf().end = latestTime - earliestTime;
+        getConf().step = 3600; // Assuming each step is 1 second
+        body.sort(Comparator.comparing(f::apply));
+        TreeSet<Double> times = new TreeSet<>();
+        HashMap<String, TimedEdge> timedEdgeMap = new HashMap<>();
         Multimap<Double, TimedIoT> multiIots = HashMultimap.create();
-        while (iter2.hasNext()) {
-            var x = iter2.next();
-            var edge = timedEdgeMap.get(x.edge_host);
-            for (int i = 0; i<x.ioTDevices; i++) {
+
+        for (String[] row : body) {
+            //   String curr = String.valueOf(row[dateColumnIndex]);
+            //  double currTime = Double.parseDouble(row[timeColumnIndex]); //
+            //double currTime = 1; // bec each row has 1 hour which is 3600 sec
+            double x = Double.parseDouble(row[eastColumnIndex]);
+            double y = Double.parseDouble(row[northColumnIndex]);
+
+            String lane = row[laneColumnIndex];
+            String dateString = row[dateColumnIndex];
+            String hourString = row[hourColumnIndex];
+            //  String dateTimeString = dateString + "  " + hourString;
+            //  System.out.println("dateString" + dateString);
+            LocalDateTime dateTime = LocalDateTime.parse(dateString, dateFormatter);
+            // dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay();
+            int hour = Integer.parseInt(hourString);
+            dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
+            double currTime = (dateTime.toEpochSecond(ZoneOffset.UTC) - earliestTime);
+            String edgeId = row[idColumnIndex];
+
+            int ioTDevices = Integer.parseInt(row[VehColumnIndex]);
+            if (!timedEdgeMap.containsKey(edgeId)) {
+                timedEdgeMap.put(edgeId, new TimedEdge(edgeId, x, y, 0, 0, 0));
+            }
+            for (int i = 0; i<ioTDevices; i++) {
                 TimedIoT TI = new TimedIoT();
-                double thisTime = BigDecimal.valueOf(x.time).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-                TI.setId("id_" + (int)(thisTime*1000)+ '_' + edge.id + '_' + i);
-                TI.setX(edge.x);
-                TI.setY(edge.y);
-                TI.setSimtime(thisTime);
+                double thisTime = BigDecimal.valueOf(currTime).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+                TI.setId("id_" + (int)(thisTime*1000)+ '_' + edgeId + '_' + i);
+                TI.setX(x);
+                TI.setY(y);
+                TI.setSimtime(currTime);
                 TI.setType("no_type_info");
                 TI.setLane("no_lane_info");
-                multiIots.put(thisTime, TI);
+                multiIots.put(currTime, TI);
             }
+            times.add(currTime);
         }
+
+
+//        File edge_nodes = new File(rsu_csv);
+//        File connection_counts = new File(connection_per_sim_time);
+//        // Determining the osmotic edges
+//        try {
+//            MappingIterator<TimedEdge> personIter = new CsvMapper().enable(CsvParser.Feature.SKIP_EMPTY_LINES).readerFor(TimedEdge.class)
+//                    .with(emptySchema().withHeader().withNullValue("")).readValues(edge_nodes);
+//            while (personIter.hasNext()) {
+//                var x = personIter.next();
+//                if (!timedEdgeMap.containsKey(x.id)) {
+//                    timedEdgeMap.put(x.id, new TimedEdge(x.id, x.x, x.y, 0, 0, 0));
+//                }
+//                times.add(x.simtime);
+//            }
+//        } catch (Exception e) {
+//            throw new RuntimeException(e);
+//        }
+
+//        MappingIterator<PrintResults.EdgeConnectionsPerSimulationTime> iter2 = null;
+//        try {
+//            iter2 = new CsvMapper().enable(CsvParser.Feature.SKIP_EMPTY_LINES).readerFor(PrintResults.EdgeConnectionsPerSimulationTime.class)
+//                    .with(emptySchema().withHeader().withNullValue("")).readValues(connection_counts);
+//        } catch (IOException e) {
+//            throw new RuntimeException(e);
+//        }
+//        while (iter2.hasNext()) {
+//            var x = iter2.next();
+//            var edge = timedEdgeMap.get(x.edge_host);
+//            for (int i = 0; i<x.ioTDevices; i++) {
+//                TimedIoT TI = new TimedIoT();
+//                double thisTime = BigDecimal.valueOf(x.time).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+//                TI.setId("id_" + (int)(thisTime*1000)+ '_' + edge.id + '_' + i);
+//                TI.setX(edge.x);
+//                TI.setY(edge.y);
+//                TI.setSimtime(thisTime);
+//                TI.setType("no_type_info");
+//                TI.setLane("no_lane_info");
+//                multiIots.put(thisTime, TI);
+//            }
+//        }
 
         var collector = new BaseCollectorParser(temporalOrdering, vehicleCSVFile);
         collector.startDocument();

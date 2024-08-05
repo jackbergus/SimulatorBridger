@@ -101,12 +101,12 @@ public class DfTConverter extends TrafficConverter {
         networkFile = null;
 
         File file = new File(concreteConf.DfT_file_path);
-        Document DfTFile = null;
+//        Document DfTFile = null;
         try {
             CSVReader reader = new CSVReader(new FileReader(file));
             List<String[]> rows = reader.readAll();
             //determining the indices of columns
-            int timeColumnIndex = Arrays.asList(rows.get(0)).indexOf("hour");
+//            int timeColumnIndex = Arrays.asList(rows.get(0)).indexOf("hour");
             int VehColumnIndex = Arrays.asList(rows.get(0)).indexOf("All_motor_vehicles");
             int eastColumnIndex = Arrays.asList(rows.get(0)).indexOf("Easting");
             int northColumnIndex = Arrays.asList(rows.get(0)).indexOf("Northing");

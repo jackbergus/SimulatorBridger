@@ -31,6 +31,7 @@ import uk.ncl.giacomobergami.utils.structures.StraightforwardAdjacencyList;
 import javax.xml.parsers.*;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -218,7 +219,8 @@ public class SUMOConverter extends TrafficConverter {
 
     private void SerializeIoTDeviceConfigList(List<IoTDeviceTabularConfiguration> iotDevices) {
         System.out.print("Starting Serialization of IoT Device Config Info...\n");
-        File name = new File( "clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser");
+        File name =
+                Path.of("clean_example", "1_traffic_information_collector_output", "IoTDeviceInfo.ser").toFile();
         try {
             name.createNewFile();
         } catch (IOException e) {
@@ -242,7 +244,8 @@ public class SUMOConverter extends TrafficConverter {
 
     private void SerializeWakeupTimes(TreeSet<Double> wakeupTimes) {
         System.out.print("Starting Serialization of Wakeup Times...\n");
-        File name = new File( "clean_example\\1_traffic_information_collector_output\\WakeupTimes.ser");
+        File name =
+                Path.of("clean_example", "1_traffic_information_collector_output", "WakeupTimes.ser").toFile();
         try {
             name.createNewFile();
         } catch (IOException e) {

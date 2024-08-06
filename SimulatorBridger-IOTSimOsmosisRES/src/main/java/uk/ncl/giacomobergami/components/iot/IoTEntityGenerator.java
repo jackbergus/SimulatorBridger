@@ -13,6 +13,7 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -100,8 +101,8 @@ public class IoTEntityGenerator implements Serializable{
         lat = latency;
         endTime = end;
 
-        String name = "clean_example\\1_traffic_information_collector_output\\WakeupTimes.ser";
-        wakeupTimes = deserializeWakeupTimes(name);
+        wakeupTimes = deserializeWakeupTimes(
+                Path.of("clean_example", "1_traffic_information_collector_output", "WakeupTimes.ser").toString());
 
         /*List<String> allVehs = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID).distinctOn(field(Vehinformation.VEHINFORMATION.VEHICLE_ID)).from(Vehinformation.VEHINFORMATION).fetchInto(Vehinformation.VEHINFORMATION).getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
         ProgressBar pb = null;
@@ -489,6 +490,8 @@ public class IoTEntityGenerator implements Serializable{
             toUpdateWithTime.mobility.range = new Mobility.MovingRange((int)currentPosition[0], (int)currentPosition[1], -1, -1);
             toUpdateWithTime.mobility.location.x = currentPosition[0];
             toUpdateWithTime.mobility.location.y = currentPosition[1];
+            toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];
+            toUpdateWithTime.mobility.range.beginY = (int) currentPosition[1];
         }
     }
     /*public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,

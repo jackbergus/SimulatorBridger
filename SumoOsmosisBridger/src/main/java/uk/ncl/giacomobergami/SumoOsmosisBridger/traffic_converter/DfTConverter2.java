@@ -20,6 +20,7 @@ import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.rsu.RSUUpdater;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.rsu.RSUUpdaterFactory;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
+import uk.ncl.giacomobergami.utils.shared_data.dft.DfTEntry;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
@@ -33,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -89,48 +91,49 @@ public class DfTConverter2 extends TrafficConverter {
         connectionPath.clear();
         temporalOrdering.clear();
         timedIoTDevices.clear();
+        AtomicInteger ai = new AtomicInteger(1);
 
         File file = new File(concreteConf.DfT_file_path);
+
         CSVReader reader = null;
-        List<String[]> rows;
+        List<DfTEntry> rows;
         try {
-            reader = new CSVReader(new FileReader(file));
-            rows = reader.readAll();
-        } catch (IOException | CsvException e) {
+            MappingIterator<DfTEntry> personIter;
+            personIter = new CsvMapper().enable(CsvParser.Feature.SKIP_EMPTY_LINES).readerFor(DfTEntry.class)
+                    .with(emptySchema().withHeader().withNullValue("")).readValues(file);
+            rows = personIter.readAll();
+        } catch (IOException  e) {
             throw new RuntimeException(e);
         }
         //determining the indices of columns
-        int VehColumnIndex = Arrays.asList(rows.get(0)).indexOf("All_motor_vehicles");
-        int eastColumnIndex = Arrays.asList(rows.get(0)).indexOf("Easting");
-        int northColumnIndex = Arrays.asList(rows.get(0)).indexOf("Northing");
-        int laneColumnIndex = Arrays.asList(rows.get(0)).indexOf("Direction_of_travel");
-        int dateColumnIndex = Arrays.asList(rows.get(0)).indexOf("Count_date");
-        int idColumnIndex = Arrays.asList(rows.get(0)).indexOf("Count_point_id");
-        int hourColumnIndex = Arrays.asList(rows.get(0)).indexOf("hour");
-        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
+//        int VehColumnIndex = Arrays.asList(rows.get(0)).indexOf("All_motor_vehicles");
+//        int eastColumnIndex = Arrays.asList(rows.get(0)).indexOf("Easting");
+//        int northColumnIndex = Arrays.asList(rows.get(0)).indexOf("Northing");
+//        int laneColumnIndex = Arrays.asList(rows.get(0)).indexOf("Direction_of_travel");
+//        int dateColumnIndex = Arrays.asList(rows.get(0)).indexOf("Count_date");
+//        int idColumnIndex = Arrays.asList(rows.get(0)).indexOf("Count_point_id");
+//        int hourColumnIndex = Arrays.asList(rows.get(0)).indexOf("hour");
+//        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
 
-        Function<String[], ImmutablePair<LocalDateTime, Integer>> f = o1 -> {
-            String dateString = o1[dateColumnIndex];
-            String hourString = o1[hourColumnIndex];
-            LocalDateTime dateTime = LocalDateTime.parse(dateString, dateFormatter);
-            // dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay();
-            int hour = Integer.parseInt(hourString);
-            dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
-            var id = o1[idColumnIndex];
-            return new ImmutablePair<>(dateTime, Integer.parseInt(id));
-        };
-        var body = rows.subList(1, rows.size());
+//        Function<String[], ImmutablePair<LocalDateTime, Integer>> f = o1 -> {
+//            String dateString = o1[dateColumnIndex];
+//            String hourString = o1[hourColumnIndex];
+//            LocalDateTime dateTime = LocalDateTime.parse(dateString, dateFormatter);
+//            // dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay();
+//            int hour = Integer.parseInt(hourString);
+//            dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
+//            var id = o1[idColumnIndex];
+//            return new ImmutablePair<>(dateTime, Integer.parseInt(id));
+//        };
+//        var body = rows.subList(1, rows.size());
 
         // Initialize earliest and latest DateTime to extreme values
         LocalDateTime earliestDateTime = LocalDateTime.MAX;
         LocalDateTime latestDateTime = LocalDateTime.MIN;
 
-        for (String[] row : body) {
-            String dateString = row[dateColumnIndex];
-            int hour = Integer.parseInt(row[hourColumnIndex]);
-            LocalDateTime dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay().withHour(hour);
-
+        for (DfTEntry row : rows) {
+            LocalDateTime dateTime = row.getFullDate();
             if (dateTime.isBefore(earliestDateTime)) {
                 earliestDateTime = dateTime;
             }
@@ -141,53 +144,84 @@ public class DfTConverter2 extends TrafficConverter {
 
         earliestTime = earliestDateTime.toEpochSecond(ZoneOffset.UTC);
         earliestTime-=3;
+        TreeSet<Double> times = new TreeSet<>();
         long latestTime = latestDateTime.toEpochSecond(ZoneOffset.UTC);
 
         // Adjust configuration based on the calculated times
         getConf().begin = 0;
         getConf().end = latestTime - earliestTime;
-        getConf().step = 3600; // Assuming each step is 1 second
-        body.sort(Comparator.comparing(f::apply));
-        TreeSet<Double> times = new TreeSet<>();
+        getConf().step = 3600.0; // Assuming each step is 1 second
+        rows.sort(Comparator.comparing(DfTEntry::comparablePair));
         HashMap<String, TimedEdge> timedEdgeMap = new HashMap<>();
         Multimap<Double, TimedIoT> multiIots = HashMultimap.create();
+        File debug = new File("clean_example", "debug.info");
+        FileWriter fw;
+        try {
+            fw = new FileWriter(debug);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
 
-        for (String[] row : body) {
+
+        for (DfTEntry row : rows) {
             //   String curr = String.valueOf(row[dateColumnIndex]);
             //  double currTime = Double.parseDouble(row[timeColumnIndex]); //
             //double currTime = 1; // bec each row has 1 hour which is 3600 sec
-            double x = Double.parseDouble(row[eastColumnIndex]);
-            double y = Double.parseDouble(row[northColumnIndex]);
+//            double x = Double.parseDouble(row[eastColumnIndex]);
+//            double y = Double.parseDouble(row[northColumnIndex]);
 
-            String lane = row[laneColumnIndex];
-            String dateString = row[dateColumnIndex];
-            String hourString = row[hourColumnIndex];
+//            String lane = row[laneColumnIndex];
+//            String dateString = row[dateColumnIndex];
+//            String hourString = row[hourColumnIndex];
             //  String dateTimeString = dateString + "  " + hourString;
             //  System.out.println("dateString" + dateString);
-            LocalDateTime dateTime = LocalDateTime.parse(dateString, dateFormatter);
+//            LocalDateTime dateTime = LocalDateTime.parse(dateString, dateFormatter);
             // dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay();
-            int hour = Integer.parseInt(hourString);
-            dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
-            double currTime = (dateTime.toEpochSecond(ZoneOffset.UTC) - earliestTime);
-            String edgeId = row[idColumnIndex];
-
-            int ioTDevices = Integer.parseInt(row[VehColumnIndex]);
-            if (!timedEdgeMap.containsKey(edgeId)) {
-                timedEdgeMap.put(edgeId, new TimedEdge(edgeId, x, y, 0, 0, 0));
+//            int hour = Integer.parseInt(hourString);
+//            dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
+            double currTime = (row.getSimtime() - earliestTime);
+//            String edgeId = row[idColumnIndex];
+            times.add(currTime);
+//            int ioTDevices = Integer.parseInt(row[VehColumnIndex]);
+            if (!timedEdgeMap.containsKey(row.getId())) {
+                timedEdgeMap.put(row.getId(), new TimedEdge(row.getId(), row.getX(), row.getY(), 0, 0, 0));
+            } else {
+                var ref = timedEdgeMap.get(row.getId());
+                if (ref.x != row.getX())
+                    throw new RuntimeException("ERROR: different x");
+                if (ref.y != row.getY())
+                    throw new RuntimeException("ERROR: different y");
             }
-            for (int i = 0; i<ioTDevices; i++) {
+            int N = row.getAll_motor_vehicles()/100;
+//            N = 1;
+            for (int i = 0; i<N; i++) {
                 TimedIoT TI = new TimedIoT();
-                double thisTime = BigDecimal.valueOf(currTime).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-                TI.setId("id_" + (int)(thisTime*1000)+ '_' + edgeId + '_' + i);
-                TI.setX(x);
-                TI.setY(y);
+                TI.setId("id_" + ai.getAndIncrement());
+                TI.setX(row.getX());
+                TI.setY(row.getY());
                 TI.setSimtime(currTime);
                 TI.setType("no_type_info");
                 TI.setLane("no_lane_info");
+                try {
+                    fw.write(TI.getId()+" communicating with "+ row.getId()+" at time "+currTime+System.lineSeparator());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
                 multiIots.put(currTime, TI);
             }
-            times.add(currTime);
         }
+        try {
+            fw.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        Set<Double> remaining = new HashSet<>();
+//        for (Double t : times) {
+//            for (double tp = t; tp<latestTime; tp+= getConf().step) {
+//                remaining.add(tp);
+//            }
+//        }
+        times.addAll(remaining);
 
         var collector = new BaseCollectorParser(temporalOrdering, vehicleCSVFile);
         collector.startDocument();

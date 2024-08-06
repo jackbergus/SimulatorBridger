@@ -21,6 +21,7 @@ import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 
 import javax.sql.DataSource;
 import java.io.*;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -251,8 +252,9 @@ public class EnsembleConfigurations {
 
     public List<GlobalConfigurationSettings> getTimedPossibleConfigurations(EnsembleConfigurations.Configuration conf, Connection conn, DSLContext context) {
         List<GlobalConfigurationSettings> ls = new ArrayList<>();
-        String name = "clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser";
-        List<IoTDeviceTabularConfiguration> iotDevices = deserializeIoTDevices("clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser");
+//        String name = "clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser";
+        List<IoTDeviceTabularConfiguration> iotDevices = deserializeIoTDevices(
+                Path.of("clean_example", "1_traffic_information_collector_output", "IoTDeviceInfo.ser").toString());
         //ioTEntityGenerator.asIoTSQLCongigurationList(context);
         AtomicInteger global_program_counter = new AtomicInteger(1);
         List<WorkloadCSV> globalApps = ioTEntityGenerator.generateAppSetUp(conf.simulation_step, global_program_counter);

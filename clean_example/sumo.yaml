@@ -9,3 +9,4 @@ sumo_detectors_file_path: "/home/giacomo/Scrivania/Bologna/acosta_detectors.add.
 sumo_vTypes_file_path: "/home/giacomo/Scrivania/Bologna/acosta_vtypes.add.xml"           #The path to the SUMO vTypes file, this file needs a "tau" value above or equal to the step-size
 python_filepath: "python3"
 generateRSUAdjacencyList: "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_orchestrator.TopKConnections"
+DfT_file_path: "/home/giacomo/Scaricati/Re_ DfT Experiment Chapter/Manchester.csv"

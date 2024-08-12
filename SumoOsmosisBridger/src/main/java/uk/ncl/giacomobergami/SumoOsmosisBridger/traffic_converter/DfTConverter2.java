@@ -67,16 +67,8 @@ public class DfTConverter2 extends TrafficConverter {
 
     public DfTConverter2(TrafficConfiguration conf)  {
         super(conf);
-//        dbf = DocumentBuilderFactory.newInstance();
-//        try {
-//            db = dbf.newDocumentBuilder();
-//        } catch (ParserConfigurationException e) {
-//            e.printStackTrace();
-//            db = null;
-//        }
         concreteConf = YAML.parse(SUMOConfiguration.class, new File(conf.YAMLConverterConfiguration)).orElseThrow();
         temporalOrdering = new ArrayList<>();
-//        networkFile = null;
         timedIoTDevices = new HashMap<>();
         roadSideUnits = new HashSet<>();
         netGen = NetworkGeneratorFactory.generateFacade(concreteConf.generateRSUAdjacencyList);
@@ -105,28 +97,6 @@ public class DfTConverter2 extends TrafficConverter {
         } catch (IOException  e) {
             throw new RuntimeException(e);
         }
-        //determining the indices of columns
-//        int VehColumnIndex = Arrays.asList(rows.get(0)).indexOf("All_motor_vehicles");
-//        int eastColumnIndex = Arrays.asList(rows.get(0)).indexOf("Easting");
-//        int northColumnIndex = Arrays.asList(rows.get(0)).indexOf("Northing");
-//        int laneColumnIndex = Arrays.asList(rows.get(0)).indexOf("Direction_of_travel");
-//        int dateColumnIndex = Arrays.asList(rows.get(0)).indexOf("Count_date");
-//        int idColumnIndex = Arrays.asList(rows.get(0)).indexOf("Count_point_id");
-//        int hourColumnIndex = Arrays.asList(rows.get(0)).indexOf("hour");
-//        DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
-
-
-//        Function<String[], ImmutablePair<LocalDateTime, Integer>> f = o1 -> {
-//            String dateString = o1[dateColumnIndex];
-//            String hourString = o1[hourColumnIndex];
-//            LocalDateTime dateTime = LocalDateTime.parse(dateString, dateFormatter);
-//            // dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay();
-//            int hour = Integer.parseInt(hourString);
-//            dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
-//            var id = o1[idColumnIndex];
-//            return new ImmutablePair<>(dateTime, Integer.parseInt(id));
-//        };
-//        var body = rows.subList(1, rows.size());
 
         // Initialize earliest and latest DateTime to extreme values
         LocalDateTime earliestDateTime = LocalDateTime.MAX;
@@ -144,7 +114,7 @@ public class DfTConverter2 extends TrafficConverter {
 
         earliestTime = earliestDateTime.toEpochSecond(ZoneOffset.UTC);
         earliestTime-=3;
-        TreeSet<Double> times = new TreeSet<>();
+//        TreeSet<Double> times = new TreeSet<>();
         long latestTime = latestDateTime.toEpochSecond(ZoneOffset.UTC);
 
         // Adjust configuration based on the calculated times
@@ -153,7 +123,7 @@ public class DfTConverter2 extends TrafficConverter {
         getConf().step = 3600.0; // Assuming each step is 1 second
         rows.sort(Comparator.comparing(DfTEntry::comparablePair));
         HashMap<String, TimedEdge> timedEdgeMap = new HashMap<>();
-        Multimap<Double, TimedIoT> multiIots = HashMultimap.create();
+//        Multimap<Double, TimedIoT> multiIots = HashMultimap.create();
         File debug = new File("clean_example", "debug.info");
         FileWriter fw;
         try {
@@ -162,27 +132,11 @@ public class DfTConverter2 extends TrafficConverter {
             throw new RuntimeException(e);
         }
 
-
+        var collector = new BaseCollectorParser(temporalOrdering, vehicleCSVFile);
+        collector.startDocument();
         for (DfTEntry row : rows) {
-            //   String curr = String.valueOf(row[dateColumnIndex]);
-            //  double currTime = Double.parseDouble(row[timeColumnIndex]); //
-            //double currTime = 1; // bec each row has 1 hour which is 3600 sec
-//            double x = Double.parseDouble(row[eastColumnIndex]);
-//            double y = Double.parseDouble(row[northColumnIndex]);
-
-//            String lane = row[laneColumnIndex];
-//            String dateString = row[dateColumnIndex];
-//            String hourString = row[hourColumnIndex];
-            //  String dateTimeString = dateString + "  " + hourString;
-            //  System.out.println("dateString" + dateString);
-//            LocalDateTime dateTime = LocalDateTime.parse(dateString, dateFormatter);
-            // dateTime = LocalDate.parse(dateString, dateFormatter).atStartOfDay();
-//            int hour = Integer.parseInt(hourString);
-//            dateTime = dateTime.withHour(hour); // add the time in "hour" to the date
             double currTime = (row.getSimtime() - earliestTime);
-//            String edgeId = row[idColumnIndex];
-            times.add(currTime);
-//            int ioTDevices = Integer.parseInt(row[VehColumnIndex]);
+            collector.addTimestamp(currTime);
             if (!timedEdgeMap.containsKey(row.getId())) {
                 timedEdgeMap.put(row.getId(), new TimedEdge(row.getId(), row.getX(), row.getY(), 0, 0, 0));
             } else {
@@ -192,8 +146,7 @@ public class DfTConverter2 extends TrafficConverter {
                 if (ref.y != row.getY())
                     throw new RuntimeException("ERROR: different y");
             }
-            int N = row.getAll_motor_vehicles()/100;
-//            N = 1;
+            int N = row.getAll_motor_vehicles();
             for (int i = 0; i<N; i++) {
                 TimedIoT TI = new TimedIoT();
                 TI.setId("id_" + ai.getAndIncrement());
@@ -207,32 +160,13 @@ public class DfTConverter2 extends TrafficConverter {
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                multiIots.put(currTime, TI);
+                collector.addIoTDevice(TI);
             }
         }
         try {
             fw.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
-        }
-        Set<Double> remaining = new HashSet<>();
-//        for (Double t : times) {
-//            for (double tp = t; tp<latestTime; tp+= getConf().step) {
-//                remaining.add(tp);
-//            }
-//        }
-        times.addAll(remaining);
-
-        var collector = new BaseCollectorParser(temporalOrdering, vehicleCSVFile);
-        collector.startDocument();
-        for (var t : times) {
-            collector.addTimestamp(t);
-            var x = multiIots.get(t);
-            if ((x != null) && (!x.isEmpty())) {
-                for (var y : x) {
-                    collector.addIoTDevice(y);
-                }
-            }
         }
         collector.endDocument();
         System.out.print("SAX parsing of SUMO XML data complete\n");

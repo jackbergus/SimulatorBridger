@@ -11,7 +11,7 @@ n_edges:                     -1         #Defined dynamically
 edges_iops:                  1000000000
 n_edges_group_size:          5
 aggregate_to_edge_bandwidth: 1000
-IoTNumber:  -1                       #Defined dynamically if set to -1
+IoTNumber:  409                       #Defined dynamically if set to -1
 hosts_and_vms:
   n_hosts_per_edges:               1
   hosts_bandwidth:                 10000

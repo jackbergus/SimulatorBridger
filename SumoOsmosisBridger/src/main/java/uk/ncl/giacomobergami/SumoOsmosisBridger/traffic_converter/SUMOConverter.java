@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.jooq.DSLContext;
 import org.jooq.Result;
+import org.jooq.meta.derby.sys.Sys;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
@@ -31,7 +32,6 @@ import uk.ncl.giacomobergami.utils.structures.StraightforwardAdjacencyList;
 import javax.xml.parsers.*;
 import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -68,8 +68,8 @@ public class SUMOConverter extends TrafficConverter {
         roadSideUnits = new HashSet<>();
         netGen = NetworkGeneratorFactory.generateFacade(concreteConf.generateRSUAdjacencyList);
         rsuUpdater = RSUUpdaterFactory.generateFacade(concreteConf.updateRSUFields,
-                concreteConf.default_rsu_communication_radius,
-                concreteConf.default_max_vehicle_communication);
+                                                      concreteConf.default_rsu_communication_radius,
+                                                      concreteConf.default_max_vehicle_communication);
         connectionPath = new StraightforwardAdjacencyList<>();
     }
 
@@ -118,7 +118,67 @@ public class SUMOConverter extends TrafficConverter {
             return false;
         }
 
-        File trajectory_python = new File(concreteConf.trace_file);
+        NodeList traffic_lights = null;
+        String RSULocs = String.valueOf(' ');
+        try {
+            traffic_lights = XPathUtil.evaluateNodeList(networkFile, "/net/junction[@type='traffic_light']");
+        } catch (XPathExpressionException e) {
+            e.printStackTrace();
+            return false;
+        }
+        for (int i = 0, N = traffic_lights.getLength(); i<N; i++) {
+            var curr = traffic_lights.item(i).getAttributes();
+            Double x = Double.parseDouble(curr.getNamedItem("x").getTextContent());
+            Double y = Double.parseDouble(curr.getNamedItem("y").getTextContent());
+            if(i + 1 < traffic_lights.getLength()) {
+                RSULocs = RSULocs + x + "," +y + ",";
+            } else {
+                RSULocs = RSULocs + x + "," +y;
+            }
+            var rsu = new TimedEdge(curr.getNamedItem("id").getTextContent(),
+                    Double.parseDouble(curr.getNamedItem("x").getTextContent()),
+                    Double.parseDouble(curr.getNamedItem("y").getTextContent()),
+                    concreteConf.default_rsu_communication_radius,
+                    concreteConf.default_max_vehicle_communication, 0);
+            rsuUpdater.accept(rsu);
+            roadSideUnits.add(rsu);
+        }
+        connectionPath.clear();
+
+        var tmp = netGen.apply(roadSideUnits);
+        tmp.forEach((k, v) -> {
+            connectionPath.put(k.id, v.id);
+        });
+
+        File trajectory_python;
+        if(concreteConf.presort) {
+            var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
+            String pyPath = conf2.getPython_filepath();
+            var checkPath = conf2.getSumo_active_check_path();
+            int radius = (int) conf2.getDefault_rsu_communication_radius();
+            path = pyPath + ' ' + checkPath + ' ' + RSULocs + ' ' + radius;
+
+            System.out.println("Starting generation of active vehicle xml file from SUMO trace data...");
+
+            Process readFile = null;
+            try {
+                readFile = new ProcessBuilder(pyPath, checkPath, RSULocs, String.valueOf(radius)).redirectErrorStream(true).start();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            try {
+                readFile.getInputStream().transferTo(System.out);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            int finish = readFile.exitValue();
+
+            System.out.print("Active vehicle data collected");
+            
+            trajectory_python = new File(concreteConf.active_trace_file);
+        } else {
+            trajectory_python = new File(concreteConf.trace_file);
+        }
         if (!trajectory_python.exists()) {
             logger.error("ERROR: sumo has not built the trace file: " + trajectory_python.getAbsolutePath());
             return false;
@@ -156,29 +216,42 @@ public class SUMOConverter extends TrafficConverter {
         TreeSet<Double> wakeupTimes = SUMODataParser.getWakeUpTimes();
         SerializeIoTDeviceConfigList(IoTDevices);
         SerializeWakeupTimes(wakeupTimes);
-
-        NodeList traffic_lights = null;
+       /* NodeList timestamp_eval;
         try {
-            traffic_lights = XPathUtil.evaluateNodeList(networkFile, "/net/junction[@type='traffic_light']");
+            timestamp_eval = XPathUtil.evaluateNodeList(trace_document, "/fcd-export/timestep");
         } catch (XPathExpressionException e) {
             e.printStackTrace();
             return false;
         }
-        for (int i = 0, N = traffic_lights.getLength(); i<N; i++) {
-            var curr = traffic_lights.item(i).getAttributes();
-            var rsu = new TimedEdge(curr.getNamedItem("id").getTextContent(),
-                    Double.parseDouble(curr.getNamedItem("x").getTextContent()),
-                    Double.parseDouble(curr.getNamedItem("y").getTextContent()),
-                    concreteConf.default_rsu_communication_radius,
-                    concreteConf.default_max_vehicle_communication, 0);
-            rsuUpdater.accept(rsu);
-            roadSideUnits.add(rsu);
-        }
-        connectionPath.clear();
-        var tmp = netGen.apply(roadSideUnits);
-        tmp.forEach((k, v) -> {
-            connectionPath.put(k.id, v.id);
-        });
+
+        for (int i = 0, N = timestamp_eval.getLength(); i<N; i++) {
+            var curr = timestamp_eval.item(i);
+            double currTime = Double.parseDouble(curr.getAttributes().getNamedItem("time").getTextContent());
+            temporalOrdering.add(currTime);
+            var ls = new ArrayList<TimedIoT>();
+            timedIoTDevices.put(currTime, ls);
+            var tag = timestamp_eval.item(i).getChildNodes();
+            for (int j = 0, M = tag.getLength(); j < M; j++) {
+                var veh = tag.item(j);
+                if (veh.getNodeType() == Node.ELEMENT_NODE) {
+                    assert (Objects.equals(veh.getNodeName(), "vehicle"));
+                    var attrs = veh.getAttributes();
+                    TimedIoT rec = new TimedIoT();
+                    rec.angle = Double.parseDouble(attrs.getNamedItem("angle").getTextContent());
+                    rec.x = Double.parseDouble(attrs.getNamedItem("x").getTextContent());
+                    rec.y = Double.parseDouble(attrs.getNamedItem("y").getTextContent());
+                    rec.speed = Double.parseDouble(attrs.getNamedItem("speed").getTextContent());
+                    rec.pos = Double.parseDouble(attrs.getNamedItem("pos").getTextContent());
+                    rec.slope = Double.parseDouble(attrs.getNamedItem("slope").getTextContent());
+                    rec.id = (attrs.getNamedItem("id").getTextContent());
+                    rec.type = (attrs.getNamedItem("type").getTextContent());
+                    rec.lane = (attrs.getNamedItem("lane").getTextContent());
+                    rec.simtime = currTime;
+                    ls.add(rec);
+                }
+            }
+        }*/
+
         return true;
     }
 
@@ -219,8 +292,7 @@ public class SUMOConverter extends TrafficConverter {
 
     private void SerializeIoTDeviceConfigList(List<IoTDeviceTabularConfiguration> iotDevices) {
         System.out.print("Starting Serialization of IoT Device Config Info...\n");
-        File name =
-                Path.of("clean_example", "1_traffic_information_collector_output", "IoTDeviceInfo.ser").toFile();
+        File name = new File( "clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser");
         try {
             name.createNewFile();
         } catch (IOException e) {
@@ -244,8 +316,7 @@ public class SUMOConverter extends TrafficConverter {
 
     private void SerializeWakeupTimes(TreeSet<Double> wakeupTimes) {
         System.out.print("Starting Serialization of Wakeup Times...\n");
-        File name =
-                Path.of("clean_example", "1_traffic_information_collector_output", "WakeupTimes.ser").toFile();
+        File name = new File( "clean_example\\1_traffic_information_collector_output\\WakeupTimes.ser");
         try {
             name.createNewFile();
         } catch (IOException e) {

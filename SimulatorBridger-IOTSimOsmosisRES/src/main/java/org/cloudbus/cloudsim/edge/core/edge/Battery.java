@@ -151,8 +151,8 @@ public class Battery implements Serializable {
 	}
 	public void decrementCapacity(double delta, double deltaTime) {
 		this.currentCapacity -= delta;
-		double reduction = dischargeBattery(deltaTime);
-		this.currentCapacity -= reduction;
+		/*double reduction = dischargeBattery(deltaTime);
+		this.currentCapacity -= reduction;*/
 	}
 
 	public void chargeBattery(double energyTransfer, double current){

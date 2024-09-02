@@ -2,6 +2,7 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter;
 
 public class SUMOConfiguration {
     public String trace_file;
+    public String active_trace_file;
     public String logger_file;
     public String sumo_program;
     public String sumo_configuration_file_path;
@@ -13,6 +14,8 @@ public class SUMOConfiguration {
     public double default_rsu_communication_radius;
     public int default_max_vehicle_communication;
     public String DfT_file_path;
+    public String sumo_active_check_path;
+    public boolean presort;
 
 
     public String getGenerateRSUAdjacencyList() {
@@ -45,6 +48,8 @@ public class SUMOConfiguration {
     public void setTrace_file(String trace_file) {
         this.trace_file = trace_file;
     }
+    public String getActive_trace_file() {return active_trace_file;}
+    public void setActive_trace_file(String active_trace_file) {this.active_trace_file = active_trace_file;}
     public String getLogger_file() {
         return logger_file;
     }
@@ -79,7 +84,6 @@ public class SUMOConfiguration {
     public void setPython_filepath(String python_filepath) {
         this.python_filepath = python_filepath;
     }
-
     public String getDfT_file_path() {
         return DfT_file_path;
 
@@ -87,5 +91,8 @@ public class SUMOConfiguration {
     public void setDfT_file_path(String DfT_file_path) {
         this.DfT_file_path = DfT_file_path;
     }
-
+    public String getSumo_active_check_path() { return sumo_active_check_path; }
+    public void setSumo_active_check_path(String sumo_active_check_path) {this.sumo_active_check_path = sumo_active_check_path;}
+    public boolean getPresort() { return presort; }
+    public void setPresort(boolean presort) { this.presort = presort; }
 }

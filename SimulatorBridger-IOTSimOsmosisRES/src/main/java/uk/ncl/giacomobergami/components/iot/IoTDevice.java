@@ -27,6 +27,7 @@ import uk.ncl.giacomobergami.components.iot_protocol.IoTProtocolGeneratorFactory
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
 import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
+import uk.ncl.giacomobergami.utils.pipeline_confs.BatteryConfiguration;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import java.io.File;
@@ -57,8 +58,8 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	public Mobility mobility;
 	int connectingEdgeDeviceId = -1;
 	private boolean enabled;
-	public abstract boolean updateBatteryBySensing();
-	public abstract boolean updateBatteryByTransmission();
+	public abstract boolean updateBatteryBySensing(double deltaTime);
+	public abstract boolean updateBatteryByTransmission(double deltaTime);
 	private double bw;
 	private double usedBw;
 	private final AtomicInteger flowId;
@@ -205,15 +206,16 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	
 	private void sensing(SimEvent ev) {
 		if (ev == null) {
-			this.updateBatteryBySensing();
-			consumptionInTime.put(MainEventManager.clock(), this.battery.getBatteryTotalConsumption());
+			double time = MainEventManager.clock();
+			this.updateBatteryBySensing(step);
+			consumptionInTime.put((double) Math.round(time * 1000) / 1000, this.battery.getBatteryTotalConsumption());
 			return;
 		}
 		OsmoticAppDescription app = (OsmoticAppDescription) ev.getData();
 		Flow flow = this.createFlow(app);
-		df.setRoundingMode(RoundingMode.HALF_UP);
+		
 		WorkflowInfo workflowTag = new WorkflowInfo();
-		workflowTag.setStartTime(Double.parseDouble(df.format(MainEventManager.clock())));
+		workflowTag.setStartTime(MainEventManager.clock());
 		workflowTag.setAppId(app.getAppID());
 		workflowTag.setAppName(app.getAppName());
 		workflowTag.setIotDeviceFlow(flow);
@@ -294,7 +296,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		boolean isCommunicating;
 		int appId = -1;
 		boolean doIncrementPacketSent = flowId != -1;
-
+		int increment = 1;
 
 		if(MainEventManager.clock() > endSUMO) {
 			MainEventManager.cancelAll(getId(), MainEventManager.SIM_ANY);
@@ -306,8 +308,9 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 			// If there is no flow, then the device is not communicating, and therefore the battery should be
 			// updated as only in sensing
 
-			isDrained = this.updateBatteryBySensing();
-			consumptionInTime.put(time - step, this.battery.getBatteryTotalConsumption());
+			isDrained = this.updateBatteryBySensing(step);
+			time = time - step;
+			consumptionInTime.put((double) Math.round(time * 1000) / 1000, this.battery.getBatteryTotalConsumption());
 			isCommunicating = false;
 		} else {
 			if (doIncrementPacketSent) {
@@ -335,11 +338,11 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 					appId = app.getAppID();
 				}
 			}
-			isDrained = this.updateBatteryBySensing();
+			isDrained = this.updateBatteryBySensing(step);
 			if (!isDrained) {
 				if (doIncrementPacketSent && (!AppIDs.contains((appId)))) {
 					for (int i = 0; i<increment; i++)
-						isDrained |= this.updateBatteryByTransmission();
+						isDrained |= this.updateBatteryByTransmission(step);
 				}
 			}
 			if (app != null)

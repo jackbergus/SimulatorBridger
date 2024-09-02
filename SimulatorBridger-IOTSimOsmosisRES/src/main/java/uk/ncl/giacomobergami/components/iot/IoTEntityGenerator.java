@@ -459,19 +459,18 @@ public class IoTEntityGenerator implements Serializable{
 
     public Collection<Double> collectionOfWakeUpTimes() {
         System.out.print("Starting Collection of Wake Up Times...\n");
-        int interval = 3600;
+        /*int interval = 3600;
         for(int j = 0; j < Collections.max(wakeupTimes); j+=interval) {
             setWUT.add((double)j);
-        }
-        /*latency = Math.max(latency, 0.01);
+        }*/
+        latency = Math.max(latency, 0.01);
         for (double i = begin; i <= end; i = i + latency) {
             setWUT.add((double) Math.round(i * 1000) / 1000);
-        }*/
+        }
         setWUT.addAll(wakeupTimes);
         /*for (int j = 0; j < vehicleTimes.size(); j++) {
             setWUT.addAll((Collection<? extends Double>) vehicleTimes.values().toArray()[j]);
         }*/
-
         System.out.print("Wake Up Times Collected\n");
         return setWUT;
     }

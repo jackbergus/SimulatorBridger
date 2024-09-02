@@ -11,7 +11,9 @@
 
 package org.cloudbus.osmosis.core;
 
+import java.math.RoundingMode;
 import java.sql.Connection;
+import java.text.DecimalFormat;
 import java.util.*;
 
 import org.cloudbus.cloudsim.Cloudlet;
@@ -46,6 +48,8 @@ public class OsmosisOrchestrator extends SimEntity {
 	protected Hashtable<String, Channel> channelTable;
 	
 	private List<Channel> channelsHistory = new ArrayList<>();
+
+	DecimalFormat df = new DecimalFormat("#.###");
 
 	public static void setBandwidthShareInfo(List<PrintResults.BandwidthInfo> bandwidthInfo) {
 		bandwidthShareInfo = bandwidthInfo;
@@ -131,9 +135,10 @@ public class OsmosisOrchestrator extends SimEntity {
 		createChannel(flow);
 	}
 	
-	protected void createChannel(Flow flow) { 	
+	protected void createChannel(Flow flow) {
+		df.setRoundingMode(RoundingMode.HALF_UP);
 		flowList.add(flow);
-		flow.setStartTime(MainEventManager.clock());
+		flow.setStartTime(Double.parseDouble(df.format(MainEventManager.clock())));
 		int flowId = flow.getFlowId();			
 		updateFlowProcessing();
 		Channel channel = flow.getChannel(); 
@@ -216,7 +221,7 @@ public class OsmosisOrchestrator extends SimEntity {
 	}
 	
 	private Channel removeChannel(String key) {
-		//Channel data = channelTable.get("232-8-24");
+		Channel data = channelTable.get("232-8-24");
 		Channel ch = this.channelTable.remove(key);		
 		ch.terminate();
 		adjustAllChannels();
@@ -238,6 +243,7 @@ public class OsmosisOrchestrator extends SimEntity {
 				removeCh.add(key);
 			}
 		}
+		
 		for(String key:removeCh) {
 			removeChannel(key);
 		}
@@ -276,6 +282,7 @@ public class OsmosisOrchestrator extends SimEntity {
 	private double nextFinishTime() {
 		double earliestEft = Double.POSITIVE_INFINITY;
 		for(Channel ch:channelTable.values()){
+			
 			double eft = ch.nextFinishTime();
 			if (eft<earliestEft){
 				earliestEft=eft;

@@ -4,6 +4,8 @@ import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 
 import java.util.ArrayList;
 
+
+@Deprecated
 public class SUMOData  {
   public ArrayList<TimedIoT> getSUMOData() {
     return SUMOData;

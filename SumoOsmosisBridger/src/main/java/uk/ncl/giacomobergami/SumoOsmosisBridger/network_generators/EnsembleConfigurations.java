@@ -21,6 +21,7 @@ import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 
 import javax.sql.DataSource;
 import java.io.*;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -71,7 +72,7 @@ public class EnsembleConfigurations {
                                                                                          int nSCC,
                                                                                          CloudInfrastructureGenerator.Configuration globalCloud, DSLContext context) {
         List<CloudInfrastructureGenerator.Configuration> ls = new ArrayList<>();
-        int IoTNumber = ioTEntityGenerator.maximumNumberOfCommunicatingVehicles(context);
+        int IoTNumber = globalCloud.IoTNumber == -1 ? ioTEntityGenerator.maximumNumberOfCommunicatingVehicles(context) : globalCloud.IoTNumber;
 
         // Assuming to set VM in the number of IoTNumber * IoTMultiplicityForVMs / numberOfClouds
         globalCloud.hosts_and_vms.n_vm = IoTNumber * IoTMultiplicityForVMs / numberOfClouds;
@@ -251,8 +252,9 @@ public class EnsembleConfigurations {
 
     public List<GlobalConfigurationSettings> getTimedPossibleConfigurations(EnsembleConfigurations.Configuration conf, Connection conn, DSLContext context) {
         List<GlobalConfigurationSettings> ls = new ArrayList<>();
-        String name = "clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser";
-        List<IoTDeviceTabularConfiguration> iotDevices = deserializeIoTDevices("clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser");
+//        String name = "clean_example\\1_traffic_information_collector_output\\IoTDeviceInfo.ser";
+        List<IoTDeviceTabularConfiguration> iotDevices = deserializeIoTDevices(
+                Path.of("clean_example", "1_traffic_information_collector_output", "IoTDeviceInfo.ser").toString());
         //ioTEntityGenerator.asIoTSQLCongigurationList(context);
         AtomicInteger global_program_counter = new AtomicInteger(1);
         List<WorkloadCSV> globalApps = ioTEntityGenerator.generateAppSetUp(conf.simulation_step, global_program_counter);

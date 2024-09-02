@@ -1,15 +1,15 @@
 package uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter;
 
-import me.tongfei.progressbar.ProgressBar;
+import com.fasterxml.jackson.databind.MappingIterator;
+import com.fasterxml.jackson.dataformat.csv.CsvMapper;
+import com.fasterxml.jackson.dataformat.csv.CsvParser;
+import com.google.common.collect.HashMultimap;
+import com.google.common.collect.Multimap;
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.jooq.DSLContext;
-import org.jooq.Result;
-import org.w3c.dom.Document;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-import org.xml.sax.helpers.DefaultHandler;
+import org.cloudbus.cloudsim.osmesis.examples.uti.PrintResults;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
@@ -18,52 +18,57 @@ import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.netgen.NetworkGene
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.netgen.NetworkGeneratorFactory;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.rsu.RSUUpdater;
 import uk.ncl.giacomobergami.traffic_orchestrator.rsu_network.rsu.RSUUpdaterFactory;
-import uk.ncl.giacomobergami.utils.data.GZip;
-import uk.ncl.giacomobergami.utils.data.XPathUtil;
 import uk.ncl.giacomobergami.utils.data.YAML;
-import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
-import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
+import uk.ncl.giacomobergami.utils.shared_data.dft.DfTEntry;
 import uk.ncl.giacomobergami.utils.shared_data.edge.TimedEdge;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
+import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 import uk.ncl.giacomobergami.utils.structures.StraightforwardAdjacencyList;
 
-import javax.xml.parsers.*;
-import javax.xml.xpath.XPathExpressionException;
 import java.io.*;
+import java.math.BigDecimal;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class SUMOConverter extends TrafficConverter {
+import static com.fasterxml.jackson.dataformat.csv.CsvSchema.emptySchema;
+
+/**
+ * This is the new DfT Converter, based upon the paper R. Almutairi, R Gillgallon, G. Bergami, G. Morgan "Approximating
+ * Real-Time IoT Interaction through Connection Counting: A QoS Perspective".
+ *
+ * @author  Giacomo Bergami, Reham Almutairi
+ */
+public class DfTConverter2 extends TrafficConverter {
     private final NetworkGenerator netGen;
+    private long earliestTime;
     private final RSUUpdater rsuUpdater;
     private SUMOConfiguration concreteConf;
-    private final DocumentBuilderFactory dbf;
-    private DocumentBuilder db;
+//    private final DocumentBuilderFactory dbf;
+//    private DocumentBuilder db;
     List<Double> temporalOrdering;
-    Document networkFile;
+//    Document networkFile;
     StraightforwardAdjacencyList<String> connectionPath;
     HashMap<Double, List<TimedIoT>> timedIoTDevices;
     HashSet<TimedEdge> roadSideUnits;
     private static Logger logger = LogManager.getRootLogger();
+//    String connection_per_sim_time = "clean_example/1_newdft_input/connectionPerSimTime.csv";
+//    String rsu_csv = "clean_example/1_newdft_input/rsu.csv";
+
     String path = "clean_example/3_extIOTSim_configuration/iot_generators.yaml";
     transient final IoTEntityGenerator.IoTGlobalConfiguration conf = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration .class, new File(path)).orElseThrow();
 
-
-    public SUMOConverter(TrafficConfiguration conf)  {
+    public DfTConverter2(TrafficConfiguration conf)  {
         super(conf);
-        dbf = DocumentBuilderFactory.newInstance();
-        try {
-            db = dbf.newDocumentBuilder();
-        } catch (ParserConfigurationException e) {
-            e.printStackTrace();
-            db = null;
-        }
         concreteConf = YAML.parse(SUMOConfiguration.class, new File(conf.YAMLConverterConfiguration)).orElseThrow();
         temporalOrdering = new ArrayList<>();
-        networkFile = null;
         timedIoTDevices = new HashMap<>();
         roadSideUnits = new HashSet<>();
         netGen = NetworkGeneratorFactory.generateFacade(concreteConf.generateRSUAdjacencyList);
@@ -78,97 +83,101 @@ public class SUMOConverter extends TrafficConverter {
         connectionPath.clear();
         temporalOrdering.clear();
         timedIoTDevices.clear();
-        networkFile = null;
+        AtomicInteger ai = new AtomicInteger(1);
 
-        File file = new File(concreteConf.sumo_configuration_file_path);
-        Document configurationFile = null;
+        File file = new File(concreteConf.DfT_file_path);
+
+        CSVReader reader = null;
+        List<DfTEntry> rows;
         try {
-            configurationFile = db.parse(file);
-        } catch (SAXException | IOException e) {
-            e.printStackTrace();
-            return false;
+            MappingIterator<DfTEntry> personIter;
+            personIter = new CsvMapper().enable(CsvParser.Feature.SKIP_EMPTY_LINES).readerFor(DfTEntry.class)
+                    .with(emptySchema().withHeader().withNullValue("")).readValues(file);
+            rows = personIter.readAll();
+        } catch (IOException  e) {
+            throw new RuntimeException(e);
         }
-        File network_python = null;
-        try {
-            network_python = Paths.get(file.getParent(), XPathUtil.evaluate(configurationFile, "/configuration/input/net-file/@value"))
-                    .toFile();
-        } catch (XPathExpressionException e) {
-            e.printStackTrace();
-            return false;
-        }
-        if (!network_python.exists()) {
-            logger.fatal("ERR: file " + network_python.getAbsolutePath() + " from " + file.getAbsolutePath() + " does not exists!");
-            System.exit(1);
-        } else if (network_python.getAbsolutePath().endsWith(".gz")) {
-            String ap = network_python.getAbsolutePath();
-            ap = ap.substring(0, ap.lastIndexOf('.'));
-            try {
-                GZip.decompressGzip(network_python.toPath(), new File(ap).toPath());
-            } catch (IOException e) {
-                e.printStackTrace();
-                return false;
+
+        // Initialize earliest and latest DateTime to extreme values
+        LocalDateTime earliestDateTime = LocalDateTime.MAX;
+        LocalDateTime latestDateTime = LocalDateTime.MIN;
+
+        for (DfTEntry row : rows) {
+            LocalDateTime dateTime = row.getFullDate();
+            if (dateTime.isBefore(earliestDateTime)) {
+                earliestDateTime = dateTime;
             }
-            network_python = new File(ap);
-        }
-        logger.trace("Loading the traffic light information...");
-        try {
-            networkFile = db.parse(network_python);
-        } catch (SAXException | IOException e) {
-            e.printStackTrace();
-            return false;
+            if (dateTime.isAfter(latestDateTime)) {
+                latestDateTime = dateTime;
+            }
         }
 
-        File trajectory_python = new File(concreteConf.trace_file);
-        if (!trajectory_python.exists()) {
-            logger.error("ERROR: sumo has not built the trace file: " + trajectory_python.getAbsolutePath());
-            return false;
-        }
+        earliestTime = earliestDateTime.toEpochSecond(ZoneOffset.UTC);
+        earliestTime-=3;
+//        TreeSet<Double> times = new TreeSet<>();
+        long latestTime = latestDateTime.toEpochSecond(ZoneOffset.UTC);
 
-        logger.trace("Loading the vehicle information...");
-        /*Document trace_document = null;
+        // Adjust configuration based on the calculated times
+        getConf().begin = 0;
+        getConf().end = latestTime - earliestTime;
+        getConf().step = 3600.0; // Assuming each step is 1 second
+        rows.sort(Comparator.comparing(DfTEntry::comparablePair));
+        HashMap<String, TimedEdge> timedEdgeMap = new HashMap<>();
+//        Multimap<Double, TimedIoT> multiIots = HashMultimap.create();
+        File debug = new File("clean_example", "debug.info");
+        FileWriter fw;
         try {
-            trace_document = db.parse(trajectory_python);
-        } catch (SAXException | IOException e) {
-            e.printStackTrace();
-            return false;
-        }*/
-
-        System.out.print("Starting SAX parsing of SUMO XML file...\n");
-        SAXParserFactory factory = SAXParserFactory.newInstance();
-
-        final String fileName;
-        final FileWriter fw;
-
-        SAXParser saxParser;
-        try {
-            saxParser = factory.newSAXParser();
-        } catch (ParserConfigurationException | SAXException e) {
+            fw = new FileWriter(debug);
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        var collector = new BaseCollectorParser(temporalOrdering, vehicleCSVFile);
+        collector.startDocument();
+        for (DfTEntry row : rows) {
+            double currTime = (row.getSimtime() - earliestTime);
+            collector.addTimestamp(currTime);
+            if (!timedEdgeMap.containsKey(row.getId())) {
+                timedEdgeMap.put(row.getId(), new TimedEdge(row.getId(), row.getX(), row.getY(), 0, 0, 0));
+            } else {
+                var ref = timedEdgeMap.get(row.getId());
+                if (ref.x != row.getX())
+                    throw new RuntimeException("ERROR: different x");
+                if (ref.y != row.getY())
+                    throw new RuntimeException("ERROR: different y");
+            }
+            int N = row.getAll_motor_vehicles();
+            for (int i = 0; i<N; i++) {
+                TimedIoT TI = new TimedIoT();
+                TI.setId("id_" + ai.getAndIncrement());
+                TI.setX(row.getX());
+                TI.setY(row.getY());
+                TI.setSimtime(currTime);
+                TI.setType("no_type_info");
+                TI.setLane("no_lane_info");
+                try {
+                    fw.write(TI.getId()+" communicating with "+ row.getId()+" at time "+currTime+System.lineSeparator());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                collector.addIoTDevice(TI);
+            }
+        }
         try {
-            saxParser.parse(trajectory_python, new SUMODataParser(temporalOrdering, vehicleCSVFile));
-        } catch (SAXException | IOException e) {
+            fw.close();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        collector.endDocument();
         System.out.print("SAX parsing of SUMO XML data complete\n");
 
-        List<IoTDeviceTabularConfiguration> IoTDevices = generateIoTDeviceConfigList(SUMODataParser.getFirstEntry(), SUMODataParser.getSecondEntry());
-        TreeSet<Double> wakeupTimes = SUMODataParser.getWakeUpTimes();
+        List<IoTDeviceTabularConfiguration> IoTDevices = generateIoTDeviceConfigList(BaseCollectorParser.getFirstEntry(), BaseCollectorParser.getSecondEntry());
+        TreeSet<Double> wakeupTimes = BaseCollectorParser.getWakeUpTimes();
         SerializeIoTDeviceConfigList(IoTDevices);
         SerializeWakeupTimes(wakeupTimes);
 
-        NodeList traffic_lights = null;
-        try {
-            traffic_lights = XPathUtil.evaluateNodeList(networkFile, "/net/junction[@type='traffic_light']");
-        } catch (XPathExpressionException e) {
-            e.printStackTrace();
-            return false;
-        }
-        for (int i = 0, N = traffic_lights.getLength(); i<N; i++) {
-            var curr = traffic_lights.item(i).getAttributes();
-            var rsu = new TimedEdge(curr.getNamedItem("id").getTextContent(),
-                    Double.parseDouble(curr.getNamedItem("x").getTextContent()),
-                    Double.parseDouble(curr.getNamedItem("y").getTextContent()),
+        for (var curr : timedEdgeMap.values()) {
+            var rsu = new TimedEdge(curr.id, curr.x, curr.y,
                     concreteConf.default_rsu_communication_radius,
                     concreteConf.default_max_vehicle_communication, 0);
             rsuUpdater.accept(rsu);
@@ -229,10 +238,7 @@ public class SUMOConverter extends TrafficConverter {
         try {
             FileOutputStream fos = new FileOutputStream(name);
             ObjectOutputStream oos = new ObjectOutputStream(fos);
-            // write object to file
             oos.writeObject(iotDevices);
-            //System.out.println("Done");
-            // closing resources
             oos.close();
             fos.close();
         } catch (IOException e) {
@@ -244,8 +250,7 @@ public class SUMOConverter extends TrafficConverter {
 
     private void SerializeWakeupTimes(TreeSet<Double> wakeupTimes) {
         System.out.print("Starting Serialization of Wakeup Times...\n");
-        File name =
-                Path.of("clean_example", "1_traffic_information_collector_output", "WakeupTimes.ser").toFile();
+        File name = Path.of("clean_example", "1_traffic_information_collector_output", "WakeupTimes.ser").toFile();
         try {
             name.createNewFile();
         } catch (IOException e) {
@@ -299,70 +304,15 @@ public class SUMOConverter extends TrafficConverter {
     protected void endReadSimulatorOutput() {
         temporalOrdering.clear();
         timedIoTDevices.clear();
-        networkFile = null;
         connectionPath.clear();
     }
 
     @Override
     public boolean runSimulator(TrafficConfiguration conf) {
         var conf1 = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration.class, new File("clean_example/3_extIOTSim_configuration/iot_generators.yaml")).orElseThrow();
-        var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
-
+//        var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
         var latency = conf1.networkType.equals("custom") ? conf1.latency: NetworkTypingGeneratorFactory.generateFacade(conf1.networkType).getNTLat();
         conf.step = conf1.match ?  latency : conf.step;
-
-        var detectorsPath = conf2.getSumo_detectors_file_path();
-        var vTypesPath = conf2.getSumo_vTypes_file_path();
-        var cfgFile = conf2.getSumo_configuration_file_path();
-        var pyPath = conf2.getPython_filepath();
-        var lcm  = 1.59; // this is the lowest common multiple of the latency for 3G, 4G and 5G, or 0.212, 0.075 and 0.001
-        var last = conf1.match ? lcm : conf.step;
-        var path = pyPath + ' ' + conf1.stepSizeEditorPath + ' ' + detectorsPath + ' ' + vTypesPath + ' ' + cfgFile + ' ' + last;
-
-        try {
-            Runtime.getRuntime().exec(path);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        if (new File(concreteConf.trace_file).exists()) {
-            System.out.print("Skipping the sumo running: the trace_file already exists\n");
-            logger.info("Skipping the sumo running: the trace_file already exists");
-            return true;
-        }
-        System.out.print("Starting generation of trace xml file from SUMO configuration data...\n");
-        File fout = new File(concreteConf.logger_file);
-        FileOutputStream fos = null;
-        try {
-            fos = new FileOutputStream(fout);
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            return false;
-        }
-        BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
-        ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command(concreteConf.sumo_program, "-c", concreteConf.sumo_configuration_file_path, "--begin", Long.toString(conf.begin), "--end", Long.toString(conf.end), "--step-length", Double.toString(conf.step), "--fcd-output", concreteConf.trace_file);
-        try {
-            Process process = processBuilder.start();
-            BufferedReader reader =
-                    new BufferedReader(new InputStreamReader(process.getInputStream()));
-            String line;
-            while ((line = reader.readLine()) != null) {
-                bw.write(line);
-                bw.newLine();
-            }
-            int exitCode = process.waitFor();
-            bw.write("\nExited with error code : ");
-            bw.write(exitCode);
-        } catch (IOException | InterruptedException e) {
-            e.printStackTrace();
-        }
-        try {
-            bw.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return false;
-        }
-        System.out.print("SUMO trace XML file generation complete\n");
         return true;
     }
 }

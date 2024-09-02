@@ -44,6 +44,10 @@ public abstract class TrafficConverter {
     private static Logger logger = LogManager.getRootLogger();
     private static Gson gson;
 
+    public TrafficConfiguration getConf() {
+        return conf;
+    }
+
     public TrafficConverter(TrafficConfiguration conf) {
         logger.info("=== TRAFFIC CONVERTER ===");
         logger.trace("TRAFFIC CONVERTER: init");
@@ -67,7 +71,7 @@ public abstract class TrafficConverter {
 
     public boolean run(Connection conn, DSLContext context) throws SQLException {
         logger.trace("TRAFFIC CONVERTER: running the simulator as per configuration: " + conf.YAMLConverterConfiguration);
-        runSimulator(conf.begin, conf.end, conf.step);
+        runSimulator(conf);
         if (!initReadSimulatorOutput()) {
             logger.info("Not generating the already-provided results");
             return false;
@@ -83,9 +87,9 @@ public abstract class TrafficConverter {
         System.out.print("Starting collection and upload of traffic information to SQL database...\n");
         for (Double tick : timeUnits) {
             // Writing IoT Devices
-            /*if(conf.isOutputVehicleCsvFile()) {
-                getTimedIoT(tick).forEach(this::writeTimedIoT);
-            }*/
+//            if(conf.isOutputVehicleCsvFile()) {
+//                getTimedIoT(tick).forEach(this::writeTimedIoT);
+//            }
             // Getting all of the IoT Devices
             HashSet<TimedEdge> allEdgeNodes = getTimedEdgeNodes(tick);
             allEdgeNodes.forEach(x -> {
@@ -117,7 +121,7 @@ public abstract class TrafficConverter {
             e.printStackTrace();
             return false;
         }
-        //closeWritingTimedIoT();
+        closeWritingTimedIoT();
         closeWritingTimedEdge();
         logger.trace("Transferring results to SQL Database...");
         write_to_SQL(conn, context,  true, true, sccPerTimeComponent, true, delta_network_neighbours, true);
@@ -307,6 +311,6 @@ public abstract class TrafficConverter {
         return true;
     }
 
-    public abstract boolean runSimulator(long begin, long end, double step);
+    public abstract boolean runSimulator(TrafficConfiguration conf);
 
 }

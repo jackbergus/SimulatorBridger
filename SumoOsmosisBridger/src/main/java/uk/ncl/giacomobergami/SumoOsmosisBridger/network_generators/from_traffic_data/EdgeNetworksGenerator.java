@@ -92,7 +92,9 @@ public class EdgeNetworksGenerator {
             subnets_in_time = gson.fromJson(reader1, sccType);
             HashMap<Set<Set<String>>, TreeSet<Double>> elements = new HashMap<>();
             subnets_in_time.forEach((x,y)-> elements.computeIfAbsent(y, sets -> new TreeSet<>()).add(x));
+            TimeTicker.addToTSTicks(subnets_in_time.keySet().toArray());
             subnets_in_time.clear();
+
             elements.forEach((x, s) -> {
                 List<ImmutablePair<Double, Double>> ls = new ArrayList<>();
                 if (s.size() == 1) {
@@ -113,7 +115,7 @@ public class EdgeNetworksGenerator {
                         curr = next;
                     }
                 }
-                simulation_intervals.addAll(TimeTicker.mergeIntervals(ls));
+                simulation_intervals.addAll(TimeTicker.mergeDfTIntervals(ls));
                 ls.forEach(interval -> css_in_time.put(interval, x));
             });
 
@@ -131,13 +133,14 @@ public class EdgeNetworksGenerator {
 
                 ticks = new TreeSet<>(retrieved_basic_information.keySet());
             } else {
-                var rsuTimeData = context.select(field("simtime")).distinctOn(field("simtime")).from(Rsuinformation.RSUINFORMATION).fetch();
-                ticks = (TreeSet<Double>) new TreeSet<>(rsuTimeData.getValues(0));
+                var rsuTimeData = context.select(Rsuinformation.RSUINFORMATION.SIMTIME).distinctOn(Rsuinformation.RSUINFORMATION.SIMTIME).from(Rsuinformation.RSUINFORMATION).fetchInto(Rsuinformation.RSUINFORMATION);
+                ticks = new TreeSet<>(rsuTimeData.getValues(Rsuinformation.RSUINFORMATION.SIMTIME));
                 System.out.print("Fetching RSU data from SQL table...\n");
-                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).where("simtime = 0.0").orderBy(field("simtime")).fetch();
+                var allRSUData = context.select().from(Rsuinformation.RSUINFORMATION).orderBy(Rsuinformation.RSUINFORMATION.SIMTIME).fetch();
                 System.out.print("RSU data fetched\n");
                 System.out.print("Starting organisation of RSU data...\n");
-                int noRSU = Math.max(allRSUData.size()/ticks.size(),allRSUData.size());
+                var diffRSU =  context.select().distinctOn(Rsuinformation.RSUINFORMATION.RSU_ID).from(Rsuinformation.RSUINFORMATION).fetchInto(Rsuinformation.RSUINFORMATION);
+                int noRSU = diffRSU.size();// Math.max(allRSUData.size()/ticks.size(),ticks.size());
                 int iterateSize = movingEdges ? ticks.size() : 1;
                 for(int j = 0; j < iterateSize; j++) {
                     HashMap<String, TimedEdge> rbi_entry = new HashMap<>();

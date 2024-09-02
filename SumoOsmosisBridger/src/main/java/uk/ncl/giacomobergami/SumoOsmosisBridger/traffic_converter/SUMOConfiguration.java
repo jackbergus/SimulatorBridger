@@ -12,6 +12,7 @@ public class SUMOConfiguration {
     public String updateRSUFields;
     public double default_rsu_communication_radius;
     public int default_max_vehicle_communication;
+    public String DfT_file_path;
 
 
     public String getGenerateRSUAdjacencyList() {
@@ -78,4 +79,13 @@ public class SUMOConfiguration {
     public void setPython_filepath(String python_filepath) {
         this.python_filepath = python_filepath;
     }
+
+    public String getDfT_file_path() {
+        return DfT_file_path;
+
+    }
+    public void setDfT_file_path(String DfT_file_path) {
+        this.DfT_file_path = DfT_file_path;
+    }
+
 }

@@ -88,6 +88,7 @@ public class CloudInfrastructureGenerator {
         public int edges_iops;
         public int n_edges_group_size;
         public int aggregate_to_edge_bandwidth;
+        public int IoTNumber;
 
         public HostsAndVMs              hosts_and_vms;
         public DataCenterWithController network_configuration;
@@ -107,6 +108,7 @@ public class CloudInfrastructureGenerator {
             result.edges_iops = edges_iops;
             result.n_edges_group_size = n_edges_group_size;
             result.aggregate_to_edge_bandwidth = aggregate_to_edge_bandwidth;
+            result.IoTNumber = IoTNumber;
             result.hosts_and_vms = hosts_and_vms.copy();
             result.network_configuration = network_configuration.copy();
             return result;

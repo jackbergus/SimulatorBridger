@@ -1,6 +1,7 @@
 package uk.ncl.giacomobergami.components.iot;
 
 import me.tongfei.progressbar.ProgressBar;
+import org.cloudbus.cloudsim.edge.core.edge.Mobility;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
@@ -12,6 +13,7 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
 
 import java.io.*;
+import java.nio.file.Path;
 import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -99,8 +101,8 @@ public class IoTEntityGenerator implements Serializable{
         lat = latency;
         endTime = end;
 
-        String name = "clean_example\\1_traffic_information_collector_output\\WakeupTimes.ser";
-        wakeupTimes = deserializeWakeupTimes(name);
+        wakeupTimes = deserializeWakeupTimes(
+                Path.of("clean_example", "1_traffic_information_collector_output", "WakeupTimes.ser").toString());
 
         /*List<String> allVehs = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID).distinctOn(field(Vehinformation.VEHINFORMATION.VEHICLE_ID)).from(Vehinformation.VEHINFORMATION).fetchInto(Vehinformation.VEHINFORMATION).getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
         ProgressBar pb = null;
@@ -457,28 +459,41 @@ public class IoTEntityGenerator implements Serializable{
 
     public Collection<Double> collectionOfWakeUpTimes() {
         System.out.print("Starting Collection of Wake Up Times...\n");
-        latency = Math.max(latency, 0.01);
+        int interval = 3600;
+        for(int j = 0; j < Collections.max(wakeupTimes); j+=interval) {
+            setWUT.add((double)j);
+        }
+        /*latency = Math.max(latency, 0.01);
         for (double i = begin; i <= end; i = i + latency) {
             setWUT.add((double) Math.round(i * 1000) / 1000);
-        }
+        }*/
         setWUT.addAll(wakeupTimes);
         /*for (int j = 0; j < vehicleTimes.size(); j++) {
             setWUT.addAll((Collection<? extends Double>) vehicleTimes.values().toArray()[j]);
         }*/
+
         System.out.print("Wake Up Times Collected\n");
         return setWUT;
     }
 
     public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,double[] currentPosition, double[] expectedPosition) {
-        toUpdateWithTime.transmit = true;
-        toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];
-        toUpdateWithTime.mobility.range.beginY = (int) currentPosition[1];
-        toUpdateWithTime.mobility.location.x = currentPosition[0];
-        toUpdateWithTime.mobility.location.y = currentPosition[1];
-        toUpdateWithTime.mobility.range.endX = (int) expectedPosition[0];
-        toUpdateWithTime.mobility.range.endY = (int) expectedPosition[1];
+        if (toUpdateWithTime.mobility.range != null) {
+            toUpdateWithTime.transmit = true;
+            toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];
+            toUpdateWithTime.mobility.range.beginY = (int) currentPosition[1];
+            toUpdateWithTime.mobility.location.x = currentPosition[0];
+            toUpdateWithTime.mobility.location.y = currentPosition[1];
+            toUpdateWithTime.mobility.range.endX = (int) expectedPosition[0];
+            toUpdateWithTime.mobility.range.endY = (int) expectedPosition[1];
+        } else {
+            toUpdateWithTime.transmit = true;
+            toUpdateWithTime.mobility.range = new Mobility.MovingRange((int)currentPosition[0], (int)currentPosition[1], -1, -1);
+            toUpdateWithTime.mobility.location.x = currentPosition[0];
+            toUpdateWithTime.mobility.location.y = currentPosition[1];
+            toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];
+            toUpdateWithTime.mobility.range.beginY = (int) currentPosition[1];
+        }
     }
-
     /*public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
                                 @Input double simTimeLow, @Input double simTimeUp,
                                 @Input DSLContext context, double[] currentPosition, double[] expectedPosition) {

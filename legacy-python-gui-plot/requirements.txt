@@ -1,0 +1,7 @@
+SumoNetVis==1.6.0
+matplotlib==3.5.2
+imageio
+seaborn
+numpy
+progressbar2
+PyYAML

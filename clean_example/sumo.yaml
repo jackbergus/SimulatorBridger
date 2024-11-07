@@ -11,4 +11,4 @@ default_max_vehicle_communication:  15
 generateRSUAdjacencyList: "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_orchestrator.TopKConnections"
 DfT_file_path: "/home/giacomo/Scaricati/Re_ DfT Experiment Chapter/Manchester.csv"
 sumo_active_check_path: "clean_example/Active.py"
-presort: "false"                                                                           #allows for a python script to presort the SUMO traffic data to remove vehicles' data when out of range of RSUs before running IoT simulator
+presort: "true"                                                                           #allows for a python script to presort the SUMO traffic data to remove vehicles' data when out of range of RSUs before running IoT simulator

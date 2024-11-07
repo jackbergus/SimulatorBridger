@@ -345,6 +345,7 @@ public class MainEventManager {
 
 	/** The simulation clock. */
 	public static double clock = 0.0;
+	public static double tempEnd = 0.0;
 
 	/** Flag for checking if the simulation is running. */
 	private static boolean running;
@@ -855,29 +856,32 @@ public class MainEventManager {
 
 		// If there are more future events then deal with them
 		if (future.size() > 0) {
-			List<SimEvent> toRemove = new ArrayList<SimEvent>();
-			Iterator<SimEvent> fit = future.iterator();
-			queue_empty = false;
-			SimEvent first = fit.next();
-			processEvent(first);
-			future.remove(first);
+			if(clock < tempEnd) {
+				List<SimEvent> toRemove = new ArrayList<SimEvent>();
+				Iterator<SimEvent> fit = future.iterator();
+				queue_empty = false;
+				SimEvent first = fit.next();
+				processEvent(first);
+				future.remove(first);
 
-			fit = future.iterator();
-			// Check if next events are at same time...
-			boolean trymore = fit.hasNext();
-			while (trymore) {
-				SimEvent next = fit.next();
-				if (next.eventTime() == first.eventTime()) {
-					processEvent(next);
-					toRemove.add(next);
-					trymore = fit.hasNext();
-				} else {
-					trymore = false;
+				fit = future.iterator();
+				// Check if next events are at same time...
+				boolean trymore = fit.hasNext();
+				while (trymore) {
+					SimEvent next = fit.next();
+					if (next.eventTime() == first.eventTime()) {
+						processEvent(next);
+						toRemove.add(next);
+						trymore = fit.hasNext();
+					} else {
+						trymore = false;
+					}
 				}
+
+				future.removeAll(toRemove);
+			} else {
+                queue_empty = !(tempEnd + 0.212 < 35);
 			}
-
-			future.removeAll(toRemove);
-
 		} else {
 			queue_empty = true;
 			running = false;
@@ -1226,6 +1230,10 @@ public class MainEventManager {
 		while (true) {
 			if (runClockTick(conn, context) || abruptTerminate) {
 				break;
+			}
+
+			if(tempEnd + 0.212 < 35) {
+				tempEnd += 0.212;
 			}
 
 			if (curr < Math.floor(clock())) {

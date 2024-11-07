@@ -128,7 +128,7 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 			}			
 		}
 		
-		if(finshedFlows.size() != 0){
+		if(!finshedFlows.isEmpty()){
 			this.flowList.removeAll(finshedFlows);
 			for(Vm vm : this.getVmList()){
 				MEL mel = (MEL) vm;				

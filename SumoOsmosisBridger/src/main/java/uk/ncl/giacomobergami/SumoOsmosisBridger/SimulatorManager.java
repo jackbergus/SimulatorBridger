@@ -45,6 +45,7 @@ public class SimulatorManager implements SimulatorBridger {
     String simulator_runner = "clean_example/IoTSim.yaml";
 
     boolean step1, step2, step3;
+    double simBegin, simEnd, deltaTime;
 
     File output_folder_1;
     File output_folder_2;
@@ -151,9 +152,20 @@ public class SimulatorManager implements SimulatorBridger {
         }
     }
 
+    public double getSimBegin() {
+        return simBegin;
+    }
+
+    public double getSimEnd() {
+        return simEnd;
+    }
+
+    public double getDeltaTime() {
+        return deltaTime;
+    }
 
     @Override
-    public void init(Connection conn, DSLContext context, List<Edge> edgeNodes, double loopEnd, double deltaTime) {
+    public void init(Connection conn, DSLContext context, List<Edge> edgeNodes) {
 
         boolean generate = false;
         step1 = true;
@@ -169,6 +181,9 @@ public class SimulatorManager implements SimulatorBridger {
         Optional<TrafficConfiguration> conf1 = YAML.parse(TrafficConfiguration.class, converter_file);
 
         conf1.ifPresent(y -> {
+            simBegin = conf1.get().getBegin();
+            simEnd = conf1.get().getEnd();
+            deltaTime = conf1.get().getStep();
             configStep1(converter_file, finalOrchestrator, y, conn, context);
             conf2.ifPresent(x -> {
                 configStep2(orchestrator_file, x, y);
@@ -176,10 +191,11 @@ public class SimulatorManager implements SimulatorBridger {
                     configStep3(finalSimulator_runner, converter_file, output_folder_1, x, conn, context);
                     collectGlobalConfigurationSettings(conn, context);
                     System.out.print("Starting Running from Configuration\n");
-                    OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, loopEnd, deltaTime);
+                    OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, simBegin, deltaTime);
                 }
             });
         });
+        return;
     }
 
 
@@ -195,7 +211,7 @@ public class SimulatorManager implements SimulatorBridger {
 
     @Override
     public void fini(Connection conn, DSLContext context) {
-        MainEventManager.finishSimulation(conn, context);
+        MainEventManager.finishSimulation(conn, context, deltaTime);
         MainEventManager.runStop();
         OsmoticRunner.LogOutput(globalConfigurationSettings, conn, context);
     }

@@ -26,17 +26,11 @@ public class MainExample {
         context.setConfigLocation(file.toURI());
     }*/
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
 
         DataSource dataSource = createDataSource();
         Connection conn = ConnectToSource(dataSource);
         DSLContext context = getDSLContext(conn);
-
-        boolean withinTime = true;
-        double start = 0;
-        double loopend = 25;
-        double fullEnd = 100;
-        double deltaTime = 0.212;
 
         /*boolean generate = false;
         boolean step1 = true;
@@ -149,14 +143,21 @@ public class MainExample {
             });
         });*/
         SimulatorManager sb = new SimulatorManager();
-        sb.init(conn, context, new ArrayList<>(), start, deltaTime); //does initialization and first loop
+        sb.init(conn, context, new ArrayList<>()); //does initialization and first loop
+        boolean withinTime = true;
+        double start = sb.getSimBegin();
+        double fullEnd = sb.getSimEnd();
+        double deltaTime = sb.getDeltaTime();
+        double loopend = 5;
         System.out.println("End of Setup!");
+
         while (true) { //second loop onwards
             loopend += deltaTime;
             loopend = (double) Math.round(loopend * 1000) / 1000;
             if(loopend >= fullEnd) break;
             sb.run(start, loopend, deltaTime, new ArrayList<>(), conn, context);
         }
+
         sb.fini(conn, context); //calls finish simulation and logging of results to database and csv files
         DisconnectFromSource(conn);
     }

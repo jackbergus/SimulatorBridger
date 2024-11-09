@@ -858,7 +858,7 @@ public class MainEventManager {
 
 		// If there are more future events then deal with them
 		if (future.size() > 0) {
-			if((double) Math.round(clock * 1000) / 1000 < (double) Math.round(tempEnd * 1000) / 1000) {
+			if((double) Math.round(clock * 1000) / 1000 <= (double) Math.round(tempEnd * 1000) / 1000) {
 				List<SimEvent> toRemove = new ArrayList<SimEvent>();
 				Iterator<SimEvent> fit = future.iterator();
 				queue_empty = false;
@@ -1320,8 +1320,8 @@ public class MainEventManager {
 		return clock();
 	}
 
-	public static void novel_stop(Connection conn, DSLContext context) {
-		finishSimulation(conn, context);
+	public static void novel_stop(Connection conn, DSLContext context, double deltaTime) {
+		finishSimulation(conn, context, deltaTime);
 		runStop();
 	}
 
@@ -1329,7 +1329,7 @@ public class MainEventManager {
 	 * Internal method that allows the entities to terminate. This method should <b>not</b> be used
 	 * in user simulations.
 	 */
-	public static void finishSimulation(Connection conn, DSLContext context) {
+	public static void finishSimulation(Connection conn, DSLContext context, double deltaTime) {
 		// Allow all entities to exit their body method
 		if (!abruptTerminate) {
 			for (SimEntity ent : entities) {
@@ -1337,6 +1337,10 @@ public class MainEventManager {
 					ent.run(conn, context);
 				}
 			}
+		}
+
+		if(future.size() > 0) {
+			legacy_run(conn, context, Integer.MAX_VALUE, deltaTime);
 		}
 
 		for (SimEntity ent : entities) {

@@ -59,7 +59,7 @@ public class OsmoticRunner {
         for (var y : ls) {
             conv.runConfiguration(y, conn, context, loopEnd, deltaTime);
         }
-        conv.stop(conn, context);
+        conv.stop(conn, context, deltaTime);
         conv.legacy_log();
     }
 

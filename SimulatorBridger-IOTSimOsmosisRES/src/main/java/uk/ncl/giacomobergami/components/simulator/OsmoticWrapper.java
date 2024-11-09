@@ -100,9 +100,9 @@ public class OsmoticWrapper {
         return null;
     }
 
-    public void stop(Connection conn, DSLContext context) {
+    public void stop(Connection conn, DSLContext context, double deltaTime) {
         if (started) {
-            MainEventManager.novel_stop(conn, context);
+            MainEventManager.novel_stop(conn, context, deltaTime);
 //            OsmoticAppsParser.appList.clear();
             OsmoticBroker.workflowTag.clear();
 //            osmoticBroker = null;
@@ -118,19 +118,19 @@ public class OsmoticWrapper {
     }
 
     public boolean runConfiguration(OsmoticConfiguration newConfiguration, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
-        stop(conn, context);
+        stop(conn, context, deltaTime);
         init = false;
         this.conf = newConfiguration;
-        if (!init(conn, context)) {
-            stop(conn, context);
+        if (!init(conn, context, deltaTime)) {
+            stop(conn, context, deltaTime);
             return false;
         }
         start(conn, context, loopEnd, deltaTime);
         return true;
     }
 
-    private boolean init(Connection conn, DSLContext context) {
-        stop(conn, context); // ensuring that the previous simulation was stopped
+    private boolean init(Connection conn, DSLContext context, double deltaTime) {
+        stop(conn, context, deltaTime); // ensuring that the previous simulation was stopped
         if (init) return init;
         Calendar calendar = Calendar.getInstance();
 
@@ -252,7 +252,7 @@ public class OsmoticWrapper {
     }
 
     private void start(Connection conn, DSLContext context, double loopEnd, double deltaTime) {
-        init(conn, context); // Ensuring that the simulation is started
+        init(conn, context, deltaTime); // Ensuring that the simulation is started
         runTime = MainEventManager.startSimulation(conn, context, loopEnd, deltaTime);
         finished = true;
     }
@@ -321,19 +321,19 @@ public class OsmoticWrapper {
     }
 
     public boolean runConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
-        stop(conn, context);
+        stop(conn, context, deltaTime);
         init = false;
         this.conf = conf.asPreviousOsmoticConfiguration();
-        if (!init(conf, conn, context)) {
-            stop(conn, context);
+        if (!init(conf, conn, context, deltaTime)) {
+            stop(conn, context, deltaTime);
             return false;
         }
         start(conn, context, loopEnd, deltaTime);
         return true;
     }
 
-    private boolean init(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
-        stop(conn, context); // ensuring that the previous simulation was stopped
+    private boolean init(GlobalConfigurationSettings conf, Connection conn, DSLContext context, double deltaTime) {
+        stop(conn, context, deltaTime); // ensuring that the previous simulation was stopped
         if (init) return init;
         Calendar calendar = Calendar.getInstance();
         // Getting configuration from json and entering classes to Agent Broker

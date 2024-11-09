@@ -1,32 +1,16 @@
 package uk.ncl.giacomobergami.SumoOsmosisBridger;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
 import org.jooq.DSLContext;
-import org.jooq.codegen.GenerationTool;
-import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
-import uk.ncl.giacomobergami.components.OsmoticRunner;
-import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
-import uk.ncl.giacomobergami.traffic_converter.TrafficConverterRunner;
-import uk.ncl.giacomobergami.traffic_converter.abstracted.TrafficConverter;
-import uk.ncl.giacomobergami.traffic_orchestrator.PreSimulatorEstimator;
-import uk.ncl.giacomobergami.traffic_orchestrator.CentralAgentPlannerRunner;
-import uk.ncl.giacomobergami.utils.data.YAML;
-import uk.ncl.giacomobergami.utils.pipeline_confs.OrchestratorConfiguration;
-import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import javax.sql.DataSource;
-import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.sql.*;
-import java.util.Optional;
+import java.util.ArrayList;
 
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class MainExample {
 
-    private static final String converter_out = "1_traffic_information_collector_output";
+   /*private static final String converter_out = "1_traffic_information_collector_output";
     private static final String converter_out_RSUCsvFile = "rsu.csv";
     private static final String converter_out_VehicleCsvFile = "vehicle.csv";
     private static final String orchestrator_out = "2_central_agent_oracle_output";
@@ -40,7 +24,7 @@ public class MainExample {
         File file = new File("log4j2.xml");
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
         context.setConfigLocation(file.toURI());
-    }
+    }*/
 
     public static void main(String[] args) {
 
@@ -48,7 +32,13 @@ public class MainExample {
         Connection conn = ConnectToSource(dataSource);
         DSLContext context = getDSLContext(conn);
 
-        boolean generate = false;
+        boolean withinTime = true;
+        double start = 0;
+        double loopend = 25;
+        double fullEnd = 100;
+        double deltaTime = 0.212;
+
+        /*boolean generate = false;
         boolean step1 = true;
         boolean step2 = false;
         boolean step3 = true;
@@ -151,10 +141,23 @@ public class MainExample {
                     for (GlobalConfigurationSettings globalConfigurationSettings : configuration_for_each_network_change) {
                         System.out.print("Starting Running from Configuration\n");
                         OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context);
+                        MainEventManager.finishSimulation(conn, context);
+                        MainEventManager.runStop();
+                        OsmoticRunner.LogOutput(globalConfigurationSettings, conn, context);
                     }
                 }
             });
-        });
+        });*/
+        SimulatorManager sb = new SimulatorManager();
+        sb.init(conn, context, new ArrayList<>(), start, deltaTime); //does initialization and first loop
+        System.out.println("End of Setup!");
+        while (true) { //second loop onwards
+            loopend += deltaTime;
+            loopend = (double) Math.round(loopend * 1000) / 1000;
+            if(loopend >= fullEnd) break;
+            sb.run(start, loopend, deltaTime, new ArrayList<>(), conn, context);
+        }
+        sb.fini(conn, context); //calls finish simulation and logging of results to database and csv files
         DisconnectFromSource(conn);
     }
 

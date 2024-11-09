@@ -202,10 +202,11 @@ public class MainEventManager {
 	 * @pre $none
 	 * @post $none
 	 */
-	public static double startSimulation(Connection conn, DSLContext context) throws NullPointerException {
+	public static double startSimulation(Connection conn, DSLContext context, double loopEnd, double deltaTime) throws NullPointerException {
 		logger.trace("Starting CloudSim version "+ CLOUDSIM_VERSION_STRING);
+		starting = true;
 		try {
-			double clock = legacy_run(conn, context);
+			double clock = legacy_run(conn, context, loopEnd, deltaTime);
 
 			// reset all static variables
 			cisId = -1;
@@ -367,6 +368,7 @@ public class MainEventManager {
 
 	/** The paused. */
 	private static boolean paused = false;
+	private static boolean starting;
 
 	/** The pause at. */
 	private static double pauseAt = -1;
@@ -841,10 +843,10 @@ public class MainEventManager {
 		return entityList;
 	}
 
-	public static boolean runClockTick(Connection conn, DSLContext context) {
+	public static boolean runClockTick(Connection conn, DSLContext context, double loopEnd, double deltaTime) {
 		SimEntity ent;
 		boolean queue_empty;
-		
+		tempEnd = loopEnd;
 		int entities_size = entities.size();
 
 		for (int i = 0; i < entities_size; i++) {
@@ -856,7 +858,7 @@ public class MainEventManager {
 
 		// If there are more future events then deal with them
 		if (future.size() > 0) {
-			if(clock < tempEnd) {
+			if((double) Math.round(clock * 1000) / 1000 < (double) Math.round(tempEnd * 1000) / 1000) {
 				List<SimEvent> toRemove = new ArrayList<SimEvent>();
 				Iterator<SimEvent> fit = future.iterator();
 				queue_empty = false;
@@ -869,7 +871,7 @@ public class MainEventManager {
 				boolean trymore = fit.hasNext();
 				while (trymore) {
 					SimEvent next = fit.next();
-					if (next.eventTime() == first.eventTime()) {
+					if ((double) Math.round(next.eventTime() * 1000) / 1000 == (double) Math.round(first.eventTime() * 1000) /1000) {
 						processEvent(next);
 						toRemove.add(next);
 						trymore = fit.hasNext();
@@ -880,7 +882,7 @@ public class MainEventManager {
 
 				future.removeAll(toRemove);
 			} else {
-                queue_empty = !(tempEnd + 0.212 < 35);
+                return !(tempEnd + deltaTime < loopEnd);
 			}
 		} else {
 			queue_empty = true;
@@ -1221,18 +1223,20 @@ public class MainEventManager {
 	 * 
 	 * @return the double last clock value
 	 */
-	public static double legacy_run(Connection conn, DSLContext context) {
-		if (!running) {
-			runStart(); // Starting all of the entities that should be started!
+	public static double legacy_run(Connection conn, DSLContext context, double loopEnd, double deltaTime) {
+		if (!running && starting) {
+			runStart();
+			System.out.print("Starting Simulation\n");
+			starting = false; // Starting all of the entities that should be started!
 		}
-		System.out.print("Starting Simulation\n");
+
 		double curr = Math.floor(clock());
 		while (true) {
-			if (runClockTick(conn, context) || abruptTerminate) {
+			if (runClockTick(conn, context, loopEnd, deltaTime) || abruptTerminate) {
 				break;
 			}
 
-			if(tempEnd + 0.212 < 35) {
+			if(tempEnd + deltaTime < loopEnd) {
 				tempEnd += 0.212;
 			}
 
@@ -1273,18 +1277,18 @@ public class MainEventManager {
 
 		double clock = clock();
 
-		finishSimulation(conn, context);
-		runStop();
+		//finishSimulation(conn, context);
+		//runStop();
 
 		return clock;
 	}
 
-	public static double novel_run(Connection conn, DSLContext context) {
+	public static double novel_run(Connection conn, DSLContext context, double loopEnd, double deltaTime) {
 		if (!running) {
 			runStart(); // Starting all of the entities that should be started!
 		}
 		while (true) {
-			if (runClockTick(conn, context) || abruptTerminate) {
+			if (runClockTick(conn, context, loopEnd, deltaTime) || abruptTerminate) {
 				break;
 			}
 

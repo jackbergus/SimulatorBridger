@@ -376,13 +376,13 @@ public class EnsembleConfigurations {
         return true;
     }
 
-    public static boolean runConfigurationFromFile(@Input String file, @Input Connection conn, @Input DSLContext context, boolean isRSUJSON) {
+    public static boolean runConfigurationFromFile(@Input String file, @Input Connection conn, @Input DSLContext context, boolean isRSUJSON, double endTime, double deltaTime) {
         var configuration_file = new File(file);
         var conf = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
         var ec = new EnsembleConfigurations(conf.first(), conf.second(), conf.third(), conf.fourth(), conf.fifth(context, isRSUJSON, conf.fourth().getMovingEdges()));
         var ls = ec.getTimedPossibleConfigurations(conf, conn, context);
         for (GlobalConfigurationSettings l : ls) {
-            OsmoticRunner.runFromConfiguration(l, conn, context);
+            OsmoticRunner.runFromConfiguration(l, conn, context, endTime, deltaTime);
         }
         return true;
     }

@@ -34,6 +34,8 @@ import java.util.List;
 
 public class OsmoticRunner {
 
+    static OsmoticWrapper conv;
+
     static {
         File file = new File("log4j2.xml");
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
@@ -50,27 +52,31 @@ public class OsmoticRunner {
     }
 
     @Deprecated
-    public static void legacyOrchestrate(String configuration, Connection conn, DSLContext context) {
+    public static void legacyOrchestrate(String configuration, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         List<OsmoticConfiguration> ls = JSON.stringToArray(new File(configuration), OsmoticConfiguration[].class);
         if (ls.isEmpty()) return;
         OsmoticWrapper conv = generateFacade();
         for (var y : ls) {
-            conv.runConfiguration(y, conn, context);
+            conv.runConfiguration(y, conn, context, loopEnd, deltaTime);
         }
         conv.stop(conn, context);
         conv.legacy_log();
     }
 
-    public static void runFromConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
-        var conv = new OsmoticWrapper(conf.asPreviousOsmoticConfiguration());
-        conv.runConfiguration(conf, conn, context);
-        conv.stop(conn, context);
+    public static void runFromConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
+        conv = new OsmoticWrapper(conf.asPreviousOsmoticConfiguration());
+        conv.runConfiguration(conf, conn, context, loopEnd, deltaTime);
+        //conv.stop(conn, context);
+        //conv.log(conf, conn, context);
+    }
+
+    public static void LogOutput(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
         conv.log(conf, conn, context);
     }
 
     @Deprecated
-    public static void runFromDump(String configuration, Connection conn, DSLContext context) {
+    public static void runFromDump(String configuration, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         var conf = GlobalConfigurationSettings.readFromYAML(new File(configuration));
-        runFromConfiguration(GlobalConfigurationSettings.readFromYAML(new File(configuration)), conn, context);
+        runFromConfiguration(GlobalConfigurationSettings.readFromYAML(new File(configuration)), conn, context, loopEnd, deltaTime);
     }
 }

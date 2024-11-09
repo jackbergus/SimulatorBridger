@@ -117,7 +117,7 @@ public class OsmoticWrapper {
         }
     }
 
-    public boolean runConfiguration(OsmoticConfiguration newConfiguration, Connection conn, DSLContext context) {
+    public boolean runConfiguration(OsmoticConfiguration newConfiguration, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         stop(conn, context);
         init = false;
         this.conf = newConfiguration;
@@ -125,7 +125,7 @@ public class OsmoticWrapper {
             stop(conn, context);
             return false;
         }
-        start(conn, context);
+        start(conn, context, loopEnd, deltaTime);
         return true;
     }
 
@@ -251,9 +251,9 @@ public class OsmoticWrapper {
         return false;
     }
 
-    private void start(Connection conn, DSLContext context) {
+    private void start(Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         init(conn, context); // Ensuring that the simulation is started
-        runTime = MainEventManager.startSimulation(conn, context);
+        runTime = MainEventManager.startSimulation(conn, context, loopEnd, deltaTime);
         finished = true;
     }
 
@@ -320,7 +320,7 @@ public class OsmoticWrapper {
         }
     }
 
-    public boolean runConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
+    public boolean runConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         stop(conn, context);
         init = false;
         this.conf = conf.asPreviousOsmoticConfiguration();
@@ -328,7 +328,7 @@ public class OsmoticWrapper {
             stop(conn, context);
             return false;
         }
-        start(conn, context);
+        start(conn, context, loopEnd, deltaTime);
         return true;
     }
 

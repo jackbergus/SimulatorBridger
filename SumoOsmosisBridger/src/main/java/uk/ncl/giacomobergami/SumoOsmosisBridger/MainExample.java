@@ -27,139 +27,21 @@ public class MainExample {
     }*/
 
     public static void main(String[] args) throws InterruptedException {
-
-        DataSource dataSource = createDataSource();
-        Connection conn = ConnectToSource(dataSource);
-        DSLContext context = getDSLContext(conn);
-
-        /*boolean generate = false;
-        boolean step1 = true;
-        boolean step2 = false;
-        boolean step3 = true;
-
-        if (generate) {
-            try {
-                GenerationTool.generate(Files.readString(Path.of("jooq-config.xml")));
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        String converter = "clean_example/converter.yaml";
-        String orchestrator = "clean_example/orchestrator.yaml";
-        String simulator_runner = "clean_example/IoTSim.yaml";
-
-        if (args.length >= 3) {
-            converter = args[0];
-            orchestrator = args[1];
-            simulator_runner = args[2];
-        }
-        String finalOrchestrator = orchestrator;
-        String finalSimulator_runner = simulator_runner;
-
-        // Dumping the traffic simulation
-        var converter_file = new File(converter).getAbsoluteFile();
-        Optional<TrafficConfiguration> conf1 = YAML.parse(TrafficConfiguration.class, converter_file);
-        // First configuration step
-
-        conf1.ifPresent(y -> {
-            var output_folder_1 = new File(converter_file.getParentFile(), converter_out);
-            if (!output_folder_1.exists()) {
-                output_folder_1.mkdirs();
-            }
-            y.RSUCsvFile = new File(output_folder_1, converter_out_RSUCsvFile).getAbsolutePath();
-            y.VehicleCsvFile = new File(output_folder_1, converter_out_VehicleCsvFile).getAbsolutePath();
-            TrafficConverter conv1 = TrafficConverterRunner.generateFacade(y);
-            if (step1) {
-                try {
-                    conv1.run(conn, context);
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            var orchestrator_file = new File(finalOrchestrator).getAbsoluteFile();
-            Optional<OrchestratorConfiguration> conf2 = YAML.parse(OrchestratorConfiguration.class, orchestrator_file);
-
-
-            // Second configuration step
-            conf2.ifPresent(x -> {
-                var output_folder_2 = new File(orchestrator_file.getParentFile(), orchestrator_out);
-                if (!output_folder_2.exists()) {
-                    output_folder_2.mkdirs();
-                }
-                x.RSUCsvFile = y.RSUCsvFile;
-                x.vehicleCSVFile = y.VehicleCsvFile;
-                x.RSUJsonFile = new File(output_folder_2, orchestrator_out_rsuJsonFile).getAbsolutePath();
-                x.vehiclejsonFile = new File(output_folder_2, orchestrator_out_vehicleJsonFile).getAbsolutePath();
-                x.output_stats_folder = new File(output_folder_2, orchestrator_out_output_stats_folder).getAbsolutePath();
-                x.experiment_name = orchestrator_out_output_experiment_name;
-                PreSimulatorEstimator conv2 = null;
-
-                try {
-                    conv2 = CentralAgentPlannerRunner.generateFacade(x, y);
-                } catch (SQLException e) {
-                    throw new RuntimeException(e);
-                }
-                if (step2) {
-                    conv2.run();
-                    try {
-                        conv2.serializeAll();
-                    } catch (SQLException e) {
-                        throw new RuntimeException(e);
-                    }
-                }
-
-                var maxAcceptableVehiclesPerEdgeNode = x.reset_max_vehicle_communication;
-                var maxCommunicationRadiusPerEdgeNode = x.reset_rsu_communication_radius;
-
-                // Third configuration step
-                var configuration_file = new File(finalSimulator_runner).getAbsoluteFile();
-                var conf3 = YAML.parse(EnsembleConfigurations.Configuration.class, configuration_file).orElseThrow();
-                conf3.converter_yaml = converter_file.getAbsolutePath();
-                conf3.strongly_connected_components = new File(output_folder_1, converter_out_RSUCsvFile + "_timed_scc.json").getAbsolutePath();
-                conf3.edge_neighbours = new File(output_folder_1, converter_out_RSUCsvFile + "_neighboursChange.json").getAbsolutePath();
-                conf3.iots = x.vehiclejsonFile;
-                conf3.edge_information = x.RSUJsonFile;
-                conf3.reset_rsu_communication_radius = x.reset_rsu_communication_radius;
-                conf3.reset_max_vehicle_communication = x.reset_max_vehicle_communication;
-                var output_folder_3 = new File(configuration_file.getParentFile(), final_out);
-                if (!output_folder_3.exists()) {
-                    output_folder_3.mkdirs();
-                }
-                conf3.netsim_output = output_folder_3.getAbsolutePath();
-                if(step3) {
-                    var conv3 = new EnsembleConfigurations(conf3.first(), conf3.second(), conf3.third(), conf3.fourth(), conf3.fifth(context, step2, conf3.fourth().getMovingEdges()));
-                    var configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3, conn, context);
-
-                    for (GlobalConfigurationSettings globalConfigurationSettings : configuration_for_each_network_change) {
-                        System.out.print("Starting Running from Configuration\n");
-                        OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context);
-                        MainEventManager.finishSimulation(conn, context);
-                        MainEventManager.runStop();
-                        OsmoticRunner.LogOutput(globalConfigurationSettings, conn, context);
-                    }
-                }
-            });
-        });*/
         SimulatorManager sb = new SimulatorManager();
-        sb.init(conn, context, new ArrayList<>()); //does initialization and first loop
-        boolean withinTime = true;
-        double start = sb.getSimBegin();
-        double fullEnd = sb.getSimEnd();
-        double deltaTime = sb.getDeltaTime();
-        double loopend = 5;
-        System.out.println("End of Setup!");
 
-        while (true) { //second loop onwards
-            loopend += deltaTime;
-            loopend = (double) Math.round(loopend * 1000) / 1000;
-            if(loopend >= fullEnd) break;
-            sb.run(start, loopend, deltaTime, new ArrayList<>(), conn, context);
+        boolean running = true;
+        double start = (args.length >= 1) ? Double.parseDouble(args[0]) : sb.getSimBegin();
+        double fullEnd = (args.length >= 2) ? Double.parseDouble(args[1]) : sb.getSimEnd();
+        double deltaTime = (args.length >= 3) ? Double.parseDouble(args[2]) : sb.getDeltaTime();
+        double loopEnd = (args.length >= 4) ? Double.parseDouble(args[3]) : 5;
+
+        sb.init(start, new ArrayList<>()); //does initialization and first loop
+
+        while (running) { //second loop onwards
+            running = sb.run(loopEnd, deltaTime, fullEnd, new ArrayList<>());
         }
 
-        sb.fini(conn, context); //calls finish simulation and logging of results to database and csv files
-        DisconnectFromSource(conn);
+        sb.fini(); //calls finish simulation and logging of results to database and csv files
     }
 
 }

@@ -9,10 +9,10 @@ import java.sql.Connection;
 import java.util.List;
 
 public interface SimulatorBridger {
-    void init(Connection conn, DSLContext context, List<Edge> edgeNodes); // automatically using the YAML configuration files for this set-up, minus the location of the EdgeNodes/RSUs, from which you are deriving the network infrastructure
+    void init(double start, List<Edge> edgeNodes); // automatically using the YAML configuration files for this set-up, minus the location of the EdgeNodes/RSUs, from which you are deriving the network infrastructure
 
-    boolean run(double start, double end, double delta, List<TimedIoT> injectedCommunicationEvents, Connection conn, DSLContext context);
+    boolean run(double end, double delta, double simulationEnd, List<TimedIoT> injectedCommunicationEvents);
 
-    void fini(Connection conn, DSLContext context); // finalising the simulator when all the events are depleted
+    void fini(); // finalising the simulator when all the events are depleted
 }
 

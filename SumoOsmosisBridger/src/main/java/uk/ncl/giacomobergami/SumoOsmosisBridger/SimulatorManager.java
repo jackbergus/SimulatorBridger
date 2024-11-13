@@ -28,7 +28,15 @@ import java.util.Optional;
 
 import org.jooq.codegen.GenerationTool;
 
+import javax.sql.DataSource;
+
+import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
+
 public class SimulatorManager implements SimulatorBridger {
+
+    DataSource dataSource = createDataSource();
+    Connection conn = ConnectToSource(dataSource);
+    DSLContext context = getDSLContext(conn);
 
     private static final String converter_out = "1_traffic_information_collector_output";
     private static final String converter_out_RSUCsvFile = "rsu.csv";
@@ -165,7 +173,7 @@ public class SimulatorManager implements SimulatorBridger {
     }
 
     @Override
-    public void init(Connection conn, DSLContext context, List<Edge> edgeNodes) {
+    public void init(double start, List<Edge> edgeNodes) {
 
         boolean generate = false;
         step1 = true;
@@ -191,28 +199,30 @@ public class SimulatorManager implements SimulatorBridger {
                     configStep3(finalSimulator_runner, converter_file, output_folder_1, x, conn, context);
                     collectGlobalConfigurationSettings(conn, context);
                     System.out.print("Starting Running from Configuration\n");
-                    OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, simBegin, deltaTime);
+                    double simulationStart = start == simBegin ? deltaTime : start;
+                    OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, simBegin, simulationStart);
                 }
             });
         });
-        return;
+        System.out.println("End of Setup!");
     }
 
 
     @Override
-    public boolean run(double start, double end, double delta, List<TimedIoT> injectedCommunicationEvents, Connection conn, DSLContext context) {
+    public boolean run(double end, double delta, double simulationEnd, List<TimedIoT> injectedCommunicationEvents) {
         if(step3) {
-            //for (GlobalConfigurationSettings globalConfigurationSettings : configuration_for_each_network_change) {
-            MainEventManager.legacy_run(conn, context, end, delta);
-            //}
+            end += delta;
+            end = (double) Math.round(end * 1000) / 1000;
+            return MainEventManager.legacy_run(conn, context, end, delta) < simulationEnd;
         }
         return true;
     }
 
     @Override
-    public void fini(Connection conn, DSLContext context) {
+    public void fini() {
         MainEventManager.finishSimulation(conn, context, deltaTime);
         MainEventManager.runStop();
         OsmoticRunner.LogOutput(globalConfigurationSettings, conn, context);
+        DisconnectFromSource(conn);
     }
 }

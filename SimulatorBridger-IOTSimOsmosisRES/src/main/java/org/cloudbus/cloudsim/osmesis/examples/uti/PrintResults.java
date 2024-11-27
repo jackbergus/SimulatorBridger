@@ -194,11 +194,11 @@ public class PrintResults {
 		System.out.print("Organising osmoticAppsStats Data...\n");
 		long startTime = System.nanoTime();
 		copyCSVDATA(conn, OASCSV, targetTABLE);
-		transferDATABetweenTables(conn, "osmoticAppsStats(appid,appname,cloudletmisize,cloudletproccessingtimebyvm" +
-						",datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel" +
+		transferDATABetweenTables(conn, "osmoticAppsStats(appid,appname,cloudletmisize,cloudletprocessingtimebyvm" +
+						",datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletprocessingtimebymel" +
 						",edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime," +
 						"oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw)",
-				"appid,appname,cloudletmisize,cloudletproccessingtimebyvm,datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletproccessingtimebymel,edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime,oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw"
+				"appid,appname,cloudletmisize,cloudletprocessingtimebyvm,datasizeiotdevicetomel_mb,datasizemeltovm_mb,destinationvmname,edgeletmisize,edgeletprocessingtimebymel,edgelet_mel_finishtime,edgelet_mel_starttime,finishtime,iotdevicename,melname,melendtransmissiontime,melstarttransmissiontime,starttime,oas_transaction,transactiontotaltime,transmissiontimeiotdevicetomel,transmissiontimemeltovm,flowiotmelappid,flowmelcloudappid,path_dst,path_src,edgetowanbw"
 				,targetTABLE);
 		long endTime = System.nanoTime();
 		long executionTime = (endTime - startTime) / 1000000;
@@ -216,8 +216,8 @@ public class PrintResults {
 		long startTime = System.nanoTime();
 		copyCSVDATA(conn, OARCSV, targetTABLE);
 		transferDATABetweenTables(conn, "overallAppResults(appname,endtime,iotdevicebatteryconsumption," +
-						"iotdevicedrained,simluationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime)",
-				"appname,endtime,iotdevicebatteryconsumption,iotdevicedrained,simluationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime"
+						"iotdevicedrained,simulationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime)",
+				"appname,endtime,iotdevicebatteryconsumption,iotdevicedrained,simulationtime,starttime,totalcloudletsizes,totaledgeletsizes,totaliotgenerateddata,totalmelgenerateddata,apptotalrunningtime"
 				,targetTABLE);
 		long endTime = System.nanoTime();
 		long executionTime = (endTime - startTime) / 1000000;

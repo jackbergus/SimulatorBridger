@@ -25,7 +25,7 @@ public class IoTEntityGenerator implements Serializable{
     public static double lat;
     public static double endTime;
     //final TreeMap<String, IoT> timed_iots;
-    transient final IoTGlobalConfiguration conf;
+    public transient final IoTGlobalConfiguration conf;
     static final HashSet<Double> setWUT = new HashSet<>();
     transient final File converter_file = new File("clean_example/converter.yaml");
     transient final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);

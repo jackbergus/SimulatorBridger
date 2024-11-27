@@ -18,6 +18,7 @@ public class TimedIoT implements TimedObject<TimedIoT> {
     public String lane;
     public double slope;
     public double simtime;
+    public boolean injected;
    
     public TimedIoT() {
     }
@@ -33,7 +34,21 @@ public class TimedIoT implements TimedObject<TimedIoT> {
         this.lane = lane;
         this.slope = slope;
         this.simtime = simtime;
-        
+        this.injected = false;
+    }
+
+    public TimedIoT(String id, double x, double y, double angle, String type, double speed, double pos, String lane, double slope, double simtime, boolean injected) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.type = type;
+        this.speed = speed;
+        this.pos = pos;
+        this.lane = lane;
+        this.slope = slope;
+        this.simtime = simtime;
+        this.injected = injected;
     }
 
     @Override
@@ -43,7 +58,7 @@ public class TimedIoT implements TimedObject<TimedIoT> {
 
     @Override
     public TimedIoT copy() {
-        return new TimedIoT(id, x, y, angle, type, speed, pos, lane, slope, simtime);
+        return new TimedIoT(id, x, y, angle, type, speed, pos, lane, slope, simtime, injected);
     }
 
     public void setSimtime(double simtime) {
@@ -124,6 +139,12 @@ public class TimedIoT implements TimedObject<TimedIoT> {
     public void setSlope(double slope) {
         this.slope = slope;
     }
+
+    public boolean isInjected() {
+        return injected;
+    }
+
+    public void setInjected(boolean injected) { this.injected = injected; }
 
     @Override
     public boolean equals(Object o) {

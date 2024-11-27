@@ -139,8 +139,7 @@ public class JavaPostGres {
     }
 
     public static DSLContext getDSLContext (Connection conn) {
-        DSLContext context =  DSL.using(conn, SQLDialect.POSTGRES);
-        return context;
+        return DSL.using(conn, SQLDialect.POSTGRES);
     }
 
     public static void copyCSVDATA(Connection conn, String file, String origin) {
@@ -162,9 +161,7 @@ public class JavaPostGres {
 
         try {
             copyManager.copyIn("COPY " + origin + " FROM stdin DELIMITER ',' CSV header", fileReader);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        } catch (IOException e) {
+        } catch (SQLException | IOException e) {
             throw new RuntimeException(e);
         }
 

@@ -32,7 +32,7 @@ import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class EnsembleConfigurations {
 
-    private final IoTEntityGenerator ioTEntityGenerator;
+    public final IoTEntityGenerator ioTEntityGenerator;
     private final EdgeNetworksGenerator edgeNetworkGenerator;
     private final CloudInfrastructureGenerator.Configuration cloud;
     private final  EdgeInfrastructureGenerator.Configuration edge;

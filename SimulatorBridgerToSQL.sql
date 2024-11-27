@@ -9,7 +9,8 @@ CREATE TABLE vehInformation (
 	pos float NOT NULL,
 	lane VARCHAR (50) NOT NULL,
 	slope float NOT NULL,
-	simtime float NOT NULL
+	simtime float NOT NULL,
+    injected VARCHAR(5) NOT NULL
 );
 
 SELECT * FROM vehInformation;
@@ -28,7 +29,8 @@ CREATE TABLE vehInformation_import (
     pos float NOT NULL,
     lane VARCHAR (50) NOT NULL,
     slope float NOT NULL,
-    simtime float NOT NULL
+    simtime float NOT NULL,
+    injected VARCHAR(5) NOT NULL
 );
 
 SELECT * FROM vehInformation_import;

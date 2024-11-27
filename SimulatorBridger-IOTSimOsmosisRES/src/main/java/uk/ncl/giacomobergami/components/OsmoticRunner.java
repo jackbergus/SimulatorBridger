@@ -23,6 +23,7 @@ package uk.ncl.giacomobergami.components;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.jooq.DSLContext;
+import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.simulator.OsmoticConfiguration;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
@@ -49,6 +50,11 @@ public class OsmoticRunner {
             obj = new OsmoticWrapper();
         }
         return obj;
+    }
+
+    public static void addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList) {
+        conv.addIoTDevices(globalConfigurationSettings, deviceList);
+        System.out.println("Global Device List Updated");
     }
 
     @Deprecated

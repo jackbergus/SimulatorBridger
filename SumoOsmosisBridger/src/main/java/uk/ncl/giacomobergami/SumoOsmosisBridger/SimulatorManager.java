@@ -1,11 +1,16 @@
 package uk.ncl.giacomobergami.SumoOsmosisBridger;
 
+import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+import com.opencsv.exceptions.CsvException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
+import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
+import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.simulator.SimulatorBridger;
 import uk.ncl.giacomobergami.traffic_converter.TrafficConverterRunner;
@@ -18,13 +23,12 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.Edge;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 
-import java.io.File;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import org.jooq.codegen.GenerationTool;
 
@@ -52,8 +56,10 @@ public class SimulatorManager implements SimulatorBridger {
     String orchestrator = "clean_example/orchestrator.yaml";
     String simulator_runner = "clean_example/IoTSim.yaml";
 
+    boolean allowInjectedData = true;
     boolean step1, step2, step3;
     double simBegin, simEnd, deltaTime;
+    public double loopEndTime;
 
     File output_folder_1;
     File output_folder_2;
@@ -65,7 +71,14 @@ public class SimulatorManager implements SimulatorBridger {
     double maxCommunicationRadiusPerEdgeNode;
 
     File configuration_file;
+    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+
+    EnsembleConfigurations conv3;
     EnsembleConfigurations.Configuration conf3;
+    List<GlobalConfigurationSettings> configuration_for_each_network_change;
+    List<IoTDeviceTabularConfiguration> deviceList;
+    static HashMap<String, TimedIoT> FirstSet = new HashMap<>();
+    static HashMap<String, TimedIoT> SecondSet = new HashMap<>();
     GlobalConfigurationSettings globalConfigurationSettings = new GlobalConfigurationSettings();
 
     static {
@@ -154,9 +167,9 @@ public class SimulatorManager implements SimulatorBridger {
 
     public void collectGlobalConfigurationSettings(Connection conn, DSLContext context) {
         if(step3) {
-            var conv3 = new EnsembleConfigurations(conf3.first(), conf3.second(), conf3.third(), conf3.fourth(), conf3.fifth(context, step2, conf3.fourth().getMovingEdges()));
-            List<GlobalConfigurationSettings> configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3, conn, context);
-            globalConfigurationSettings = (GlobalConfigurationSettings) configuration_for_each_network_change.get(0);
+            conv3 = new EnsembleConfigurations(conf3.first(), conf3.second(), conf3.third(), conf3.fourth(), conf3.fifth(context, step2, conf3.fourth().getMovingEdges()));
+            configuration_for_each_network_change = conv3.getTimedPossibleConfigurations(conf3, conn, context);
+            globalConfigurationSettings = configuration_for_each_network_change.get(0);
         }
     }
 
@@ -170,6 +183,112 @@ public class SimulatorManager implements SimulatorBridger {
 
     public double getDeltaTime() {
         return deltaTime;
+    }
+
+    public void injectData() throws IOException, CsvException {
+
+        System.out.println("Do you want to injected new data, enter 1 or 2 :\n 1): yes \n 2): no? ");
+        int isData = br.read();
+        br.readLine();
+
+        deviceList = ((GlobalConfigurationSettings) ((ArrayList) configuration_for_each_network_change).get(0)).iotDevices;
+
+        if (isData == '1') {
+            System.out.println("Enter the path to the data file:");
+            String vehicleCSVFile = br.readLine();
+            System.out.println(vehicleCSVFile);
+
+            updateCSV(vehicleCSVFile);
+            addToDevicesToList();
+            OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList);
+            uploadInjectedDataToSQL(vehicleCSVFile);
+        }
+    }
+
+    protected void updateCSV(String vehicleCSVFile) throws IOException, CsvException {
+        CSVReader reader = new CSVReader(new FileReader(vehicleCSVFile));
+        List<String[]> csvBody = reader.readAll();
+        for (int i = 1; i < csvBody.size(); i++) {
+            csvBody.get(i)[0] = csvBody.get(i)[0] + "_injected";
+            csvBody.get(i)[10] = "true";
+            toTimedIoT(csvBody.get(i));
+        }
+        CSVWriter writer = new CSVWriter(new FileWriter(vehicleCSVFile));
+        writer.writeAll(csvBody);
+        writer.flush();
+        System.out.println("Injected data updated");
+    }
+
+    private void toTimedIoT(String[] strings) {
+        TimedIoT TI = new TimedIoT();
+        TI.setId(strings[0]);
+        TI.setX(Double.parseDouble(strings[1]));
+        TI.setY(Double.parseDouble(strings[2]));
+        TI.setAngle(Double.parseDouble(strings[3]));
+        TI.setType(strings[4]);
+        TI.setSpeed(Double.parseDouble(strings[5]));
+        TI.setPos(Double.parseDouble(strings[6]));
+        TI.setLane(strings[7]);
+        TI.setSlope(Double.parseDouble(strings[8]));
+
+        TI.setSimtime(Double.parseDouble(strings[9]));
+        TI.setInjected(Boolean.parseBoolean(strings[10]));
+
+        if (SecondSet.containsKey(TI.getId())) {
+            return;
+        }
+        if (FirstSet.containsKey(TI.getId())) {
+            SecondSet.putIfAbsent(TI.getId(), TI);
+            return;
+        }
+        FirstSet.putIfAbsent(TI.getId(), TI);
+    }
+
+    private void uploadInjectedDataToSQL(String vehicleCSVFile) {
+        String targetTABLE = "vehInformation";
+        System.out.print("Organising new vehInformation Data...\n");
+        long startTime = System.nanoTime();
+        copyCSVDATA(conn, vehicleCSVFile, targetTABLE);
+        transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected)",
+                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected", targetTABLE);
+        long endTime = System.nanoTime();
+        long executionTime = (endTime - startTime) / 1000000;
+        System.out.print("Sending vehInformation to SQL Database\n");
+        System.out.println("This takes " + executionTime + "ms");
+    }
+
+    private void addToDevicesToList(){
+        System.out.print("Starting IoT Device Info Configuration...\n");
+        Set<String> allVehs = FirstSet.keySet();
+        IoTEntityGenerator.IoTGlobalConfiguration conf = conv3.ioTEntityGenerator.conf;
+
+        for (String allVeh : allVehs) {
+            IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
+            idtc.beginX = (int) FirstSet.get(allVeh).getX();
+            idtc.beginY = (int) FirstSet.get(allVeh).getY();
+            idtc.movable = SecondSet.containsKey(allVeh);
+            if (idtc.movable) {
+                idtc.hasMovingRange = true;
+                idtc.endX = (int) SecondSet.get(allVeh).getX();
+                idtc.endY = (int) SecondSet.get(allVeh).getY();
+            }
+            idtc.latency = conf.latency;
+            idtc.match = conf.match;
+            idtc.signalRange = conf.signalRange;
+            idtc.associatedEdge = null;
+            idtc.networkType = conf.networkType;
+            idtc.stepSizeEditorPath = conf.stepSizeEditorPath;
+            idtc.velocity = FirstSet.get(allVeh).getSpeed();
+            idtc.name = allVeh;
+            idtc.communicationProtocol = conf.communicationProtocol;
+            idtc.bw = conf.bw;
+            idtc.max_battery_capacity = conf.max_battery_capacity;
+            idtc.battery_sensing_rate = conf.battery_sensing_rate;
+            idtc.battery_sending_rate = conf.battery_sending_rate;
+            idtc.ioTClassName = conf.ioTClassName;
+            deviceList.add(idtc);
+        }
+        System.out.print("IoT Device Info Configuration Completed\n");
     }
 
     @Override
@@ -209,11 +328,16 @@ public class SimulatorManager implements SimulatorBridger {
 
 
     @Override
-    public boolean run(double end, double delta, double simulationEnd, List<TimedIoT> injectedCommunicationEvents) {
+    public boolean run( double delta, double simulationEnd, double injectionTime) throws IOException, CsvException {
         if(step3) {
-            end += delta;
-            end = (double) Math.round(end * 1000) / 1000;
-            return MainEventManager.legacy_run(conn, context, end, delta) < simulationEnd;
+            if(MainEventManager.clock() > injectionTime && allowInjectedData) {
+                injectData();
+                System.out.println("You injected new events!");
+                allowInjectedData = false;
+            }
+            loopEndTime += delta;
+            loopEndTime = (double) Math.round(loopEndTime * 1000) / 1000;
+            return MainEventManager.legacy_run(conn, context, loopEndTime, delta) < simulationEnd;
         }
         return true;
     }

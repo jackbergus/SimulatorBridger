@@ -36,6 +36,7 @@ import org.cloudbus.res.config.AppConfig;
 import org.cloudbus.res.dataproviders.res.RESResponse;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
+import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELRoutingPolicyGeneratorFacade;
@@ -98,6 +99,10 @@ public class OsmoticWrapper {
             }
         }
         return null;
+    }
+
+    public void addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList) {
+        globalConfigurationSettings.getIoTDevices(osmoticBroker, deviceList);
     }
 
     public void stop(Connection conn, DSLContext context, double deltaTime) {

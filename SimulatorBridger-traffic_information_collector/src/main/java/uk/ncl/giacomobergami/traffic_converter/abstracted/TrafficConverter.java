@@ -154,8 +154,8 @@ public abstract class TrafficConverter {
         System.out.print("Organising vehInformation Data...\n");
         long startTime = System.nanoTime();
         copyCSVDATA(conn, vehicleCSVFile, targetTABLE);
-        transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime)",
-                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime", targetTABLE);
+        transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected)",
+                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected", targetTABLE);
         long endTime = System.nanoTime();
         long executionTime = (endTime - startTime) / 1000000;
         System.out.print("Sending vehInformation to SQL Database\n");

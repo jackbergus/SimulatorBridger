@@ -54,7 +54,7 @@ public class SUMODataParser extends DefaultHandler {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime"};
+        String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime", "injected"};
         writer.writeNext(headers);
     }
 
@@ -102,6 +102,7 @@ public class SUMODataParser extends DefaultHandler {
                         TI.setSlope(Double.parseDouble(attr.getValue(i)));
                     }*/
                 TI.setSimtime(timestep);
+                TI.setInjected(false);
                 wakeUpTimes.add(timestep);
                 SD.sdAddTo(TI);
                 toTimedIoTCSV(TI, writer);
@@ -118,7 +119,7 @@ public class SUMODataParser extends DefaultHandler {
     }
 
     private static void toTimedIoTCSV(TimedIoT vehicle, CSVWriter writer) {
-        String[] data = {String.valueOf(vehicle.getId()), String.valueOf(vehicle.getX()), String.valueOf(vehicle.getY()), String.valueOf(vehicle.getAngle()), String.valueOf(vehicle.getType()), String.valueOf(vehicle.getSpeed()), String.valueOf(vehicle.getPos()), String.valueOf(vehicle.getLane()), String.valueOf(vehicle.getSlope()), String.valueOf(vehicle.getSimtime())};
+        String[] data = {String.valueOf(vehicle.getId()), String.valueOf(vehicle.getX()), String.valueOf(vehicle.getY()), String.valueOf(vehicle.getAngle()), String.valueOf(vehicle.getType()), String.valueOf(vehicle.getSpeed()), String.valueOf(vehicle.getPos()), String.valueOf(vehicle.getLane()), String.valueOf(vehicle.getSlope()), String.valueOf(vehicle.getSimtime()), String.valueOf(vehicle.isInjected())};
         writer.writeNext(data);
     }
 

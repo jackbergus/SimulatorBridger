@@ -185,32 +185,26 @@ public class SimulatorManager implements SimulatorBridger {
         return deltaTime;
     }
 
-    public void injectData() throws IOException, CsvException {
-
-        System.out.println("Do you want to injected new data, enter 1 or 2 :\n 1): yes \n 2): no? ");
-        int isData = br.read();
-        br.readLine();
+    public void injectCSVData(String vehicleCSVFile, boolean updatedCSV) throws IOException, CsvException {
 
         deviceList = ((GlobalConfigurationSettings) ((ArrayList) configuration_for_each_network_change).get(0)).iotDevices;
 
-        if (isData == '1') {
-            System.out.println("Enter the path to the data file:");
-            String vehicleCSVFile = br.readLine();
-            System.out.println(vehicleCSVFile);
-
-            updateCSV(vehicleCSVFile);
+        if (conf3.isInjectData) {
+            updateCSV(vehicleCSVFile, updatedCSV);
             addToDevicesToList();
             OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList);
             uploadInjectedDataToSQL(vehicleCSVFile);
         }
     }
 
-    protected void updateCSV(String vehicleCSVFile) throws IOException, CsvException {
+    protected void updateCSV(String vehicleCSVFile, boolean updatedCSV) throws IOException, CsvException {
         CSVReader reader = new CSVReader(new FileReader(vehicleCSVFile));
         List<String[]> csvBody = reader.readAll();
         for (int i = 1; i < csvBody.size(); i++) {
-            csvBody.get(i)[0] = csvBody.get(i)[0] + "_injected";
-            csvBody.get(i)[10] = "true";
+            if(!updatedCSV) {
+                csvBody.get(i)[0] = csvBody.get(i)[0] + "_injected";
+                csvBody.get(i)[10] = "true";
+            }
             toTimedIoT(csvBody.get(i));
         }
         CSVWriter writer = new CSVWriter(new FileWriter(vehicleCSVFile));
@@ -230,7 +224,6 @@ public class SimulatorManager implements SimulatorBridger {
         TI.setPos(Double.parseDouble(strings[6]));
         TI.setLane(strings[7]);
         TI.setSlope(Double.parseDouble(strings[8]));
-
         TI.setSimtime(Double.parseDouble(strings[9]));
         TI.setInjected(Boolean.parseBoolean(strings[10]));
 
@@ -251,6 +244,7 @@ public class SimulatorManager implements SimulatorBridger {
         copyCSVDATA(conn, vehicleCSVFile, targetTABLE);
         transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected)",
                 "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected", targetTABLE);
+        emptyTABLE(conn, targetTABLE+"_import");
         long endTime = System.nanoTime();
         long executionTime = (endTime - startTime) / 1000000;
         System.out.print("Sending vehInformation to SQL Database\n");
@@ -291,6 +285,30 @@ public class SimulatorManager implements SimulatorBridger {
         System.out.print("IoT Device Info Configuration Completed\n");
     }
 
+    private void injectListData(List<TimedIoT> timedIoTList) throws IOException, CsvException {
+        String timedIoTFile = writeToCSV(timedIoTList);
+        injectCSVData(timedIoTFile, true);
+    }
+
+    private String writeToCSV(List<TimedIoT> timedIoTList) throws IOException {
+        String CSVFilePath = "example-list-data.csv";
+        CSVWriter writer;
+
+        writer = new CSVWriter(new FileWriter(CSVFilePath));
+
+        String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime", "injected"};
+        writer.writeNext(headers);
+
+        for (TimedIoT vehicle : timedIoTList) {
+            String[] data = {String.valueOf(vehicle.getId()), String.valueOf(vehicle.getX()), String.valueOf(vehicle.getY()), String.valueOf(vehicle.getAngle()), String.valueOf(vehicle.getType()), String.valueOf(vehicle.getSpeed()), String.valueOf(vehicle.getPos()), String.valueOf(vehicle.getLane()), String.valueOf(vehicle.getSlope()), String.valueOf(vehicle.getSimtime()), String.valueOf(vehicle.isInjected())};
+            writer.writeNext(data);
+        }
+
+        writer.flush();
+
+        return CSVFilePath;
+    }
+
     @Override
     public void init(double start, List<Edge> edgeNodes) {
 
@@ -328,10 +346,14 @@ public class SimulatorManager implements SimulatorBridger {
 
 
     @Override
-    public boolean run( double delta, double simulationEnd, double injectionTime) throws IOException, CsvException {
+    public boolean run( double delta, double simulationEnd, double injectionTime, List<TimedIoT> timedIoTList) throws IOException, CsvException {
         if(step3) {
             if(MainEventManager.clock() > injectionTime && allowInjectedData) {
-                injectData();
+                if(!timedIoTList.isEmpty()) {
+                    injectListData(timedIoTList);
+                }else if(conf3.isInjectData)  {
+                    injectCSVData(conf3.injectedData, false);
+                }
                 System.out.println("You injected new events!");
                 allowInjectedData = false;
             }

@@ -19,6 +19,10 @@ edge_neighbours:                # dynamically defined
 iots:                           # dynamically defined
 edge_information:               # dynamically defined
 
+## Injected data
+isInjectData: true
+injectedData: "example-injection-data.csv"
+
 ## Novel configuration files required for generating the network
 iot_generators:                 "clean_example/3_extIOTSim_configuration/iot_generators.yaml"
 cloud_general_configuration:    "clean_example/3_extIOTSim_configuration/cloud_generators.yaml"

@@ -59,7 +59,8 @@ public class SimulatorManager implements SimulatorBridger {
     boolean allowInjectedData = true;
     boolean step1, step2, step3;
     double simBegin, simEnd, deltaTime;
-    public double loopEndTime;
+    public double loopDuration;
+    double lastRunTime = 0;
 
     File output_folder_1;
     File output_folder_2;
@@ -195,6 +196,8 @@ public class SimulatorManager implements SimulatorBridger {
             OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList);
             uploadInjectedDataToSQL(vehicleCSVFile);
         }
+        System.out.println("You injected new events!");
+        allowInjectedData = false;
     }
 
     protected void updateCSV(String vehicleCSVFile, boolean updatedCSV) throws IOException, CsvException {
@@ -211,6 +214,35 @@ public class SimulatorManager implements SimulatorBridger {
         writer.writeAll(csvBody);
         writer.flush();
         System.out.println("Injected data updated");
+    }
+
+    public void injectTimedIoTData(List<TimedIoT> timedIoTList, double start, double loopEndTime) throws IOException, CsvException {
+        List<TimedIoT> processedEvents = new ArrayList<>();
+        for(TimedIoT vehicle : timedIoTList) {
+            if (vehicle.simtime < start) {
+                processedEvents.add(vehicle);
+            }
+        }
+
+        timedIoTList.removeAll(processedEvents);
+        processedEvents.clear();
+
+        List<TimedIoT> currentEvents = new ArrayList<>();
+        for (TimedIoT vehicle : timedIoTList) {
+            if (vehicle.simtime >= lastRunTime && vehicle.simtime < loopEndTime) {
+                currentEvents.add(vehicle);
+                processedEvents.add(vehicle);
+            }
+        }
+
+        timedIoTList.removeAll(processedEvents);
+        processedEvents.clear();
+
+        if (!currentEvents.isEmpty()) {
+            injectListDataToSQL(currentEvents);
+            System.out.println("You injected new events!");
+            currentEvents.clear();
+        }
     }
 
     private void toTimedIoT(String[] strings) {
@@ -285,7 +317,7 @@ public class SimulatorManager implements SimulatorBridger {
         System.out.print("IoT Device Info Configuration Completed\n");
     }
 
-    private void injectListData(List<TimedIoT> timedIoTList) throws IOException, CsvException {
+    private void injectListDataToSQL(List<TimedIoT> timedIoTList) throws IOException, CsvException {
         String timedIoTFile = writeToCSV(timedIoTList);
         injectCSVData(timedIoTFile, true);
     }
@@ -344,24 +376,34 @@ public class SimulatorManager implements SimulatorBridger {
         System.out.println("End of Setup!");
     }
 
-
-    @Override
-    public boolean run( double delta, double simulationEnd, double injectionTime, List<TimedIoT> timedIoTList) throws IOException, CsvException {
-        if(step3) {
-            if(MainEventManager.clock() > injectionTime && allowInjectedData) {
-                if(!timedIoTList.isEmpty()) {
-                    injectListData(timedIoTList);
-                }else if(conf3.isInjectData)  {
-                    injectCSVData(conf3.injectedData, false);
-                }
-                System.out.println("You injected new events!");
-                allowInjectedData = false;
-            }
-            loopEndTime += delta;
-            loopEndTime = (double) Math.round(loopEndTime * 1000) / 1000;
-            return MainEventManager.legacy_run(conn, context, loopEndTime, delta) < simulationEnd;
+    public boolean run(double start, double delta, List<TimedIoT> timedIoTList) {
+        boolean cont = false;
+        try {
+           cont = innerRun(start, delta, timedIoTList);
+        } catch (IOException | CsvException e) {
+            throw new RuntimeException(e);
         }
-        return true;
+        return cont;
+    }
+
+    public boolean innerRun(double start, double delta, List<TimedIoT> timedIoTList) throws IOException, CsvException {
+        double loopEndTime = (start > lastRunTime) ? start : loopDuration;
+
+        if (!step3) {
+            return true;
+        }
+
+        if (!timedIoTList.isEmpty()) {
+            injectTimedIoTData(timedIoTList, start, loopEndTime);
+        } else if (conf3.isInjectData && allowInjectedData) {
+            injectCSVData(conf3.injectedData, false);
+        }
+
+        loopEndTime += delta;
+        loopEndTime = (double) Math.round(loopEndTime * 1000) / 1000;
+        loopDuration = (double) Math.round(loopEndTime * 1000) / 1000;
+        lastRunTime = MainEventManager.clock();
+        return MainEventManager.legacy_run(conn, context, loopEndTime, delta) < simEnd;
     }
 
     @Override

@@ -208,7 +208,8 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		if (ev == null) {
 			double time = MainEventManager.clock();
 			this.updateBatteryBySensing(step);
-			consumptionInTime.put((double) Math.round(time * 1000) / 1000, this.battery.getBatteryTotalConsumption());
+			time = (double) Math.round(time / netLatency) * netLatency;
+			consumptionInTime.put(Double.parseDouble(df.format(time)), this.battery.getBatteryTotalConsumption());
 			return;
 		}
 		OsmoticAppDescription app = (OsmoticAppDescription) ev.getData();
@@ -310,7 +311,8 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 
 			isDrained = this.updateBatteryBySensing(step);
 			time = time - step;
-			consumptionInTime.put((double) Math.round(time * 1000) / 1000, this.battery.getBatteryTotalConsumption());
+			time = (double) Math.round(time / netLatency) * netLatency;
+			consumptionInTime.put(Double.parseDouble(df.format(time)), this.battery.getBatteryTotalConsumption());
 			isCommunicating = false;
 		} else {
 			if (doIncrementPacketSent) {
@@ -351,10 +353,19 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		}
 		if (doIncrementPacketSent && isCommunicating && (!isDrained) && (!AppIDs.contains((appId)))) {
 			totalPacketsBeingSent += increment;
-			consumptionInTime.put(time, this.battery.getBatteryTotalConsumption());
-			actionToFlowId.put(time, appId);
+			time = (double) Math.round(time/ netLatency) * netLatency;
+			consumptionInTime.put(Double.parseDouble(df.format(time)), this.battery.getBatteryTotalConsumption());
+			actionToFlowId.put(Double.parseDouble(df.format(time)), appId);
 		}
-		packetsSentInTime.put(time, totalPacketsBeingSent);
+
+		if(packetsSentInTime.isEmpty()) {
+			time = (double) Math.round(time / netLatency) * netLatency;
+			packetsSentInTime.put(Double.parseDouble(df.format(time)), totalPacketsBeingSent);
+		}
+		if(Collections.max(packetsSentInTime.values()) < totalPacketsBeingSent) {
+			time = (double) Math.round(time / netLatency) * netLatency;
+			packetsSentInTime.put(Double.parseDouble(df.format(time)), totalPacketsBeingSent);
+		}
 
 		AppIDs.add(appId);
 		return isDrained;

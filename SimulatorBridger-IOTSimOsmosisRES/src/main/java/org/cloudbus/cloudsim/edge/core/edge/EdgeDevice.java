@@ -22,6 +22,7 @@ import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.provisioners.*;
 import uk.ncl.giacomobergami.components.allocation_policy.VmSchedulerTimeSharedEnergy;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
 
 /**
@@ -63,9 +64,12 @@ public class EdgeDevice extends Host implements CartesianPoint {
 				new BwProvisionerSimple(hostEntity.getBwSize()),
 				hostEntity.getStorage(),
 				generatePEList(hostEntity));
+
 		location = hostEntity.location;
 		signalRange = hostEntity.signalRange;
 		max_vehicle_communication = hostEntity.max_vehicle_communication;
+
+		OsmoticWrapper.melList.putIfAbsent(hostEntity.name, (double)hostEntity.getMips());
     }
     public String getDeviceName() {
 		return deviceName;

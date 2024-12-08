@@ -36,6 +36,7 @@ import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
 import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
@@ -149,6 +150,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	private final float maxEdgeBW = 100;
 	public transient Collection<Double> wakeUpTimes;
 	DecimalFormat df = new DecimalFormat("#.###");
+	HashMap<String, Double> melProcessing = OsmoticWrapper.melList;
 
 	private static OsmoticBroker OBINSTANCE;
 
@@ -364,14 +366,26 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 
 	private void melResolution(SimEvent ev) {
+
+		double maxMips = 0;
+		String melName = null;
+
+		for (String mel : melProcessing.keySet()) {
+			if (melProcessing.get(mel) /*- initNum*/ >= maxMips) {
+				maxMips = melProcessing.get(mel);// - initNum;
+				melProcessing.put(mel, maxMips);
+				melName = "@" + mel;
+			}
+		}
+
 		Flow flow = (Flow) ev.getData();
-		String melName = flow.getAppNameDest();
+		melName = melName != null ? melName : flow.getAppNameDest();
 		String IoTDevice = flow.getAppNameSrc();
 		var actualIoT = iotDeviceNameToObject.get(IoTDevice);
 		int mel_id = -1;
 
 		flow.setActualEdgeDevice(melName);
-		if (melRouting.test(melName)){
+		if (melRouting.test(melName)) {
 			// Using a policy for determining the next MEL
 			String melInstanceName = melRouting.apply(actualIoT, melName, this);
 			if (melInstanceName == null) return; // Ignoring the communication if no alternative is given
@@ -457,7 +471,7 @@ public class OsmoticBroker extends DatacenterBroker {
 
 		while(!eventMap.isEmpty()) {
 			SimEvent newEv = eventMap.entrySet().iterator().next().getKey();
-			var dest = ((EdgeLet) newEv.getData()).getWorkflowTag().getEdgeLet().getWorkflowTag().getIotDeviceFlow().getAppNameDest();
+			//var dest = ((EdgeLet) newEv.getData()).getWorkflowTag().getEdgeLet().getWorkflowTag().getIotDeviceFlow().getAppNameDest();
 			//bw = edgeToCloudBandwidth.get(dest);
 			/*if(bw > (float) messageSize / 2) {
 				limit = 1;

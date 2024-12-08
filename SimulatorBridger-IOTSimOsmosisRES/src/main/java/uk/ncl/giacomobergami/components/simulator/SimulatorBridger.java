@@ -13,7 +13,7 @@ import java.util.List;
 public interface SimulatorBridger {
     void init(double start, List<Edge> edgeNodes); // automatically using the YAML configuration files for this set-up, minus the location of the EdgeNodes/RSUs, from which you are deriving the network infrastructure
 
-    boolean run(double delta, double simulationEnd, double injectionTime, List<TimedIoT> timedIoTList) throws IOException, CsvException;
+    boolean run(double start, double delta, List<TimedIoT> timedIoTList);
 
     void fini(); // finalising the simulator when all the events are depleted
 }

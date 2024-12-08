@@ -1063,7 +1063,7 @@ public class Datacenter extends SimEntity {
 		// R: for term is to allow loop at simulation start. Otherwise, one initial
 		// simulation step is skipped and schedulers are not properly initialized
 
-		if (MainEventManager.clock() < 0.111 || MainEventManager.clock() > getLastProcessTime() + MainEventManager.getMinTimeBetweenEvents()) {
+		if (/*MainEventManager.clock() < 0.111 ||*/ MainEventManager.clock() > getLastProcessTime() + MainEventManager.getMinTimeBetweenEvents()) {
 			List<? extends Host> list = getVmAllocationPolicy().getHostList();
 			double smallerTime = Double.MAX_VALUE;
 			// for each host...

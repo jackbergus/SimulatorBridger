@@ -72,11 +72,10 @@ public class OsmoticWrapper {
     private double runTime;
     List<OsmoticAppDescription> appList;
     List<PrintResults.BandwidthInfo> bandwidthInfoList;
+    public static HashMap<String, Double> melList = new HashMap<>();
     private static final File converter_file = new File("clean_example/converter.yaml");
     private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
     private static final String RA = time_conf.get().getRoutingAlgorithm();
-
-
 
     public OsmoticWrapper() {
         this(null);

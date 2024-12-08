@@ -14,6 +14,8 @@ import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.ResCloudlet;
 import org.cloudbus.cloudsim.core.MainEventManager;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 /**
  * CloudletSchedulerTimeShared implements a policy of scheduling performed by a virtual machine.
@@ -75,8 +77,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 			if (remainingLength == 0) {// finished: remove from the list
 				toRemove.add(rcl);
 				cloudletFinish(rcl);
-				continue;
-			}
+            }
 		}
 		getCloudletExecList().removeAll(toRemove);
 
@@ -91,6 +92,9 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 			if (estimatedFinishTime < nextEvent) {
 				nextEvent = estimatedFinishTime;
 			}
+
+			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
+			OsmoticWrapper.melList.put(mel.replace("@",  ""), getMipsShare);
 		}
 
 		setPreviousTime(currentTime);
@@ -124,6 +128,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		} else {
 			capacity /= currentCPUs;
 		}
+
 		return capacity;
 	}
 

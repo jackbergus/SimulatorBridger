@@ -367,8 +367,10 @@ public class OsmoticBroker extends DatacenterBroker {
 
 	private void melResolution(SimEvent ev) {
 
+		Flow flow = (Flow) ev.getData();
+
 		double maxMips = 0;
-		String melName = null;
+		String melName = flow.getAppNameDest();;
 
 		for (String mel : melProcessing.keySet()) {
 			if (melProcessing.get(mel) /*- initNum*/ >= maxMips) {
@@ -378,13 +380,11 @@ public class OsmoticBroker extends DatacenterBroker {
 			}
 		}
 
-		Flow flow = (Flow) ev.getData();
-		melName = melName != null ? melName : flow.getAppNameDest();
 		String IoTDevice = flow.getAppNameSrc();
 		var actualIoT = iotDeviceNameToObject.get(IoTDevice);
 		int mel_id = -1;
-
 		flow.setActualEdgeDevice(melName);
+
 		if (melRouting.test(melName)) {
 			// Using a policy for determining the next MEL
 			String melInstanceName = melRouting.apply(actualIoT, melName, this);

@@ -64,6 +64,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	private double usedBw;
 	private final AtomicInteger flowId;
 	private long totalPacketsBeingSent = 0;
+	private long totalSensing = 0;
 	private TreeMap<Double, Double> consumptionInTime = new TreeMap<>();
 	private TreeMap<Double, Long> packetsSentInTime = new TreeMap<>();
 	private TreeMap<Double, Integer> actionToFlowId = new TreeMap<>();
@@ -214,9 +215,9 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		}
 		OsmoticAppDescription app = (OsmoticAppDescription) ev.getData();
 		Flow flow = this.createFlow(app);
-		
+		totalSensing +=1;
 		WorkflowInfo workflowTag = new WorkflowInfo();
-		workflowTag.setStartTime(MainEventManager.clock());
+		workflowTag.setStartTime(Double.parseDouble(df.format(MainEventManager.clock())));
 		workflowTag.setAppId(app.getAppID());
 		workflowTag.setAppName(app.getAppName());
 		workflowTag.setIotDeviceFlow(flow);
@@ -292,12 +293,18 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	double beginSUMO = time_conf.get().getBegin();
 	double step = time_conf.get().getStep();
 	double endSUMO = time_conf.get().getEnd();
+	public static HashMap<String, Double> IoTDeviceBattery = new HashMap<>();
 	private boolean updateEnergyConsumptionInformation(SimEvent ev, int flowId) {
 		boolean isDrained;
 		boolean isCommunicating;
 		int appId = -1;
 		boolean doIncrementPacketSent = flowId != -1;
 		int increment = 1;
+
+		IoTDeviceBattery.putIfAbsent(this.getName(), this.getBattery().getMaxCapacity());
+		if(IoTDeviceBattery.containsKey(this.getName())) {
+			this.battery.setCurrentCapacity(IoTDeviceBattery.get(this.getName()));
+		}
 
 		if(MainEventManager.clock() > endSUMO) {
 			MainEventManager.cancelAll(getId(), MainEventManager.SIM_ANY);

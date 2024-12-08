@@ -34,18 +34,16 @@ public class CarSensor extends IoTDevice {
 	@Override
 	public boolean updateBatteryBySensing(double deltaTime) {
 		battery.decrementCapacity(battery.getBatterySensingRate(), deltaTime);
-		if(battery.getCurrentCapacity()<0)
-			return  true;
-		return false;
-	}
+		IoTDevice.IoTDeviceBattery.put(this.getName(), this.battery.getCurrentCapacity());
+\        return battery.getCurrentCapacity() < 0;
+    }
 
 	@Override
 	public boolean updateBatteryByTransmission(double deltaTime) {
 		battery.decrementCapacity(battery.getBatterySendingRate(), deltaTime);
-		if(battery.getCurrentCapacity()<0)
-			return  true;
-		return false;
-	}
+		IoTDevice.IoTDeviceBattery.put(this.getName(), this.battery.getCurrentCapacity());
+        return battery.getCurrentCapacity() < 0;
+    }
 
 	@Override
 	public void startEntity() {

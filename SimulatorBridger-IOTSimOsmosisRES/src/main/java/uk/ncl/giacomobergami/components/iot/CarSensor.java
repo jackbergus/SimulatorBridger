@@ -35,7 +35,7 @@ public class CarSensor extends IoTDevice {
 	public boolean updateBatteryBySensing(double deltaTime) {
 		battery.decrementCapacity(battery.getBatterySensingRate(), deltaTime);
 		IoTDevice.IoTDeviceBattery.put(this.getName(), this.battery.getCurrentCapacity());
-\        return battery.getCurrentCapacity() < 0;
+        return battery.getCurrentCapacity() < 0;
     }
 
 	@Override

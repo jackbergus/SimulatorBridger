@@ -1,0 +1,36 @@
+{"patients": [{
+  "seed": 0,
+  "x": 0,
+  "y": 0,
+  "HR_MU": 70,
+"HR_SD": 20,
+"SBP_MU": 120,
+"SBP_SD": 25,
+"TEMP_MU": 37,
+"TEMP_SD": 0.5
+},
+{
+  "seed": 5,
+  "x": 100,
+  "y": 150,
+  "HR_MU": 80,
+"HR_SD": 20,
+"SBP_MU": 90,
+"SBP_SD": 20,
+"TEMP_MU": 37,
+"TEMP_SD": 0.5
+},
+{
+  "seed": 5,
+  "x": 100,
+  "y": 100,
+  "HR_MU": 80,
+"HR_SD": 1.5,
+"SBP_MU": 112,
+"SBP_SD": 2,
+"TEMP_MU": 36.8,
+"TEMP_SD": 0.2
+}],
+  "granularity": 7,
+  "boolean_risk": true
+  }

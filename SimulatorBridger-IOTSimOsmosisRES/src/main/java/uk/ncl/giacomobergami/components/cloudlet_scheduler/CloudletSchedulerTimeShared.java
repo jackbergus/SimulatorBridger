@@ -15,6 +15,7 @@ import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.ResCloudlet;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
+import org.cloudbus.osmosis.core.OsmoticBroker;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 /**
@@ -56,13 +57,13 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	public double updateVmProcessing(double currentTime, List<Double> mipsShare) {
 		setCurrentMipsShare(mipsShare);
 		double timeSpam = currentTime - getPreviousTime();
-
-
 		double getMipsShare = (getCapacity(mipsShare));
+
 		for (ResCloudlet rcl : getCloudletExecList()) {
 			rcl.updateCloudletFinishedSoFar((long) (getMipsShare * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
+			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
+			OsmoticWrapper.melList.put(mel.replace("@",  ""), getMipsShare);
 		}
-
 
 		if (getCloudletExecList().size() == 0) {
 			setPreviousTime(currentTime);
@@ -82,6 +83,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		getCloudletExecList().removeAll(toRemove);
 
 		// estimate finish time of cloudlets
+		getMipsShare = (getCapacity(mipsShare));
 		for (ResCloudlet rcl : getCloudletExecList()) {
 			double estimatedFinishTime = currentTime
 					+ (rcl.getRemainingCloudletLength() /  getMipsShare * rcl.getNumberOfPes());

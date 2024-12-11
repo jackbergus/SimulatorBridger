@@ -1,6 +1,8 @@
 package uk.ncl.giacomobergami.utils.pipeline_confs;
 
 public class BatteryConfiguration {
+    public boolean Active;
+
     public float a0;
     public float a1;
     public float a2;
@@ -34,6 +36,9 @@ public class BatteryConfiguration {
     public double Charging_DischargingPower;
     public double Maximum_Battery_Capacity;
     public double Standby_Loss;
+
+    public boolean isActive() {return Active;}
+    public void setActive(boolean Active) {this.Active = Active;}
 
     public float getA0() {return a0;    }
     public void setA0(float a0) {this.a0 = a0;}

@@ -10,6 +10,7 @@ public class TrafficConfiguration {
     public long begin, end;
     public double step;
     public String routingAlgorithm;
+    public String melProcessing;
     boolean isBatch;
     boolean isFirstBatch;
     String queueFilePath;
@@ -44,6 +45,10 @@ public class TrafficConfiguration {
     public void setRoutingAlgorithm(String routingAlgorithm) {
         this.routingAlgorithm = routingAlgorithm;
     }
+
+    public String getMelProcessing() { return melProcessing;}
+
+    public void setMelProcessing(String melProcessing) { this.melProcessing = melProcessing;}
 
     public String getClazzPath() {
         return clazzPath;

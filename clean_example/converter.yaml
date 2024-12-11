@@ -7,6 +7,9 @@ step: 0.212 # needs to be changed to match network latency if match is "true"  i
 #Routing Algorithm
 routingAlgorithm: "uk.ncl.giacomobergami.components.routing_algorithm.SPMB" #choose either "...SPMB" or "...MCFR" to select these algorithms, or choose just "custom" to modify agent_config.json and edge/cloud_generator.yaml files
 
+#MEL processing policy
+melProcessing: "Quietest" #choose either "Nearest" to process incoming communications on the nearest MEL or "Quietest" to process incoming communications in the quietest MEL
+
 ## Output
 RSUCsvFile:         #dynamically defined
 VehicleCsvFile:     #dynamically defined

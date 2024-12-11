@@ -30,6 +30,8 @@ public class Battery implements Serializable {
 	private final transient File battery_file = new File("clean_example/3_extIOTSim_configuration/battery_parameters.yaml");
 	private final transient Optional<BatteryConfiguration> battery_conf = YAML.parse(BatteryConfiguration.class, battery_file);
 
+	private final boolean Active = battery_conf.get().isActive();
+
 	private final float a0 = battery_conf.get().getA0();
 	private final float a1 = battery_conf.get().getA1();
 	private final float a2 = battery_conf.get().getA2();
@@ -151,8 +153,11 @@ public class Battery implements Serializable {
 	}
 	public void decrementCapacity(double delta, double deltaTime) {
 		this.currentCapacity -= delta;
-		/*double reduction = dischargeBattery(deltaTime);
-		this.currentCapacity -= reduction;*/
+		if(Active) {
+			double reduction = dischargeBattery(deltaTime);
+			this.currentCapacity -= reduction;
+		}
+		if(this.currentCapacity < 0) this.currentCapacity = 0;
 	}
 
 	public void chargeBattery(double energyTransfer, double current){
@@ -207,7 +212,8 @@ public class Battery implements Serializable {
 		double VOC = calculateOpenCircuitVoltage();
 		double RTOT = calculateTotalResistance();
 
-		double IT = (VOC - Math.sqrt(Math.pow(VOC, 2) - 4 * RTOT * PB)) / (2 * RTOT);
+		double negCheck = Math.pow(VOC, 2) - 4 * RTOT * PB;
+		double IT = negCheck > 0 ? (VOC - Math.sqrt(negCheck)) / (2 * RTOT) : 0;
 		return IT;
 	}
 
@@ -231,16 +237,16 @@ public class Battery implements Serializable {
 
 	public double dischargeBattery(double deltaTime) {
 		double NDC = dischargeEfficiency();
-		//double NC = chargeEfficiency();
+		double NC = chargeEfficiency();
 		double discharge = 0;
 
-		//if(PB > 0) {
+		if(PB > 0) {
 			discharge = (PB*deltaTime)/(EC*NDC);
-		//} else if (PB == 0) {
-			//discharge = (PSB*deltaTime)/(EC*NDC);
-		//}else if(PB < 0) {
-		//	discharge = (PB*deltaTime*NC)/EC;
-		//}
+		} else if (PB == 0) {
+			discharge = (PSB*deltaTime)/(EC*NDC);
+		}else if(PB < 0) {
+			discharge = (PB*deltaTime*NC)/EC;
+		}
 
 		return discharge;
 	}

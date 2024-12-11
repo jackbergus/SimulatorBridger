@@ -151,6 +151,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	public transient Collection<Double> wakeUpTimes;
 	DecimalFormat df = new DecimalFormat("#.###");
 	HashMap<String, Double> melProcessing = OsmoticWrapper.melList;
+	final String processingPolicy = time_conf.get().getMelProcessing();
 
 	private static OsmoticBroker OBINSTANCE;
 
@@ -368,15 +369,19 @@ public class OsmoticBroker extends DatacenterBroker {
 	private void melResolution(SimEvent ev) {
 
 		Flow flow = (Flow) ev.getData();
+		String melName = flow.getAppNameDest();
 
-		double maxMips = 0;
-		String melName = flow.getAppNameDest();;
+		if(Objects.equals(processingPolicy, "Quietest")) {
+			double multiplier = 0.1;
+			double maxMips = Collections.max(melProcessing.values());
+			double buffer = Math.max(maxMips - (Collections.min(melProcessing.values()) * multiplier), maxMips - multiplier);
 
-		for (String mel : melProcessing.keySet()) {
-			if (melProcessing.get(mel) /*- initNum*/ >= maxMips) {
-				maxMips = melProcessing.get(mel);// - initNum;
-				melProcessing.put(mel, maxMips);
-				melName = "@" + mel;
+			for (String mel : melProcessing.keySet()) {
+				if (melProcessing.get(mel) == maxMips) {
+					melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
+					melName = "@" + mel;
+					break;
+				}
 			}
 		}
 

@@ -22,5 +22,5 @@ if __name__ == '__main__':
     sb.init()
     for x in range(20):
         sb.run(x, next(pdg))
-    sb.fini()
+    sb.stop()
 

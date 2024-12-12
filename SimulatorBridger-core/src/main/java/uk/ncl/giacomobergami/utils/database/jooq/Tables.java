@@ -5,18 +5,30 @@ package uk.ncl.giacomobergami.utils.database.jooq;
 
 
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Accuratebatteryinfo;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.AccuratebatteryinfoImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Applist;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.ApplistImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Bandwidthshareinfo;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.BandwidthshareinfoImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Connectionpersimtime;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.ConnectionpersimtimeImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Datacenterenergyconsumption;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.DatacenterenergyconsumptionImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Historyentry;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.HistoryentryImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Hostpowerconsumption;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.HostpowerconsumptionImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Neighbourschange;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Osmoticappsstats;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.OsmoticappsstatsImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Overallappresults;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.OverallappresultsImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Powerutilisationhistory;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.PowerutilisationhistoryImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Rsuinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.RsuinformationImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Switchpowerconsumption;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.SwitchpowerconsumptionImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.VehinformationImport;
@@ -25,7 +37,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.VehinformationImport;
 /**
  * Convenience access to all tables in public.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Tables {
 
     /**
@@ -34,9 +46,19 @@ public class Tables {
     public static final Accuratebatteryinfo ACCURATEBATTERYINFO = Accuratebatteryinfo.ACCURATEBATTERYINFO;
 
     /**
+     * The table <code>public.accuratebatteryinfo_import</code>.
+     */
+    public static final AccuratebatteryinfoImport ACCURATEBATTERYINFO_IMPORT = AccuratebatteryinfoImport.ACCURATEBATTERYINFO_IMPORT;
+
+    /**
      * The table <code>public.applist</code>.
      */
     public static final Applist APPLIST = Applist.APPLIST;
+
+    /**
+     * The table <code>public.applist_import</code>.
+     */
+    public static final ApplistImport APPLIST_IMPORT = ApplistImport.APPLIST_IMPORT;
 
     /**
      * The table <code>public.bandwidthshareinfo</code>.
@@ -44,9 +66,19 @@ public class Tables {
     public static final Bandwidthshareinfo BANDWIDTHSHAREINFO = Bandwidthshareinfo.BANDWIDTHSHAREINFO;
 
     /**
+     * The table <code>public.bandwidthshareinfo_import</code>.
+     */
+    public static final BandwidthshareinfoImport BANDWIDTHSHAREINFO_IMPORT = BandwidthshareinfoImport.BANDWIDTHSHAREINFO_IMPORT;
+
+    /**
      * The table <code>public.connectionpersimtime</code>.
      */
     public static final Connectionpersimtime CONNECTIONPERSIMTIME = Connectionpersimtime.CONNECTIONPERSIMTIME;
+
+    /**
+     * The table <code>public.connectionpersimtime_import</code>.
+     */
+    public static final ConnectionpersimtimeImport CONNECTIONPERSIMTIME_IMPORT = ConnectionpersimtimeImport.CONNECTIONPERSIMTIME_IMPORT;
 
     /**
      * The table <code>public.datacenterenergyconsumption</code>.
@@ -54,14 +86,29 @@ public class Tables {
     public static final Datacenterenergyconsumption DATACENTERENERGYCONSUMPTION = Datacenterenergyconsumption.DATACENTERENERGYCONSUMPTION;
 
     /**
+     * The table <code>public.datacenterenergyconsumption_import</code>.
+     */
+    public static final DatacenterenergyconsumptionImport DATACENTERENERGYCONSUMPTION_IMPORT = DatacenterenergyconsumptionImport.DATACENTERENERGYCONSUMPTION_IMPORT;
+
+    /**
      * The table <code>public.historyentry</code>.
      */
     public static final Historyentry HISTORYENTRY = Historyentry.HISTORYENTRY;
 
     /**
+     * The table <code>public.historyentry_import</code>.
+     */
+    public static final HistoryentryImport HISTORYENTRY_IMPORT = HistoryentryImport.HISTORYENTRY_IMPORT;
+
+    /**
      * The table <code>public.hostpowerconsumption</code>.
      */
     public static final Hostpowerconsumption HOSTPOWERCONSUMPTION = Hostpowerconsumption.HOSTPOWERCONSUMPTION;
+
+    /**
+     * The table <code>public.hostpowerconsumption_import</code>.
+     */
+    public static final HostpowerconsumptionImport HOSTPOWERCONSUMPTION_IMPORT = HostpowerconsumptionImport.HOSTPOWERCONSUMPTION_IMPORT;
 
     /**
      * The table <code>public.neighbourschange</code>.
@@ -74,9 +121,19 @@ public class Tables {
     public static final Osmoticappsstats OSMOTICAPPSSTATS = Osmoticappsstats.OSMOTICAPPSSTATS;
 
     /**
+     * The table <code>public.osmoticappsstats_import</code>.
+     */
+    public static final OsmoticappsstatsImport OSMOTICAPPSSTATS_IMPORT = OsmoticappsstatsImport.OSMOTICAPPSSTATS_IMPORT;
+
+    /**
      * The table <code>public.overallappresults</code>.
      */
     public static final Overallappresults OVERALLAPPRESULTS = Overallappresults.OVERALLAPPRESULTS;
+
+    /**
+     * The table <code>public.overallappresults_import</code>.
+     */
+    public static final OverallappresultsImport OVERALLAPPRESULTS_IMPORT = OverallappresultsImport.OVERALLAPPRESULTS_IMPORT;
 
     /**
      * The table <code>public.powerutilisationhistory</code>.
@@ -84,14 +141,29 @@ public class Tables {
     public static final Powerutilisationhistory POWERUTILISATIONHISTORY = Powerutilisationhistory.POWERUTILISATIONHISTORY;
 
     /**
+     * The table <code>public.powerutilisationhistory_import</code>.
+     */
+    public static final PowerutilisationhistoryImport POWERUTILISATIONHISTORY_IMPORT = PowerutilisationhistoryImport.POWERUTILISATIONHISTORY_IMPORT;
+
+    /**
      * The table <code>public.rsuinformation</code>.
      */
     public static final Rsuinformation RSUINFORMATION = Rsuinformation.RSUINFORMATION;
 
     /**
+     * The table <code>public.rsuinformation_import</code>.
+     */
+    public static final RsuinformationImport RSUINFORMATION_IMPORT = RsuinformationImport.RSUINFORMATION_IMPORT;
+
+    /**
      * The table <code>public.switchpowerconsumption</code>.
      */
     public static final Switchpowerconsumption SWITCHPOWERCONSUMPTION = Switchpowerconsumption.SWITCHPOWERCONSUMPTION;
+
+    /**
+     * The table <code>public.switchpowerconsumption_import</code>.
+     */
+    public static final SwitchpowerconsumptionImport SWITCHPOWERCONSUMPTION_IMPORT = SwitchpowerconsumptionImport.SWITCHPOWERCONSUMPTION_IMPORT;
 
     /**
      * The table <code>public.timed_scc</code>.

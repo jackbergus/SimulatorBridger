@@ -852,7 +852,7 @@ public class MainEventManager {
 		for (int i = 0; i < entities_size; i++) {
 			ent = entities.get(i);
 			if (ent.getState() == SimEntity.RUNNABLE) {
-				ent.run(conn, context);
+				ent.run(conn, context, deltaTime);
 			}
 		}
 
@@ -1334,7 +1334,7 @@ public class MainEventManager {
 		if (!abruptTerminate) {
 			for (SimEntity ent : entities) {
 				if (ent.getState() != SimEntity.FINISHED) {
-					ent.run(conn, context);
+					ent.run(conn, context, deltaTime);
 				}
 			}
 		}

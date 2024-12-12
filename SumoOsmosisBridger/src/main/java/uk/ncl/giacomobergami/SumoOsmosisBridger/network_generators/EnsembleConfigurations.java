@@ -177,9 +177,6 @@ public class EnsembleConfigurations {
         public double reset_rsu_communication_radius;
         public int reset_max_vehicle_communication;
 
-        public boolean isInjectData;
-        public String injectedData;
-
         public IoTEntityGenerator first() {
             return new IoTEntityGenerator(new File(iot_generators));
         }

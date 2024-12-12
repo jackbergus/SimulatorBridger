@@ -12,14 +12,12 @@ package org.cloudbus.cloudsim.core;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import org.cloudbus.cloudsim.Log;
 import org.cloudbus.cloudsim.NetworkTopology;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.jooq.DSLContext;
 
 import java.io.Serializable;
 import java.sql.Connection;
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -409,7 +407,7 @@ public abstract class SimEntity implements Cloneable, Serializable {
 	 */
 	public abstract void processEvent(SimEvent ev);
 
-	public abstract void processEvent(SimEvent ev, Connection conn, DSLContext context);
+	public abstract void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime);
 
 	/**
 	 * This method is invoked by the {@link Simulation} before the simulation finishes. If you want
@@ -426,11 +424,11 @@ public abstract class SimEntity implements Cloneable, Serializable {
 		return nl;
 	}
 
-	public void run(Connection conn, DSLContext context) {
+	public void run(Connection conn, DSLContext context, double deltaTime) {
 		SimEvent ev = evbuf != null ? evbuf : getNextEvent();
 
 		while (ev != null) {
-			processEvent(ev, conn, context);
+			processEvent(ev, conn, context, deltaTime);
 			if (state != RUNNABLE) {
 				break;
 			}

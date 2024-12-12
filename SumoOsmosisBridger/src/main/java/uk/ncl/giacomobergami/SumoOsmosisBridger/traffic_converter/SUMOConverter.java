@@ -388,6 +388,7 @@ public class SUMOConverter extends TrafficConverter {
         var pyPath = conf2.getPython_filepath();
         var lcm  = 1.59; // this is the lowest common multiple of the latency for 3G, 4G and 5G, or 0.212, 0.075 and 0.001
         var last = conf1.match ? lcm : conf.step;
+        last = conf.boostLatency ? conf.normalLatency : conf.step;
         var path = pyPath + ' ' + conf1.stepSizeEditorPath + ' ' + detectorsPath + ' ' + vTypesPath + ' ' + cfgFile + ' ' + last;
 
         try {
@@ -411,7 +412,7 @@ public class SUMOConverter extends TrafficConverter {
         }
         BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(fos));
         ProcessBuilder processBuilder = new ProcessBuilder();
-        processBuilder.command(concreteConf.sumo_program, "-c", concreteConf.sumo_configuration_file_path, "--begin", Long.toString(conf.begin), "--end", Long.toString(conf.end), "--step-length", Double.toString(conf.step), "--fcd-output", concreteConf.trace_file);
+        processBuilder.command(concreteConf.sumo_program, "-c", concreteConf.sumo_configuration_file_path, "--begin", Long.toString(conf.begin), "--end", Long.toString(conf.end), "--step-length", Double.toString(last), "--fcd-output", concreteConf.trace_file);
         try {
             Process process = processBuilder.start();
             BufferedReader reader =

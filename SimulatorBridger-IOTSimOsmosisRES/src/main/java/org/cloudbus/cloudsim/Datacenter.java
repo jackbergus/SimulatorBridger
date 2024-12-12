@@ -276,7 +276,7 @@ public class Datacenter extends SimEntity {
 		}
 	}
 
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 		int srcId = -1;
 
 		switch (ev.getTag()) {

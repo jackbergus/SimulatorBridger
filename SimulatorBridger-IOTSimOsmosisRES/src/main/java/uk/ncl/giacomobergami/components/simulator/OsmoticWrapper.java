@@ -356,7 +356,8 @@ public class OsmoticWrapper {
             MainEventManager.addEntity(osmoticBroker);
             osmoticBroker.setIsWakeupStartSet(false);
             osmoticBroker.setFullInterval(time_conf.get().getBatchStart(), time_conf.get().getBatchEnd());
-        }
+        } else
+            osmoticBroker.setFullInterval(time_conf.get().getBegin(), time_conf.get().getEnd());
         MELSwitchPolicy melSwitchPolicy = MELRoutingPolicyGeneratorFacade.generateFacade(conf.mel_switch_policy);
         osmoticBroker.setMelRouting(melSwitchPolicy);
         conf.buildTopologyForSimulator(osmoticBroker, RA);
@@ -374,9 +375,8 @@ public class OsmoticWrapper {
         appList = (time_conf.get().getIsBatch() && !time_conf.get().getIsFirstBatch()) ?  MainEventManager.deserializeAppList(name +"appList.ser") : osmoticBroker.submitWorkloadCSVApps(conf.apps);
         osmoticBroker.setAppList(appList);
         osmoticBroker.setDatacenters(conf.conf.osmesisDatacentres);
-        osmoticBroker.setDeltaVehUpdate(conf.simulation_step);
+        osmoticBroker.setDeltaVehUpdate(deltaTime);
         osmoticBroker.setIoTTraces(new IoTEntityGenerator(new File(conf.iot_traces), null, conn, context));
-
         init = true;
         return init;
     }

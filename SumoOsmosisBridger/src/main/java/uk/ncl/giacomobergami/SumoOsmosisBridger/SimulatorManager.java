@@ -8,6 +8,7 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
+import uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConfiguration;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
@@ -28,6 +29,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.DecimalFormat;
 import java.util.*;
 
 import org.jooq.codegen.GenerationTool;
@@ -56,9 +58,11 @@ public class SimulatorManager implements SimulatorBridger {
     String orchestrator;
     String simulator_runner;
 
-    boolean allowInjectedData = true;
+    boolean allowInjectedData = false;
     boolean step1, step2, step3;
-    double simBegin, simEnd, deltaTime;
+    static double simBegin;
+    static double simEnd;
+    static double deltaTime;
     public double loopDuration;
     double lastRunTime = 0;
 
@@ -66,6 +70,7 @@ public class SimulatorManager implements SimulatorBridger {
     File output_folder_2;
     File output_folder_3;
     File orchestrator_file;
+    Optional<TrafficConfiguration> conf1;
     Optional<OrchestratorConfiguration> conf2;
 
     int maxAcceptableVehiclesPerEdgeNode;
@@ -82,15 +87,20 @@ public class SimulatorManager implements SimulatorBridger {
     static HashMap<String, TimedIoT> SecondSet = new HashMap<>();
     GlobalConfigurationSettings globalConfigurationSettings = new GlobalConfigurationSettings();
 
+    private boolean firstLoop = true;
+    DecimalFormat df = new DecimalFormat("#.###");
+
+    private double normalLatency;
+    private double boostedLatency;
+    private double currentLatency;
+
     static {
         File file = new File("log4j2.xml");
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
         context.setConfigLocation(file.toURI());
     }
 
-    public SimulatorManager() {
-
-    }
+    public SimulatorManager() {}
 
     public void generateJooQ() {
         try {
@@ -187,14 +197,15 @@ public class SimulatorManager implements SimulatorBridger {
     }
 
     public double getDeltaTime() {
+        deltaTime = this.currentLatency;
         return deltaTime;
     }
 
-    public void injectCSVData(String vehicleCSVFile, boolean updatedCSV) throws IOException, CsvException {
+    public void injectCSVData(String vehicleCSVFile, boolean updatedCSV, double newLatency) throws IOException, CsvException {
 
         deviceList = ((GlobalConfigurationSettings) ((ArrayList) configuration_for_each_network_change).get(0)).iotDevices;
 
-        if (conf3.isInjectData) {
+        if (conf1.get().isInjectData()) {
             updateCSV(vehicleCSVFile, updatedCSV);
             addToDevicesToList();
             OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList);
@@ -202,6 +213,7 @@ public class SimulatorManager implements SimulatorBridger {
         }
         System.out.println("You injected new events!");
         allowInjectedData = false;
+        updateCurrentLatency(newLatency);
     }
 
     protected void updateCSV(String vehicleCSVFile, boolean updatedCSV) throws IOException, CsvException {
@@ -220,7 +232,7 @@ public class SimulatorManager implements SimulatorBridger {
         System.out.println("Injected data updated");
     }
 
-    public void injectTimedIoTData(List<TimedIoT> timedIoTList, double start, double loopEndTime) throws IOException, CsvException {
+    public void injectTimedIoTData(List<TimedIoT> timedIoTList, double start, double loopEndTime, double newLatency) throws IOException, CsvException {
         List<TimedIoT> processedEvents = new ArrayList<>();
         for(TimedIoT vehicle : timedIoTList) {
             if (vehicle.simtime < start) {
@@ -243,8 +255,7 @@ public class SimulatorManager implements SimulatorBridger {
         processedEvents.clear();
 
         if (!currentEvents.isEmpty()) {
-            injectListDataToSQL(currentEvents);
-            System.out.println("You injected new events!");
+            injectListDataToSQL(currentEvents, newLatency);
             currentEvents.clear();
         }
     }
@@ -321,9 +332,9 @@ public class SimulatorManager implements SimulatorBridger {
         System.out.print("IoT Device Info Configuration Completed\n");
     }
 
-    private void injectListDataToSQL(List<TimedIoT> timedIoTList) throws IOException, CsvException {
+    private void injectListDataToSQL(List<TimedIoT> timedIoTList, double newLatency) throws IOException, CsvException {
         String timedIoTFile = writeToCSV(timedIoTList);
-        injectCSVData(timedIoTFile, true);
+        injectCSVData(timedIoTFile, true, newLatency);
     }
 
     private String writeToCSV(List<TimedIoT> timedIoTList) throws IOException {
@@ -345,8 +356,19 @@ public class SimulatorManager implements SimulatorBridger {
         return CSVFilePath;
     }
 
+    private void updateCurrentLatency(double newLatency) {
+        this.currentLatency = newLatency;
+    }
+
+    public double getCurrentLatency() { return currentLatency; }
+
+    public double getSimulationBegin() { return simBegin; }
+
+    public static double getSimulationEnd() { return simEnd; }
+
     @Override
     public boolean init(double start, List<Edge> edgeNodes) {
+
         try {
             dataSource = createDataSource();
             conn = ConnectToSource(dataSource);
@@ -361,13 +383,13 @@ public class SimulatorManager implements SimulatorBridger {
             step2 = false;
             step3 = true;
 
-            if(generate) generateJooQ();
+            if (generate) generateJooQ();
 
             String finalOrchestrator = orchestrator;
             String finalSimulator_runner = simulator_runner;
 
             var converter_file = new File(converter).getAbsoluteFile();
-            Optional<TrafficConfiguration> conf1 = YAML.parse(TrafficConfiguration.class, converter_file);
+            conf1 = YAML.parse(TrafficConfiguration.class, converter_file);
 
             conf1.ifPresent(y -> {
                 simBegin = conf1.get().getBegin();
@@ -376,11 +398,14 @@ public class SimulatorManager implements SimulatorBridger {
                 configStep1(converter_file, finalOrchestrator, y, conn, context);
                 conf2.ifPresent(x -> {
                     configStep2(orchestrator_file, x, y);
-                    if(step3) {
+                    if (step3) {
                         configStep3(finalSimulator_runner, converter_file, output_folder_1, x, conn, context);
                         collectGlobalConfigurationSettings(conn, context);
                         System.out.print("Starting Running from Configuration\n");
                         double simulationStart = start == simBegin ? deltaTime : start;
+                        normalLatency = (conf1.get().boostLatency) ? conf1.get().normalLatency : conf1.get().step;
+                        boostedLatency = (conf1.get().boostLatency) ? conf1.get().boostedLatency : normalLatency;
+                        updateCurrentLatency(normalLatency);
                         OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, simBegin, simulationStart);
                     }
                 });
@@ -405,22 +430,33 @@ public class SimulatorManager implements SimulatorBridger {
 
     public boolean innerRun(double start, double delta, List<TimedIoT> timedIoTList) throws IOException, CsvException {
         double loopEndTime = (start > lastRunTime) ? start : loopDuration;
+        loopEndTime += normalLatency;
+        loopEndTime = (double) Math.round(loopEndTime * 1000) / 1000;
+        updateCurrentLatency(delta);
 
         if (!step3) {
             return true;
         }
 
-        if (!timedIoTList.isEmpty()) {
-            injectTimedIoTData(timedIoTList, start, loopEndTime);
-        } else if (conf3.isInjectData && allowInjectedData) {
-            injectCSVData(conf3.injectedData, false);
+        if(firstLoop) {
+            updateCurrentLatency(normalLatency);
+            boostedLatency = conf1.get().boostLatency ? boostedLatency : delta;
+            firstLoop = false;
         }
 
-        loopEndTime += delta;
-        loopEndTime = (double) Math.round(loopEndTime * 1000) / 1000;
+        if (Double.parseDouble(df.format(MainEventManager.clock() % normalLatency)) == 0.0) {
+            updateCurrentLatency(normalLatency);
+        }
+
+        if (!timedIoTList.isEmpty()) {
+            injectTimedIoTData(timedIoTList, start, loopEndTime, boostedLatency);
+        } else if (conf1.get().isInjectData() && allowInjectedData) {
+            injectCSVData(conf1.get().getInjectedData(), false, boostedLatency);
+        }
+
         loopDuration = (double) Math.round(loopEndTime * 1000) / 1000;
         lastRunTime = MainEventManager.clock();
-        return MainEventManager.legacy_run(conn, context, loopEndTime, delta) < simEnd;
+        return MainEventManager.legacy_run(conn, context, loopEndTime, currentLatency) < simEnd;
     }
 
     @Override

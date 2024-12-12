@@ -11,6 +11,11 @@ public class TrafficConfiguration {
     public double step;
     public String routingAlgorithm;
     public String melProcessing;
+    public boolean isInjectData;
+    public String injectedData;
+    public boolean boostLatency;
+    public double normalLatency;
+    public double boostedLatency;
     boolean isBatch;
     boolean isFirstBatch;
     String queueFilePath;
@@ -49,6 +54,22 @@ public class TrafficConfiguration {
     public String getMelProcessing() { return melProcessing;}
 
     public void setMelProcessing(String melProcessing) { this.melProcessing = melProcessing;}
+
+    public boolean isInjectData() { return isInjectData;}
+
+    public void setInjectData(boolean isInjectData) { this.isInjectData = isInjectData;}
+
+    public String getInjectedData() { return injectedData;}
+
+    public void setInjectedData(String injectedData) {this.injectedData = injectedData;}
+
+    public double getNormalLatency() { return normalLatency;}
+
+    public void setNormalLatency(double normalLatency) { this.normalLatency = normalLatency;}
+
+    public double getBoostedLatency() { return boostedLatency;}
+
+    public void setBoostedLatency(double boostedLatency) { this.boostedLatency = boostedLatency; }
 
     public String getClazzPath() {
         return clazzPath;

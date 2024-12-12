@@ -71,7 +71,7 @@ public class Switch extends SimEntity implements NetworkNIC{
 	}
 
 	@Override
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 		int tag = ev.getTag();
 		switch(tag){
 			default: System.out.println("Unknown event received by "+super.getName()+". Tag:"+ev.getTag());

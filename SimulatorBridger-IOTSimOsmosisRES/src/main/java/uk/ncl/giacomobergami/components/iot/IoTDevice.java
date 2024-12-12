@@ -206,6 +206,15 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	}
 	
 	private void sensing(SimEvent ev) {
+
+		if(!assigned) {
+			time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+			endSUMO = time_conf.get().getEnd();
+			assigned = true;
+		}
+
+		step = time_conf.get().getStep();
+
 		if (ev == null) {
 			double time = MainEventManager.clock();
 			this.updateBatteryBySensing(step);
@@ -289,10 +298,10 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 
 	int increment = 1;
 	File converter_file = new File("clean_example/converter.yaml");
-	Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
-	double beginSUMO = time_conf.get().getBegin();
-	double step = time_conf.get().getStep();
-	double endSUMO = time_conf.get().getEnd();
+	Optional<TrafficConfiguration> time_conf;
+	double step, endSUMO;
+	boolean assigned = false;
+
 	public static HashMap<String, Double> IoTDeviceBattery = new HashMap<>();
 	private boolean updateEnergyConsumptionInformation(SimEvent ev, int flowId) {
 		boolean isDrained;
@@ -300,6 +309,8 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		int appId = -1;
 		boolean doIncrementPacketSent = flowId != -1;
 		int increment = 1;
+
+		step = time_conf.get().getStep();
 
 		IoTDeviceBattery.putIfAbsent(this.getName(), this.getBattery().getMaxCapacity());
 		if(IoTDeviceBattery.containsKey(this.getName())) {

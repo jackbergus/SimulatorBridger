@@ -20,6 +20,7 @@ import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.osmosis.core.OsmoticAppDescription;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.cloudbus.osmosis.core.OsmoticTags;
+import uk.ncl.giacomobergami.SumoOsmosisBridger.SimulatorManager;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.PayloadForIoTAgent;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.MessageWithPayload;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
@@ -49,13 +50,13 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
 
     protected List<ImmutablePair<EdgeDataCenter, EdgeDevice>> ls = Collections.emptyList();
     private final File converter_file = new File("clean_example/converter.yaml");
-    private final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
-    double beginSUMO = time_conf.get().getBegin();
-    double endSUMO = time_conf.get().getEnd();
+
+    double endSUMO = SimulatorManager.getSimulationEnd();
     DecimalFormat df = new DecimalFormat("#.###");
 
     @Override
     public void monitor() {
+
         super.monitor();
         if (ls != null) ls.clear();
 
@@ -94,6 +95,7 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
 
         // If I did not set this up, there is no meaning on resolving the nearest Edge
         // device over which perform a distributed communication
+
         if ((ls != null) && (!ls.isEmpty())) {
             // Still, against multiple possible candidates, the node is always picking the nearest!
             var nearest = getReceivedMessages()

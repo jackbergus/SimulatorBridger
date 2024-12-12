@@ -74,7 +74,7 @@ public class CloudSimShutdown extends SimEntity {
 	}
 
 	@Override
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 		numUser--;
 		if (numUser == 0 || ev.getTag() == CloudSimTags.ABRUPT_END_OF_SIMULATION) {
 			MainEventManager.abruptallyTerminate();

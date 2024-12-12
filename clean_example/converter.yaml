@@ -1,14 +1,23 @@
-clazzPath: "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter" # Simulator Class
-YAMLConverterConfiguration: "clean_example/sumo.yaml" # Simulator Configuration for the Class
+clazzPath: uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter # Simulator Class
+YAMLConverterConfiguration: clean_example/sumo.yaml # Simulator Configuration for the Class
 begin: 0    # Start simulator time
 end: 125     # End simulator time
-step: 0.212 # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
+step: 0.212   # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
 
 #Routing Algorithm
-routingAlgorithm: "uk.ncl.giacomobergami.components.routing_algorithm.SPMB" #choose either "...SPMB" or "...MCFR" to select these algorithms, or choose just "custom" to modify agent_config.json and edge/cloud_generator.yaml files
+routingAlgorithm: uk.ncl.giacomobergami.components.routing_algorithm.SPMB #choose either "...SPMB" or "...MCFR" to select these algorithms, or choose just "custom" to modify agent_config.json and edge/cloud_generator.yaml files
 
 #MEL processing policy
-melProcessing: "Quietest" #choose either "Nearest" to process incoming communications on the nearest MEL or "Quietest" to process incoming communications in the quietest MEL
+melProcessing: Quietest #choose either "Nearest" to process incoming communications on the nearest MEL or "Quietest" to process incoming communications in the quietest MEL
+
+## Injected data
+isInjectData: true
+injectedData: example-injection-data.csv
+
+#these used if injected data needs boosted latency
+boostLatency: true #true if injected data needs boosted latency
+normalLatency: 0.212
+boostedLatency: 0.001
 
 ## Output
 RSUCsvFile:         #dynamically defined
@@ -19,6 +28,7 @@ outputVehicleCsvFile: true #true to output this CSV file, false to avoid outputt
 ## Batch TODO: make this work, this is currently broken
 isBatch: false
 isFirstBatch: true
-queueFilePath: "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\PersistingBatchData\\"
+queueFilePath: 
+  C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\clean_example\\PersistingBatchData\\
 batchStart: 0
 batchEnd: 20

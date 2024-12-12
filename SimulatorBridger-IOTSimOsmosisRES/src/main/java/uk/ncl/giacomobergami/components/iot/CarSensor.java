@@ -57,7 +57,7 @@ public class CarSensor extends IoTDevice {
 		super.processEvent(ev);
 	}
 
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 		super.processEvent(ev);
 	}
 

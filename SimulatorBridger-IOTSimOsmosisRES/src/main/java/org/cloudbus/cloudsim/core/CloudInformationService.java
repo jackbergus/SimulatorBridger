@@ -11,7 +11,6 @@ package org.cloudbus.cloudsim.core;
 import java.sql.Connection;
 import java.util.*;
 
-import org.cloudbus.cloudsim.Log;
 import org.jooq.DSLContext;
 
 /**
@@ -135,7 +134,7 @@ public class CloudInformationService extends SimEntity {
 	}
 
 	@Override
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 		int id = -1;  // requester id
 		switch (ev.getTag()) {
 			// storing regional GIS id

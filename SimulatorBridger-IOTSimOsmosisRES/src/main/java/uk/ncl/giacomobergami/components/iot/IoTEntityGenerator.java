@@ -22,18 +22,11 @@ import static org.jooq.impl.DSL.count;
 import static org.jooq.impl.DSL.field;
 
 public class IoTEntityGenerator implements Serializable{
-    public static double lat;
-    public static double endTime;
     //final TreeMap<String, IoT> timed_iots;
     public transient final IoTGlobalConfiguration conf;
     static final HashSet<Double> setWUT = new HashSet<>();
-    transient final File converter_file = new File("clean_example/converter.yaml");
-    transient final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
-    final double begin = time_conf.get().getBegin();
-    final double end = time_conf.get().getEnd();
-    double latency = time_conf.get().getStep();
     private TreeSet<Double> wakeupTimes = new TreeSet<>();
-    HashMap<String, TreeSet<Double>> vehicleTimes = new HashMap<>();
+    //HashMap<String, TreeSet<Double>> vehicleTimes = new HashMap<>();
 
     public static HashSet<Double> getSetWUT() {
         return setWUT;
@@ -65,9 +58,6 @@ public class IoTEntityGenerator implements Serializable{
         else
             conf = null;
 
-        lat = latency;
-        endTime = end;
-
         /*Gson gson = new Gson();
         Type sccType = new TypeToken<TreeMap<String, IoT>>() {}.getType();
         BufferedReader reader1 = null;
@@ -97,10 +87,6 @@ public class IoTEntityGenerator implements Serializable{
             conf = YAML.parse(IoTGlobalConfiguration.class, configuration).orElseThrow();
         else
             conf = null;
-
-        lat = latency;
-        endTime = end;
-
         wakeupTimes = deserializeWakeupTimes(
                 Path.of("clean_example", "1_traffic_information_collector_output", "WakeupTimes.ser").toString());
 
@@ -457,7 +443,7 @@ public class IoTEntityGenerator implements Serializable{
         return timed_IoTs;
     }*/
 
-    public Collection<Double> collectionOfWakeUpTimes() {
+    public Collection<Double> collectionOfWakeUpTimes(double begin, double end, double latency) {
         System.out.print("Starting Collection of Wake Up Times...\n");
         /*int interval = 3600;
         for(int j = 0; j < Collections.max(wakeupTimes); j+=interval) {

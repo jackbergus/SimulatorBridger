@@ -120,17 +120,13 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 	public static String choice = DataCenterWithController.getLimiting();
 	protected static String change;
-	private static final File converter_file = new File("clean_example/converter.yaml");
-	private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
-	static double beginSUMO = time_conf.get().getBegin();
-	static double endSUMO = time_conf.get().getEnd();
 	//////////////////////////////////////////////////////////////////////////////////////////////
 	public CentralAgent osmoticCentralAgent;
 	private AtomicInteger flowId;
 	private IoTEntityGenerator ioTEntityGenerator;
-	public static double deltaVehUpdate = time_conf.get().step;
-	private double startTime = time_conf.get().getBegin();
-	private double endTime = time_conf.get().getEnd();
+	public static double deltaVehUpdate;
+	private double startTime;
+	private double endTime;
 	public void setFullInterval(double startTime, double endTime){
 		this.startTime = startTime;
 		this.endTime = endTime;
@@ -151,6 +147,9 @@ public class OsmoticBroker extends DatacenterBroker {
 	public transient Collection<Double> wakeUpTimes;
 	DecimalFormat df = new DecimalFormat("#.###");
 	HashMap<String, Double> melProcessing = OsmoticWrapper.melList;
+
+	private static final File converter_file = new File("clean_example/converter.yaml");
+	private static Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 	final String processingPolicy = time_conf.get().getMelProcessing();
 
 	private static OsmoticBroker OBINSTANCE;
@@ -186,12 +185,13 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 
 	@Override
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
+		deltaVehUpdate = deltaTime;
 		double chron = Double.parseDouble(df.format(MainEventManager.clock()));
 
 		// Setting up the forced times when the simulator has to wake up, as new messages have to be sent
 		if (!isWakeupStartSet) {
-			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes();
+			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes(startTime, endTime, deltaVehUpdate);
 			processTimes = context.select().distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
 			timesToProcess = processTimes.getValues(Vehinformation.VEHINFORMATION.SIMTIME);
 			for (Double forcedWakeUpTime :
@@ -212,7 +212,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		if(chron <= endTime && chron > lastTime && chron >= startTime) {
 			var ab = AgentBroker.getInstance();
 			//info used to update IoT devices' positions
-			double now = (double) Math.round((chron / IoTEntityGenerator.lat) * IoTEntityGenerator.lat * 1000) / 1000;
+			double now = (double) Math.round((chron / deltaVehUpdate) * deltaVehUpdate * 1000) / 1000;
 			int nowIndex = timesToProcess.indexOf(now);
 			double future = nowIndex == timesToProcess.size() - 1 ? now : timesToProcess.get(timesToProcess.indexOf(now) + 1);//now + (2 * deltaVehUpdate);
 			lastTime = now;
@@ -221,8 +221,8 @@ public class OsmoticBroker extends DatacenterBroker {
 			//System.out.print("Collecting new batch of vehicle information from SQL table...\n");
 			//dataNowRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min((double) intervalEnd, endSUMO) + "'").orderBy(field("simtime")).fetch();
 			//dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + ((double) intervalStart + (2 * deltaVehUpdate)) + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endSUMO) + "'").orderBy(field("simtime")).fetch();
-			dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime =" + now).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
-			dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime =" + future).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
+			dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME, Vehinformation.VEHINFORMATION.INJECTED).from(Vehinformation.VEHINFORMATION).where("simtime =" + now).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
+			dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME, Vehinformation.VEHINFORMATION.INJECTED).from(Vehinformation.VEHINFORMATION).where("simtime =" + future).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
 			vehsToUpdate = dataRange.getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
 			//collectSQLInfo += collectionInterval;
 			//intervalStart += collectionInterval;
@@ -239,6 +239,7 @@ public class OsmoticBroker extends DatacenterBroker {
 				if (nowFirst != -1) {
 					for (int i = nowFirst; i <= nowLast; i++) {
 						String name = dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.VEHICLE_ID);
+						String injected = dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.INJECTED);
 						double[] nowPos = {dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.X), dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.Y)};
 						nowData.put(name, nowPos);
 					}
@@ -272,7 +273,7 @@ public class OsmoticBroker extends DatacenterBroker {
 				ioTEntityGenerator.updateIoTDevice(obj, nowDouble, futureDouble);
 			});*/
 
-				if (deltaVehUpdate == 0.001 && now >= 1.0) {
+				/*if (deltaVehUpdate == 0.001 && now >= 1.0) {
 					if (now % 1 == 0) {
 						if (pb != null) {
 							pb.stepTo(1000L);
@@ -280,7 +281,7 @@ public class OsmoticBroker extends DatacenterBroker {
 						pb = new ProgressBar("Progress to second " + Math.ceil(now + 1) + " of simtime", 1000L);
 					}
 					pb.step();
-				}
+				}*/
 				//Update simulation time in the AgentBroker
 				ab.updateTime(chron, vehsToUpdate);
 				//Execute MAPE loop at time interval
@@ -372,9 +373,9 @@ public class OsmoticBroker extends DatacenterBroker {
 		String melName = flow.getAppNameDest();
 
 		if(Objects.equals(processingPolicy, "Quietest")) {
-			double multiplier = 0.1;
+			double differentiator = 0.1;
 			double maxMips = Collections.max(melProcessing.values());
-			double buffer = Math.max(maxMips - (Collections.min(melProcessing.values()) * multiplier), maxMips - multiplier);
+			double buffer = Math.max(maxMips - (Collections.min(melProcessing.values()) * differentiator), maxMips - differentiator);
 
 			for (String mel : melProcessing.keySet()) {
 				if (melProcessing.get(mel) == maxMips) {

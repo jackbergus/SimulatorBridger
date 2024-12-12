@@ -61,7 +61,7 @@ public class LightSensor extends IoTDevice {
 	}
 
 	@Override
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 		super.processEvent(ev);
 	}
 

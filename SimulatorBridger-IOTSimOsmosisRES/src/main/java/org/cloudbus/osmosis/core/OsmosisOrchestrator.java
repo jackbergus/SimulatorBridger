@@ -112,7 +112,7 @@ public class OsmosisOrchestrator extends SimEntity {
 	}
 
 	@Override
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 		int tag = ev.getTag();
 
 		switch(tag){

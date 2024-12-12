@@ -10,7 +10,6 @@ package org.cloudbus.cloudsim;
 
 import java.sql.Connection;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -282,7 +281,7 @@ public class DatacenterBroker extends SimEntity  {
 	}
 
 	@Override
-	public void processEvent(SimEvent ev, Connection conn, DSLContext context) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 //		int srcId = -1;
 
 		switch (ev.getTag()) {

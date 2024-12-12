@@ -45,7 +45,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRe
  * A class modelling foreign key relationships and constraints of tables in
  * public.
  */
-@SuppressWarnings({ "all", "unchecked", "rawtypes" })
+@SuppressWarnings({ "all", "unchecked", "rawtypes", "this-escape" })
 public class Keys {
 
     // -------------------------------------------------------------------------
@@ -66,5 +66,5 @@ public class Keys {
     public static final UniqueKey<RsuinformationRecord> RSUINFORMATION_PKEY = Internal.createUniqueKey(Rsuinformation.RSUINFORMATION, DSL.name("rsuinformation_pkey"), new TableField[] { Rsuinformation.RSUINFORMATION.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<SwitchpowerconsumptionRecord> SWITCHPOWERCONSUMPTION_PKEY = Internal.createUniqueKey(Switchpowerconsumption.SWITCHPOWERCONSUMPTION, DSL.name("switchpowerconsumption_pkey"), new TableField[] { Switchpowerconsumption.SWITCHPOWERCONSUMPTION.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<TimedSccRecord> TIMED_SCC_PKEY = Internal.createUniqueKey(TimedScc.TIMED_SCC, DSL.name("timed_scc_pkey"), new TableField[] { TimedScc.TIMED_SCC.UNIQUE_ENTRY_ID }, true);
-    public static final UniqueKey<VehinformationRecord> DYNAMICINFORMATION_PKEY = Internal.createUniqueKey(Vehinformation.VEHINFORMATION, DSL.name("dynamicinformation_pkey"), new TableField[] { Vehinformation.VEHINFORMATION.DI_ENTRY_ID }, true);
+    public static final UniqueKey<VehinformationRecord> VEHINFORMATION_PKEY = Internal.createUniqueKey(Vehinformation.VEHINFORMATION, DSL.name("vehinformation_pkey"), new TableField[] { Vehinformation.VEHINFORMATION.DI_ENTRY_ID }, true);
 }

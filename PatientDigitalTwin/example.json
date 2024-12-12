@@ -31,6 +31,5 @@
 "TEMP_MU": 36.8,
 "TEMP_SD": 0.2
 }],
-  "granularity": 7,
-  "boolean_risk": true
+  "granularity": 7
   }

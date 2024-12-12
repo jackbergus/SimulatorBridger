@@ -19,8 +19,8 @@ if __name__ == '__main__':
 
     # Normal vital signs information: https://medlineplus.gov/ency/article/002341.htm, https://www.researchgate.net/publication/257943370_Technical_Evaluation_of_an_E-Health_Platform
     pdg = PatientDataGenerator(patient_configuration)
-    sb.init()
-    for x in range(20):
-        sb.run(x, next(pdg))
-    sb.stop()
+    if sb.init(): # Performing the simulation only if all went well at initialisation time
+        for x in range(20):
+            sb.run(x, next(pdg))
+        sb.stop()
 

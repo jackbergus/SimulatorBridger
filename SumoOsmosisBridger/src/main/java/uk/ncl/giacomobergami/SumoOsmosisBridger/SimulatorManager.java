@@ -38,9 +38,9 @@ import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class SimulatorManager implements SimulatorBridger {
 
-    DataSource dataSource = createDataSource();
-    Connection conn = ConnectToSource(dataSource);
-    DSLContext context = getDSLContext(conn);
+    DataSource dataSource;
+    Connection conn;
+    DSLContext context;
 
     private static final String converter_out = "1_traffic_information_collector_output";
     private static final String converter_out_RSUCsvFile = "rsu.csv";
@@ -52,9 +52,9 @@ public class SimulatorManager implements SimulatorBridger {
     private static final String orchestrator_out_output_experiment_name = "test";
     private static final String final_out = "3_extIOTSim_output";
 
-    String converter = "clean_example/converter.yaml";
-    String orchestrator = "clean_example/orchestrator.yaml";
-    String simulator_runner = "clean_example/IoTSim.yaml";
+    String converter;
+    String orchestrator;
+    String simulator_runner;
 
     boolean allowInjectedData = true;
     boolean step1, step2, step3;
@@ -72,7 +72,7 @@ public class SimulatorManager implements SimulatorBridger {
     double maxCommunicationRadiusPerEdgeNode;
 
     File configuration_file;
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    BufferedReader br;
 
     EnsembleConfigurations conv3;
     EnsembleConfigurations.Configuration conf3;
@@ -86,6 +86,10 @@ public class SimulatorManager implements SimulatorBridger {
         File file = new File("log4j2.xml");
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
         context.setConfigLocation(file.toURI());
+    }
+
+    public SimulatorManager() {
+
     }
 
     public void generateJooQ() {
@@ -342,38 +346,51 @@ public class SimulatorManager implements SimulatorBridger {
     }
 
     @Override
-    public void init(double start, List<Edge> edgeNodes) {
+    public boolean init(double start, List<Edge> edgeNodes) {
+        try {
+            dataSource = createDataSource();
+            conn = ConnectToSource(dataSource);
+            context = getDSLContext(conn);
+            converter = "clean_example/converter.yaml";
+            orchestrator = "clean_example/orchestrator.yaml";
+            simulator_runner = "clean_example/IoTSim.yaml";
+            br = new BufferedReader(new InputStreamReader(System.in));
 
-        boolean generate = false;
-        step1 = true;
-        step2 = false;
-        step3 = true;
+            boolean generate = false;
+            step1 = true;
+            step2 = false;
+            step3 = true;
 
-        if(generate) generateJooQ();
+            if(generate) generateJooQ();
 
-        String finalOrchestrator = orchestrator;
-        String finalSimulator_runner = simulator_runner;
+            String finalOrchestrator = orchestrator;
+            String finalSimulator_runner = simulator_runner;
 
-        var converter_file = new File(converter).getAbsoluteFile();
-        Optional<TrafficConfiguration> conf1 = YAML.parse(TrafficConfiguration.class, converter_file);
+            var converter_file = new File(converter).getAbsoluteFile();
+            Optional<TrafficConfiguration> conf1 = YAML.parse(TrafficConfiguration.class, converter_file);
 
-        conf1.ifPresent(y -> {
-            simBegin = conf1.get().getBegin();
-            simEnd = conf1.get().getEnd();
-            deltaTime = conf1.get().getStep();
-            configStep1(converter_file, finalOrchestrator, y, conn, context);
-            conf2.ifPresent(x -> {
-                configStep2(orchestrator_file, x, y);
-                if(step3) {
-                    configStep3(finalSimulator_runner, converter_file, output_folder_1, x, conn, context);
-                    collectGlobalConfigurationSettings(conn, context);
-                    System.out.print("Starting Running from Configuration\n");
-                    double simulationStart = start == simBegin ? deltaTime : start;
-                    OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, simBegin, simulationStart);
-                }
+            conf1.ifPresent(y -> {
+                simBegin = conf1.get().getBegin();
+                simEnd = conf1.get().getEnd();
+                deltaTime = conf1.get().getStep();
+                configStep1(converter_file, finalOrchestrator, y, conn, context);
+                conf2.ifPresent(x -> {
+                    configStep2(orchestrator_file, x, y);
+                    if(step3) {
+                        configStep3(finalSimulator_runner, converter_file, output_folder_1, x, conn, context);
+                        collectGlobalConfigurationSettings(conn, context);
+                        System.out.print("Starting Running from Configuration\n");
+                        double simulationStart = start == simBegin ? deltaTime : start;
+                        OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, simBegin, simulationStart);
+                    }
+                });
             });
-        });
-        System.out.println("End of Setup!");
+            System.out.println("End of Setup!");
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
     }
 
     public boolean run(double start, double delta, List<TimedIoT> timedIoTList) {

@@ -1,5 +1,7 @@
 package uk.ncl.giacomobergami.SumoOsmosisBridger;
 
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvException;
@@ -36,6 +38,7 @@ import org.jooq.codegen.GenerationTool;
 
 import javax.sql.DataSource;
 
+import static java.lang.Double.parseDouble;
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class SimulatorManager implements SimulatorBridger {
@@ -247,15 +250,12 @@ public class SimulatorManager implements SimulatorBridger {
         for (TimedIoT vehicle : timedIoTList) {
             if (vehicle.simtime >= lastRunTime && vehicle.simtime < loopEndTime) {
                 currentEvents.add(vehicle);
-                processedEvents.add(vehicle);
             }
         }
 
-        timedIoTList.removeAll(processedEvents);
-        processedEvents.clear();
-
         if (!currentEvents.isEmpty()) {
             injectListDataToSQL(currentEvents, newLatency);
+            //timedIoTList.removeAll(currentEvents);
             currentEvents.clear();
         }
     }
@@ -354,6 +354,45 @@ public class SimulatorManager implements SimulatorBridger {
         writer.flush();
 
         return CSVFilePath;
+    }
+
+    public List<TimedIoT> parseJSONHealthData(String path) {
+        List<TimedIoT> jsonTimedIoTList = new ArrayList<>();
+        try (
+                InputStream inputStream = Files.newInputStream(Path.of(path));
+                JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+        ) {
+            JsonToken check;
+            reader.beginArray();
+            while (reader.hasNext()) {
+                while (reader.hasNext()) {
+                    check = reader.peek();
+                    switch (check.name()) {
+                        case "BEGIN_ARRAY" -> reader.beginArray();
+                        case "BEGIN_OBJECT" -> {
+                            reader.beginObject();
+                            String idTag = reader.nextName();
+                            String id = reader.nextString();
+                            String xTag = reader.nextName();
+                            double x = parseDouble(reader.nextString());
+                            String yTag = reader.nextName();
+                            double y = parseDouble(reader.nextString());
+                            String riskTag = reader.nextName();
+                            boolean risk = reader.nextBoolean();
+                            String simTimeTag = reader.nextName();
+                            double simTime = parseDouble(reader.nextString());
+                            TimedIoT TIoT = new TimedIoT(id, x, y, 0, "patient", 0.0, 0.0, "", 0.0, simTime, true);
+                            jsonTimedIoTList.add(TIoT);
+                            reader.endObject();
+                        }
+                    }
+                }
+                reader.endArray();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return jsonTimedIoTList;
     }
 
     private void updateCurrentLatency(double newLatency) {

@@ -461,6 +461,10 @@ public class IoTEntityGenerator implements Serializable{
         return setWUT;
     }
 
+    public void addWakeUpTime(double newWakeUpTime) {
+        setWUT.add(newWakeUpTime);
+    }
+
     public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,double[] currentPosition, double[] expectedPosition) {
         if (toUpdateWithTime.mobility.range != null) {
             toUpdateWithTime.transmit = true;

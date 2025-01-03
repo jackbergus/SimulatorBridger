@@ -11,8 +11,10 @@ routingAlgorithm: uk.ncl.giacomobergami.components.routing_algorithm.SPMB #choos
 melProcessing: Quietest #choose either "Nearest" to process incoming communications on the nearest MEL or "Quietest" to process incoming communications in the quietest MEL
 
 ## Injected data
-isInjectData: true
-injectedData: example-injection-data.csv
+isInjectCSVData: false
+injectedCSVData: example-injection-data.csv
+isInjectJSONData : true
+injectedJSONData: PatientDigitalTwin/patient.json
 
 #these used if injected data needs boosted latency
 boostLatency: true #true if injected data needs boosted latency

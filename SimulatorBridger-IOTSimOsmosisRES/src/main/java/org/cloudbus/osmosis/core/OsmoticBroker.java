@@ -184,19 +184,29 @@ public class OsmoticBroker extends DatacenterBroker {
 		super.startEntity();
 	}
 
+	public void scheduleNewWakeUpTime(Collection<Double> wakeUpTimes, double chron) {
+		for (Double forcedWakeUpTime : wakeUpTimes) {
+			double time = Double.parseDouble(df.format(forcedWakeUpTime)) - chron;
+			if (time >= 0.0 && chron + getDeltaVehUpdate() <= endTime) {
+				schedule(OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);
+			}
+		}
+		IoTEntityGenerator.clearNewWakeUpTimes();
+	}
+
 	@Override
 	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
+
 		deltaVehUpdate = deltaTime;
 		double chron = Double.parseDouble(df.format(MainEventManager.clock()));
-
+		scheduleNewWakeUpTime(IoTEntityGenerator.getNewWakeUpTimes(), chron);
 		// Setting up the forced times when the simulator has to wake up, as new messages have to be sent
 		if (!isWakeupStartSet) {
 			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes(startTime, endTime, deltaVehUpdate);
 			processTimes = context.select().distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
 			timesToProcess = processTimes.getValues(Vehinformation.VEHINFORMATION.SIMTIME);
-			for (Double forcedWakeUpTime :
-					wakeUpTimes) {
-				double time = forcedWakeUpTime - chron;
+			for (Double forcedWakeUpTime : wakeUpTimes) {
+				double time = Double.parseDouble(df.format(forcedWakeUpTime)) - chron;
 				if (time > 0.0 && chron + getDeltaVehUpdate() <= endTime) {
 					schedule(OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);
 				}
@@ -240,9 +250,6 @@ public class OsmoticBroker extends DatacenterBroker {
 					for (int i = nowFirst; i <= nowLast; i++) {
 						String name = dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.VEHICLE_ID);
 						boolean injected = Boolean.parseBoolean(dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.INJECTED));
-						if(injected) {
-							ioTEntityGenerator.addWakeUpTime(dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.SIMTIME));
-						}
 						double[] nowPos = {dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.X), dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.Y)};
 						nowData.put(name, nowPos);
 					}

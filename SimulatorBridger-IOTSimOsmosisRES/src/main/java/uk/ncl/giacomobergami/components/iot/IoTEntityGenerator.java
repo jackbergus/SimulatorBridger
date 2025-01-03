@@ -24,12 +24,28 @@ import static org.jooq.impl.DSL.field;
 public class IoTEntityGenerator implements Serializable{
     //final TreeMap<String, IoT> timed_iots;
     public transient final IoTGlobalConfiguration conf;
+    static HashSet<Double> newWakeUpTimes = new HashSet<>();
     static final HashSet<Double> setWUT = new HashSet<>();
     private TreeSet<Double> wakeupTimes = new TreeSet<>();
     //HashMap<String, TreeSet<Double>> vehicleTimes = new HashMap<>();
 
     public static HashSet<Double> getSetWUT() {
         return setWUT;
+    }
+
+    public static Collection<Double> getNewWakeUpTimes() {
+        return newWakeUpTimes;
+    }
+
+    public static void addNewWakeUpTimes(double newWakeUpTime) {
+        if(!setWUT.contains(newWakeUpTime)) {
+            newWakeUpTimes.add(newWakeUpTime);
+            addWakeUpTime(newWakeUpTime);
+        }
+    }
+
+    public static void clearNewWakeUpTimes() {
+        newWakeUpTimes.clear();
     }
 
     public static class IoTGlobalConfiguration {
@@ -445,23 +461,16 @@ public class IoTEntityGenerator implements Serializable{
 
     public Collection<Double> collectionOfWakeUpTimes(double begin, double end, double latency) {
         System.out.print("Starting Collection of Wake Up Times...\n");
-        /*int interval = 3600;
-        for(int j = 0; j < Collections.max(wakeupTimes); j+=interval) {
-            setWUT.add((double)j);
-        }*/
         latency = Math.max(latency, 0.01);
         for (double i = begin; i <= end; i = i + latency) {
             setWUT.add((double) Math.round(i * 1000) / 1000);
         }
         setWUT.addAll(wakeupTimes);
-        /*for (int j = 0; j < vehicleTimes.size(); j++) {
-            setWUT.addAll((Collection<? extends Double>) vehicleTimes.values().toArray()[j]);
-        }*/
         System.out.print("Wake Up Times Collected\n");
         return setWUT;
     }
 
-    public void addWakeUpTime(double newWakeUpTime) {
+    public static void addWakeUpTime(double newWakeUpTime) {
         setWUT.add(newWakeUpTime);
     }
 

@@ -11,8 +11,10 @@ public class TrafficConfiguration {
     public double step;
     public String routingAlgorithm;
     public String melProcessing;
-    public boolean isInjectData;
-    public String injectedData;
+    public boolean isInjectCSVData;
+    public String injectedCSVData;
+    public boolean isInjectJSONData;
+    public String injectedJSONData;
     public boolean boostLatency;
     public double normalLatency;
     public double boostedLatency;
@@ -55,13 +57,21 @@ public class TrafficConfiguration {
 
     public void setMelProcessing(String melProcessing) { this.melProcessing = melProcessing;}
 
-    public boolean isInjectData() { return isInjectData;}
+    public boolean isInjectCSVData() { return isInjectCSVData;}
 
-    public void setInjectData(boolean isInjectData) { this.isInjectData = isInjectData;}
+    public void setInjectCSVData(boolean isInjectData) { this.isInjectCSVData = isInjectData;}
 
-    public String getInjectedData() { return injectedData;}
+    public String getInjectedCSVData() { return injectedCSVData;}
 
-    public void setInjectedData(String injectedData) {this.injectedData = injectedData;}
+    public void setInjectedCSVData(String injectedCSVData) {this.injectedCSVData = injectedCSVData;}
+
+    public boolean isInjectJSONData() { return isInjectJSONData;}
+
+    public void setInjectJSONData(boolean isInjectData) { this.isInjectJSONData = isInjectData;}
+
+    public String getInjectedJSONData() { return injectedJSONData;}
+
+    public void setInjectedJSONData(String injectedJSONData) { this.injectedJSONData = injectedJSONData; }
 
     public double getNormalLatency() { return normalLatency;}
 

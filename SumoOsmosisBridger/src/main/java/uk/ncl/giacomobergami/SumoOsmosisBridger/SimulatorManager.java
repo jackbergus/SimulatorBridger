@@ -10,7 +10,6 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
-import uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConfiguration;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
@@ -61,7 +60,6 @@ public class SimulatorManager implements SimulatorBridger {
     String orchestrator;
     String simulator_runner;
 
-    boolean allowInjectedData = false;
     boolean step1, step2, step3;
     static double simBegin;
     static double simEnd;
@@ -91,6 +89,8 @@ public class SimulatorManager implements SimulatorBridger {
     GlobalConfigurationSettings globalConfigurationSettings = new GlobalConfigurationSettings();
 
     private boolean firstLoop = true;
+    private boolean addNewCSVData = true;
+    private boolean addNewJSONData = true;
     DecimalFormat df = new DecimalFormat("#.###");
 
     private double normalLatency;
@@ -208,14 +208,13 @@ public class SimulatorManager implements SimulatorBridger {
 
         deviceList = ((GlobalConfigurationSettings) ((ArrayList) configuration_for_each_network_change).get(0)).iotDevices;
 
-        if (conf1.get().isInjectData()) {
+        if (conf1.get().isInjectCSVData()) {
             updateCSV(vehicleCSVFile, updatedCSV);
             addToDevicesToList();
             OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList);
             uploadInjectedDataToSQL(vehicleCSVFile);
         }
         System.out.println("You injected new events!");
-        allowInjectedData = false;
         updateCurrentLatency(newLatency);
     }
 
@@ -255,7 +254,6 @@ public class SimulatorManager implements SimulatorBridger {
 
         if (!currentEvents.isEmpty()) {
             injectListDataToSQL(currentEvents, newLatency);
-            //timedIoTList.removeAll(currentEvents);
             currentEvents.clear();
         }
     }
@@ -273,6 +271,8 @@ public class SimulatorManager implements SimulatorBridger {
         TI.setSlope(Double.parseDouble(strings[8]));
         TI.setSimtime(Double.parseDouble(strings[9]));
         TI.setInjected(Boolean.parseBoolean(strings[10]));
+
+        IoTEntityGenerator.addNewWakeUpTimes(Double.parseDouble(strings[9]));
 
         if (SecondSet.containsKey(TI.getId())) {
             return;
@@ -338,7 +338,7 @@ public class SimulatorManager implements SimulatorBridger {
     }
 
     private String writeToCSV(List<TimedIoT> timedIoTList) throws IOException {
-        String CSVFilePath = "example-list-data.csv";
+        String CSVFilePath = "injected-list-data.csv";
         CSVWriter writer;
 
         writer = new CSVWriter(new FileWriter(CSVFilePath));
@@ -384,6 +384,7 @@ public class SimulatorManager implements SimulatorBridger {
                             TimedIoT TIoT = new TimedIoT(id, x, y, 0, "patient", 0.0, 0.0, "", 0.0, simTime, true);
                             jsonTimedIoTList.add(TIoT);
                             reader.endObject();
+                            IoTEntityGenerator.addNewWakeUpTimes(simTime);
                         }
                     }
                 }
@@ -468,6 +469,7 @@ public class SimulatorManager implements SimulatorBridger {
     }
 
     public boolean innerRun(double start, double delta, List<TimedIoT> timedIoTList) throws IOException, CsvException {
+
         double loopEndTime = (start > lastRunTime) ? start : loopDuration;
         loopEndTime += normalLatency;
         loopEndTime = (double) Math.round(loopEndTime * 1000) / 1000;
@@ -487,10 +489,17 @@ public class SimulatorManager implements SimulatorBridger {
             updateCurrentLatency(normalLatency);
         }
 
+        if(conf1.get().isInjectJSONData && addNewJSONData) {
+            String JsonPath = conf1.get().getInjectedJSONData();
+            timedIoTList.addAll(parseJSONHealthData(JsonPath));
+            addNewJSONData = false;
+        }
+
         if (!timedIoTList.isEmpty()) {
             injectTimedIoTData(timedIoTList, start, loopEndTime, boostedLatency);
-        } else if (conf1.get().isInjectData() && allowInjectedData) {
-            injectCSVData(conf1.get().getInjectedData(), false, boostedLatency);
+        } else if (conf1.get().isInjectCSVData() && addNewCSVData) {
+            injectCSVData(conf1.get().getInjectedCSVData(), false, boostedLatency);
+            addNewCSVData = false;
         }
 
         loopDuration = (double) Math.round(loopEndTime * 1000) / 1000;

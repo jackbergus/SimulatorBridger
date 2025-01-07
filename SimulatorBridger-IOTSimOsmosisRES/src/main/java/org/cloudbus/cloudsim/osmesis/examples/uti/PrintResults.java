@@ -379,13 +379,14 @@ public class PrintResults {
 		utilizationHisotry.forEach(x -> ahe.add(new ActualHistoryEntry(dcName, name, x)));
 	}
 
-	public void collectTrustworthyBatteryData(Map<String, IoTDevice> devices) {
+	public void collectTrustworthyBatteryData(Map<String, IoTDevice> devices, HashMap<String,TreeMap<Double, Integer>> injectedPacketsInTime, HashMap<String,TreeMap<Double, Integer>> injectedActionToFlowID, HashMap<String, TreeMap<Double, Double>> injectedConsumptionInTime) {
 		battInfo = new ArrayList<>();
-		for (var nameToIoT : devices.entrySet()) {
-			var actualDevice = nameToIoT.getValue();
-			var deviceMemory = actualDevice.computeTrustworthyCommunication();
-			var flowInfo = actualDevice.getActionToFlowId();
-			for (var entry : actualDevice.getTrustworthyConsumption().entrySet()) {
+		for (Map.Entry<String, TreeMap<Double, Double>> nameToIoT : injectedConsumptionInTime.entrySet()) {
+			String actualDevice = nameToIoT.getKey();//nameToIoT.getValue();
+			TreeMap<Double, Integer> deviceMemory = injectedPacketsInTime.get(actualDevice);//actualDevice.computeTrustworthyCommunication();
+			TreeMap<Double, Integer> flowInfo = injectedActionToFlowID.get(actualDevice);//actualDevice.getActionToFlowId();
+			TreeMap<Double, Double> consumptionInfo = injectedConsumptionInTime.get(actualDevice);
+			for (Map.Entry<Double, Double> entry : /*nameToIoT.getValue().getTrustworthyConsumption()*/consumptionInfo.entrySet()) {
 				battInfo.add(new AccurateBatteryInformation(nameToIoT.getKey(),
 						entry.getKey(),
 						entry.getValue(),

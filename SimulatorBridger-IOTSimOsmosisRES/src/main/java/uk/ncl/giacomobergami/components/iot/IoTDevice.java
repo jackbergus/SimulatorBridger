@@ -24,6 +24,7 @@ import org.cloudbus.cloudsim.edge.iot.network.EdgeNetworkInfo;
 import org.cloudbus.cloudsim.edge.utils.LogUtil;
 import org.cloudbus.osmosis.core.*;
 import uk.ncl.giacomobergami.components.iot_protocol.IoTProtocolGeneratorFactory;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
 import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
@@ -58,15 +59,16 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	public Mobility mobility;
 	int connectingEdgeDeviceId = -1;
 	private boolean enabled;
+	private boolean injected;
 	public abstract boolean updateBatteryBySensing(double deltaTime);
 	public abstract boolean updateBatteryByTransmission(double deltaTime);
 	private double bw;
 	private double usedBw;
 	private final AtomicInteger flowId;
-	private long totalPacketsBeingSent = 0;
+	private int totalPacketsBeingSent = 0;
 	private long totalSensing = 0;
 	private TreeMap<Double, Double> consumptionInTime = new TreeMap<>();
-	private TreeMap<Double, Long> packetsSentInTime = new TreeMap<>();
+	private TreeMap<Double, Integer> packetsSentInTime = new TreeMap<>();
 	private TreeMap<Double, Integer> actionToFlowId = new TreeMap<>();
 	private HashMap<Integer, Double> flowIdCreationTime = new HashMap<>();
 	private HashSet<Integer> AppIDs = new HashSet<>();
@@ -74,7 +76,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 
 	public Map<Double, Double> getTrustworthyConsumption() { return consumptionInTime; }
 
-	public Map<Double, Long> computeTrustworthyCommunication() { return packetsSentInTime; }
+	public Map<Double, Integer> computeTrustworthyCommunication() { return packetsSentInTime; }
 
 	public TreeMap<Double, Integer> getActionToFlowId() {
 		return actionToFlowId;
@@ -111,7 +113,7 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 
 		this.bw = Objects.equals(this.netType, "custom") ? onta.getBw() : NetworkTypingGeneratorFactory.generateFacade(this.netType).getNTBW();
 		this.netLatency = Objects.equals(this.netType, "custom") ? onta.getLatency() : NetworkTypingGeneratorFactory.generateFacade(this.netType).getNTLat();
-
+		this.injected = onta.isInjected();
 		//Osmosis Agents
 		AgentBroker.getInstance().createDeviceAgent(onta.getName(), this);
 
@@ -204,6 +206,8 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	public void setEnabled(boolean enabled) {
 		this.enabled = enabled;
 	}
+
+	public boolean isInjected() { return injected; }
 	
 	private void sensing(SimEvent ev) {
 
@@ -304,6 +308,12 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 
 	public static HashMap<String, Double> IoTDeviceBattery = new HashMap<>();
 	private boolean updateEnergyConsumptionInformation(SimEvent ev, int flowId) {
+		if(!(ev.getTag() == OsmoticTags.updateIoTBW)) {
+			consumptionInTime = OsmoticWrapper.injctedConsumptionInTime.containsKey(((OsmoticAppDescription) ev.getData()).getIoTDeviceName()) ? OsmoticWrapper.injctedConsumptionInTime.get(((OsmoticAppDescription) ev.getData()).getIoTDeviceName()) : consumptionInTime;
+			totalPacketsBeingSent = OsmoticWrapper.packetsPerDevice.containsKey(((OsmoticAppDescription) ev.getData()).getIoTDeviceName()) ? OsmoticWrapper.packetsPerDevice.get(((OsmoticAppDescription) ev.getData()).getIoTDeviceName()) : totalPacketsBeingSent;
+			packetsSentInTime = OsmoticWrapper.injectedPacketsInTime.containsKey(((OsmoticAppDescription) ev.getData()).getIoTDeviceName()) ? OsmoticWrapper.injectedPacketsInTime.get(((OsmoticAppDescription) ev.getData()).getIoTDeviceName()) : packetsSentInTime;
+			actionToFlowId = OsmoticWrapper.injectedActionToFlowID.containsKey(((OsmoticAppDescription) ev.getData()).getIoTDeviceName()) ? OsmoticWrapper.injectedActionToFlowID.get(((OsmoticAppDescription) ev.getData()).getIoTDeviceName()) : actionToFlowId;
+		}
 		boolean isDrained;
 		boolean isCommunicating;
 		int appId = -1;
@@ -321,13 +331,10 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 			MainEventManager.cancelAll(getId(), MainEventManager.SIM_ANY);
 			return true;
 		}
-		double time = ev == null ? MainEventManager.clock() : ev.eventTime();
-		time = (double) Math.round(time * 1000) / 1000;
 		if (this.flowList.isEmpty()) {
 			// If there is no flow, then the device is not communicating, and therefore the battery should be
 			// updated as only in sensing
 			isDrained = this.updateBatteryBySensing(step);
-			time = time - step;
 			isCommunicating = false;
 		} else {
 			if (doIncrementPacketSent) {
@@ -367,19 +374,23 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 			isCommunicating = true;
 		}
 		if (doIncrementPacketSent && isCommunicating && (!isDrained) && (!AppIDs.contains((appId)))) {
+			consumptionInTime.put(Double.parseDouble(df.format(ev.eventTime())), this.battery.getBatteryTotalConsumption());
+			actionToFlowId.put(Double.parseDouble(df.format(ev.eventTime())), appId);
 			totalPacketsBeingSent += increment;
-			time = (double) Math.round(time/ netLatency) * netLatency;
-			consumptionInTime.put(Double.parseDouble(df.format(time)), this.battery.getBatteryTotalConsumption());
-			actionToFlowId.put(Double.parseDouble(df.format(time)), appId);
 		}
 
 		if(packetsSentInTime.isEmpty()) {
-			time = (double) Math.round(time / netLatency) * netLatency;
-			packetsSentInTime.put(Double.parseDouble(df.format(time)), totalPacketsBeingSent);
+			packetsSentInTime.put(Double.parseDouble(df.format(ev.eventTime())), totalPacketsBeingSent);
 		}
 		if(Collections.max(packetsSentInTime.values()) < totalPacketsBeingSent) {
-			time = (double) Math.round(time / netLatency) * netLatency;
-			packetsSentInTime.put(Double.parseDouble(df.format(time)), totalPacketsBeingSent);
+			packetsSentInTime.put(Double.parseDouble(df.format(ev.eventTime())), totalPacketsBeingSent);
+		}
+
+		if(!(ev.getTag() == OsmoticTags.updateIoTBW)) {
+			OsmoticWrapper.injctedConsumptionInTime.put(((OsmoticAppDescription) ev.getData()).getIoTDeviceName(), consumptionInTime);
+			OsmoticWrapper.packetsPerDevice.put(((OsmoticAppDescription) ev.getData()).getIoTDeviceName(), totalPacketsBeingSent);
+			OsmoticWrapper.injectedPacketsInTime.put(((OsmoticAppDescription) ev.getData()).getIoTDeviceName(), packetsSentInTime);
+			OsmoticWrapper.injectedActionToFlowID.put(((OsmoticAppDescription) ev.getData()).getIoTDeviceName(), actionToFlowId);
 		}
 
 		AppIDs.add(appId);

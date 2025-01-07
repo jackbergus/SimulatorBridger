@@ -69,7 +69,7 @@ public class EdgeDevice extends Host implements CartesianPoint {
 		signalRange = hostEntity.signalRange;
 		max_vehicle_communication = hostEntity.max_vehicle_communication;
 
-		OsmoticWrapper.melList.putIfAbsent(hostEntity.name, (double)hostEntity.getMips());
+		OsmoticWrapper.melList.putIfAbsent("@"+hostEntity.name, (double)hostEntity.getMips());
     }
     public String getDeviceName() {
 		return deviceName;

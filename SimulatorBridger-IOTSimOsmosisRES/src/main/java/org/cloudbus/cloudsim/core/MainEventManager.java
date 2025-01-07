@@ -985,13 +985,14 @@ public class MainEventManager {
 	 */
 	public static int waiting(int d, Predicate p) {
 		int count = 0;
-		SimEvent event;
-		Iterator<SimEvent> iterator = deferred.iterator();
-		while (iterator.hasNext()) {
-			event = iterator.next();
-			if ((event.getDestination() == d) && (p.match(event))) {
+		//SimEvent event;
+		List<SimEvent> list = deferred.getList();
+		//Iterator<SimEvent> iterator = deferred.iterator();
+		//while (iterator.hasNext()) {
+		for (SimEvent event : list) {
+			//event = iterator.next();
+			if (event.getDestination() == d)
 				count++;
-			}
 		}
 		return count;
 	}
@@ -1276,11 +1277,7 @@ public class MainEventManager {
 		}
 
 		double clock = clock();
-
-		//finishSimulation(conn, context);
-		//runStop();
-
-		return clock;
+		return (double) Math.round(clock * 1000) / 1000;
 	}
 
 	public static double novel_run(Connection conn, DSLContext context, double loopEnd, double deltaTime) {

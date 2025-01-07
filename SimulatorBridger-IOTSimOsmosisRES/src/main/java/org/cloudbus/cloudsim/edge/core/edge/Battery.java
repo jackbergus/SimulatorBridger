@@ -151,11 +151,13 @@ public class Battery implements Serializable {
 //		}
 		this.currentCapacity = currentCapacity;
 	}
-	public void decrementCapacity(double delta, double deltaTime) {
-		this.currentCapacity -= delta;
-		if(Active) {
-			double reduction = dischargeBattery(deltaTime);
-			this.currentCapacity -= reduction;
+	public void decrementCapacity(double delta, double deltaTime, boolean isInjected) {
+		if(!isInjected) {
+			this.currentCapacity -= delta;
+			if (Active) {
+				double reduction = dischargeBattery(deltaTime);
+				this.currentCapacity -= reduction;
+			}
 		}
 		if(this.currentCapacity < 0) this.currentCapacity = 0;
 	}

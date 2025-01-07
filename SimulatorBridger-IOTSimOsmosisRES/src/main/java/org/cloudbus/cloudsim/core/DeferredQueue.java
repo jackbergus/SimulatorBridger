@@ -70,6 +70,10 @@ public class DeferredQueue implements Serializable {
 		return list.iterator();
 	}
 
+	public List<SimEvent> getList() {
+		return list;
+	}
+
 	/**
 	 * Returns the size of this event queue.
 	 * 

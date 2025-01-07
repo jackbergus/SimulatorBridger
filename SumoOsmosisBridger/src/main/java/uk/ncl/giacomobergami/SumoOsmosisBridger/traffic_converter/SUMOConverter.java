@@ -284,6 +284,7 @@ public class SUMOConverter extends TrafficConverter {
             idtc.battery_sensing_rate = conf.battery_sensing_rate;
             idtc.battery_sending_rate = conf.battery_sending_rate;
             idtc.ioTClassName = conf.ioTClassName;
+            idtc.setInjected(false);
             IDTCList.add(idtc);
         }
         System.out.print("IoT Device Info Configuration Completed\n");

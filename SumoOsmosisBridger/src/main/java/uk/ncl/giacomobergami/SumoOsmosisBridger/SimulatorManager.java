@@ -8,6 +8,7 @@ import com.opencsv.exceptions.CsvException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.cloudbus.cloudsim.core.MainEventManager;
+import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
@@ -38,6 +39,7 @@ import org.jooq.codegen.GenerationTool;
 import javax.sql.DataSource;
 
 import static java.lang.Double.parseDouble;
+import static org.cloudbus.cloudsim.core.CloudSimTags.MAPE_WAKEUP_FOR_COMMUNICATION;
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
 public class SimulatorManager implements SimulatorBridger {
@@ -65,7 +67,6 @@ public class SimulatorManager implements SimulatorBridger {
     static double simEnd;
     static double deltaTime;
     public double loopDuration;
-    double lastRunTime = 0;
 
     File output_folder_1;
     File output_folder_2;
@@ -96,6 +97,7 @@ public class SimulatorManager implements SimulatorBridger {
     private double normalLatency;
     private double boostedLatency;
     private double currentLatency;
+    public double loopEndTime = 0;
 
     static {
         File file = new File("log4j2.xml");
@@ -205,15 +207,11 @@ public class SimulatorManager implements SimulatorBridger {
     }
 
     public void injectCSVData(String vehicleCSVFile, boolean updatedCSV, double newLatency) throws IOException, CsvException {
-
         deviceList = ((GlobalConfigurationSettings) ((ArrayList) configuration_for_each_network_change).get(0)).iotDevices;
-
-        if (conf1.get().isInjectCSVData()) {
-            updateCSV(vehicleCSVFile, updatedCSV);
-            addToDevicesToList();
-            OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList);
-            uploadInjectedDataToSQL(vehicleCSVFile);
-        }
+        updateCSV(vehicleCSVFile, updatedCSV);
+        addToDevicesToList();
+        OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList);
+        uploadInjectedDataToSQL(vehicleCSVFile);
         System.out.println("You injected new events!");
         updateCurrentLatency(newLatency);
     }
@@ -247,8 +245,9 @@ public class SimulatorManager implements SimulatorBridger {
 
         List<TimedIoT> currentEvents = new ArrayList<>();
         for (TimedIoT vehicle : timedIoTList) {
-            if (vehicle.simtime >= lastRunTime && vehicle.simtime < loopEndTime) {
+            if (vehicle.simtime >= loopEndTime && vehicle.simtime < loopEndTime + normalLatency) {
                 currentEvents.add(vehicle);
+                IoTEntityGenerator.addNewWakeUpTimes(vehicle.simtime);
             }
         }
 
@@ -327,6 +326,7 @@ public class SimulatorManager implements SimulatorBridger {
             idtc.battery_sensing_rate = conf.battery_sensing_rate;
             idtc.battery_sending_rate = conf.battery_sending_rate;
             idtc.ioTClassName = conf.ioTClassName;
+            idtc.setInjected(true);
             deviceList.add(idtc);
         }
         System.out.print("IoT Device Info Configuration Completed\n");
@@ -384,7 +384,6 @@ public class SimulatorManager implements SimulatorBridger {
                             TimedIoT TIoT = new TimedIoT(id, x, y, 0, "patient", 0.0, 0.0, "", 0.0, simTime, true);
                             jsonTimedIoTList.add(TIoT);
                             reader.endObject();
-                            IoTEntityGenerator.addNewWakeUpTimes(simTime);
                         }
                     }
                 }
@@ -405,6 +404,18 @@ public class SimulatorManager implements SimulatorBridger {
     public double getSimulationBegin() { return simBegin; }
 
     public static double getSimulationEnd() { return simEnd; }
+
+    public double getLoopEndTime() {return loopEndTime;}
+
+    public void scheduleNewWakeUpTime(Collection<Double> wakeUpTimes, double chron) {
+        for (Double forcedWakeUpTime : wakeUpTimes) {
+            double time = Double.parseDouble(df.format(forcedWakeUpTime)) - chron;
+            if (time >= 0.0 && chron + getDeltaTime() <= simEnd) {
+                MainEventManager.send(OsmoticBroker.brokerID, OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);
+            }
+        }
+        IoTEntityGenerator.clearNewWakeUpTimes();
+    }
 
     @Override
     public boolean init(double start, List<Edge> edgeNodes) {
@@ -458,25 +469,21 @@ public class SimulatorManager implements SimulatorBridger {
         }
     }
 
-    public boolean run(double start, double delta, List<TimedIoT> timedIoTList) {
+    public double run(double start, double delta, List<TimedIoT> timedIoTList) {
         boolean cont = false;
         try {
-           cont = innerRun(start, delta, timedIoTList);
+           return innerRun(start, delta, timedIoTList);
         } catch (IOException | CsvException e) {
             throw new RuntimeException(e);
         }
-        return cont;
     }
 
-    public boolean innerRun(double start, double delta, List<TimedIoT> timedIoTList) throws IOException, CsvException {
+    public double innerRun(double start, double delta, List<TimedIoT> timedIoTList) throws IOException, CsvException {
 
-        double loopEndTime = (start > lastRunTime) ? start : loopDuration;
-        loopEndTime += normalLatency;
-        loopEndTime = (double) Math.round(loopEndTime * 1000) / 1000;
         updateCurrentLatency(delta);
 
         if (!step3) {
-            return true;
+            return Integer.MAX_VALUE; //true;
         }
 
         if(firstLoop) {
@@ -502,9 +509,10 @@ public class SimulatorManager implements SimulatorBridger {
             addNewCSVData = false;
         }
 
-        loopDuration = (double) Math.round(loopEndTime * 1000) / 1000;
-        lastRunTime = MainEventManager.clock();
-        return MainEventManager.legacy_run(conn, context, loopEndTime, currentLatency) < simEnd;
+        loopDuration = (double) Math.round(normalLatency * 1000) / 1000;
+        scheduleNewWakeUpTime(IoTEntityGenerator.getNewWakeUpTimes(), Double.parseDouble(df.format(MainEventManager.clock())));
+        loopEndTime = MainEventManager.legacy_run(conn, context, loopEndTime, currentLatency);
+        return loopEndTime;// < simEnd;
     }
 
     @Override

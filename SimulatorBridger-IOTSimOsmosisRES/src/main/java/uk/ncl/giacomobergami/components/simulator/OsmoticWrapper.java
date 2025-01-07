@@ -73,6 +73,10 @@ public class OsmoticWrapper {
     List<OsmoticAppDescription> appList;
     List<PrintResults.BandwidthInfo> bandwidthInfoList;
     public static HashMap<String, Double> melList = new HashMap<>();
+    public static HashMap<String, Integer> packetsPerDevice = new HashMap<>();
+    public static HashMap<String, TreeMap<Double, Double>> injctedConsumptionInTime = new HashMap<>();
+    public static HashMap<String,TreeMap<Double, Integer>> injectedPacketsInTime = new HashMap<>();
+    public static HashMap<String,TreeMap<Double, Integer>> injectedActionToFlowID = new HashMap<>();
     private static final File converter_file = new File("clean_example/converter.yaml");
     private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
     private static final String RA = time_conf.get().getRoutingAlgorithm();
@@ -265,7 +269,7 @@ public class OsmoticWrapper {
         if (finished) {
             LogUtil.logger.trace("Simulation finished...");
             PrintResults pr = new PrintResults();
-            pr.collectTrustworthyBatteryData(osmoticBroker.getDevices());
+            pr.collectTrustworthyBatteryData(osmoticBroker.getDevices(), injectedPacketsInTime, injectedActionToFlowID, injctedConsumptionInTime);
             pr.collectNetworkData(appList, osmoticBroker);
 
             for(OsmoticDatacenter osmesisDC : topologyBuilder.getOsmesisDatacentres()){
@@ -295,7 +299,7 @@ public class OsmoticWrapper {
             LogUtil.logger.trace("Simulation finished...");
             bandwidthInfoList = OsmosisOrchestrator.getBandwidthShareInfo();
             PrintResults pr = new PrintResults();
-            pr.collectTrustworthyBatteryData(osmoticBroker.getDevices());
+            pr.collectTrustworthyBatteryData(osmoticBroker.getDevices(), injectedPacketsInTime, injectedActionToFlowID, injctedConsumptionInTime);
             pr.collectNetworkData(appList, osmoticBroker);
             pr.collectBandwidthInfo(bandwidthInfoList);
 

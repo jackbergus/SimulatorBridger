@@ -27,6 +27,7 @@ import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.gir.SquaredCartesianDistanceFunction;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
+import uk.ncl.giacomobergami.utils.shared_data.edge.Edge;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 
 import java.io.File;
@@ -49,7 +50,11 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
     }
 
     protected List<ImmutablePair<EdgeDataCenter, EdgeDevice>> ls = Collections.emptyList();
-    private final File converter_file = new File("clean_example/converter.yaml");
+    private static final File converter_file = new File("clean_example/converter.yaml");
+    private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+    List<String> mels = new ArrayList<>();
+    HashMap<String, Integer> timesPerMel = new HashMap<>();
+    HashMap<String, Integer> timesPerEdgeNetwork = new HashMap<>();
 
     double endSUMO = SimulatorManager.getSimulationEnd();
     DecimalFormat df = new DecimalFormat("#.###");
@@ -68,21 +73,73 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
         double currentTime = (double) Math.round(MainEventManager.clock() * 1000) /1000;
         // Returning if the agent, at this current time, is not scheduled for transmission
         if (!iot.transmit || !setWUT.contains(currentTime) ||currentTime > endSUMO) return;
-
+        HashMap<String, String> edgeToMelList = new HashMap<>();
+        HashMap<String, Integer> thisLoop = new HashMap<>();
         ls = AgentBroker
                 .getInstance()
                 .getOsmoticDataCentersStream()
                 .filter(x -> (x instanceof EdgeDataCenter))
                 .flatMap(x->x.getSdnhosts().stream().map(y -> new ImmutablePair<>(x, y.getHost())))
                 .filter(x -> {
-                    if (!(x.getRight() instanceof EdgeDevice)) return false;
-                    var obj = (EdgeDevice)x.getRight();
-                    var distance = Math.sqrt(f.getDistance(iot, obj.location));
-                    var outcome = ((distance <= iot.mobility.signalRange) && (distance <= obj.signalRange));
+                    if (!(x.getRight() instanceof EdgeDevice obj)) return false;
+                    edgeToMelList.put(obj.getDeviceName(), x.getLeft().getName());
+                    timesPerEdgeNetwork.putIfAbsent(x.getLeft().getName(), 0);
+                    timesPerMel.putIfAbsent(obj.getDeviceName(), 0);
+                    thisLoop.putIfAbsent(obj.getDeviceName(), 0);
+                    double distance = Math.sqrt(f.getDistance(iot, obj.location));
+                    boolean outcome = ((distance <= iot.mobility.signalRange) && (distance <= obj.signalRange));
                     return outcome;
                 })
                 .map(x -> new ImmutablePair<>(((EdgeDataCenter)x.getLeft()), ((EdgeDevice) x.getRight())))
                 .collect(Collectors.toList());
+
+        if (Objects.equals(time_conf.get().getMelProcessing(), "Quietest")) {
+
+            List<String> initialMels = new ArrayList<>();
+            for (ImmutablePair<EdgeDataCenter, EdgeDevice> l : ls) {
+                initialMels.add(l.getRight().getDeviceName());
+            }
+
+            List<String> actNetwork = new ArrayList<>();
+            for (String network : timesPerEdgeNetwork.keySet()) {
+                if (timesPerEdgeNetwork.get(network) == (int) Collections.min(timesPerEdgeNetwork.values())) {
+                    actNetwork.add(network);
+                }
+            }
+
+            HashMap<String, Integer> quietestMels = new HashMap<>();
+            for (String chosenMels : edgeToMelList.keySet()) {
+                if (actNetwork.contains(edgeToMelList.get(chosenMels))) {
+                    quietestMels.put(chosenMels, timesPerMel.get(chosenMels));
+                }
+            }
+
+            for (String mel : quietestMels.keySet()) {
+                if (quietestMels.get(mel) == (int) Collections.min(quietestMels.values()) && !mels.contains("@" + mel)) {
+                    mels.add("@" + mel);
+                    timesPerMel.put(mel, timesPerMel.get(mel) + 1);
+                    thisLoop.put(mel, thisLoop.get(mel) + 1);
+                    if (mels.size() == ls.size()) break;
+                }
+            }
+
+            ls = AgentBroker
+                    .getInstance()
+                    .getOsmoticDataCentersStream()
+                    .filter(x -> (x instanceof EdgeDataCenter))
+                    .flatMap(x -> x.getSdnhosts().stream().map(y -> new ImmutablePair<>(x, y.getHost())))
+                    .filter(x -> {
+                        if (!(x.getRight() instanceof EdgeDevice)) return false;
+                        return mels.contains("@" + ((EdgeDevice) x.getValue()).getDeviceName());
+                    })
+                    .map(x -> new ImmutablePair<>(((EdgeDataCenter) x.getLeft()), ((EdgeDevice) x.getRight())))
+                    .collect(Collectors.toList());
+
+            for (String mel : timesPerMel.keySet()) {
+                timesPerEdgeNetwork.put(edgeToMelList.get(mel), timesPerEdgeNetwork.get(edgeToMelList.get(mel)) + thisLoop.get(mel));
+            }
+            mels.clear();
+        }
     }
 
     @Override

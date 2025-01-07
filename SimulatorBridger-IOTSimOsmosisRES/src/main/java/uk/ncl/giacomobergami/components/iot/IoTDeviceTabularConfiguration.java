@@ -15,6 +15,7 @@ import java.io.Serializable;
 "cloudletId", "cloudletLength", "cloudletFileSize", "cloudletOutputSize", "utilizationModelCpu", "utilizationModelRam", "utilizationModelBw", "associatedEdge"})
 public class IoTDeviceTabularConfiguration implements Serializable {
     public String name;
+    public boolean injected = false;
     public double bw;
     public double max_battery_capacity;
     public double  battery_sensing_rate;
@@ -192,7 +193,7 @@ public class IoTDeviceTabularConfiguration implements Serializable {
         result.setProcessingAbility(processingAbility);
         result.setBw(bw);
         result.setLatency(latency);
-
+        result.setInjected(injected);
         result.setMobilityEntity(mobility);
 
         return result;
@@ -494,4 +495,10 @@ public class IoTDeviceTabularConfiguration implements Serializable {
     public void setBw(double bw) {
         this.bw = bw;
     }
+
+    public boolean isInjected() {
+        return injected;
+    }
+
+    public void setInjected(boolean injected) { this.injected = injected; }
 }

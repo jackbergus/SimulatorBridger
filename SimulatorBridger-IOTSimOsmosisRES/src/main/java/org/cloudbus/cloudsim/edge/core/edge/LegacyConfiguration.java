@@ -241,7 +241,7 @@ public class LegacyConfiguration {
 		EdgeLetEntity dataTemplate;
 		double bw;
 		double latency;
-
+		boolean injected = false;
 	}
 	
 	@Data

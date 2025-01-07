@@ -112,6 +112,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	protected static TreeMap<SimEvent, String> eventMap = new TreeMap<>(Collections.reverseOrder());
 	public static  int getEventMapSize(){return eventMap.size();}
 	public static TreeMap<SimEvent, String> getEventMap() {return eventMap; }
+	private static final HashSet<SimEvent> toDelete = new HashSet<>();
 	public static HashMap<String, Integer> activePerSource = new HashMap<>();
 	private static final HashSet<SimEvent> waitQueue = new HashSet<>();
 	protected static HashMap<String, Float> edgeToCloudBandwidth = new HashMap<>();
@@ -146,7 +147,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	private final float maxEdgeBW = 100;
 	public transient Collection<Double> wakeUpTimes;
 	DecimalFormat df = new DecimalFormat("#.###");
-	HashMap<String, Double> melProcessing = OsmoticWrapper.melList;
+	static HashMap<String, Double> melProcessing = OsmoticWrapper.melList;
 
 	private static final File converter_file = new File("clean_example/converter.yaml");
 	private static Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
@@ -184,22 +185,11 @@ public class OsmoticBroker extends DatacenterBroker {
 		super.startEntity();
 	}
 
-	public void scheduleNewWakeUpTime(Collection<Double> wakeUpTimes, double chron) {
-		for (Double forcedWakeUpTime : wakeUpTimes) {
-			double time = Double.parseDouble(df.format(forcedWakeUpTime)) - chron;
-			if (time >= 0.0 && chron + getDeltaVehUpdate() <= endTime) {
-				schedule(OsmoticBroker.brokerID, time, MAPE_WAKEUP_FOR_COMMUNICATION, null);
-			}
-		}
-		IoTEntityGenerator.clearNewWakeUpTimes();
-	}
-
 	@Override
 	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 
 		deltaVehUpdate = deltaTime;
 		double chron = Double.parseDouble(df.format(MainEventManager.clock()));
-		scheduleNewWakeUpTime(IoTEntityGenerator.getNewWakeUpTimes(), chron);
 		// Setting up the forced times when the simulator has to wake up, as new messages have to be sent
 		if (!isWakeupStartSet) {
 			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes(startTime, endTime, deltaVehUpdate);
@@ -239,6 +229,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			//intervalEnd += collectionInterval;
 			//System.out.print("Batch collected from SQL table\n");
 			//}
+
 
 			if(!dataRange.isEmpty()) {
 				var Times = dataRange.getValues(Vehinformation.VEHINFORMATION.SIMTIME);//dataRange.getValues(3);
@@ -377,23 +368,27 @@ public class OsmoticBroker extends DatacenterBroker {
 		this.melRouting = melRouting;
 	}
 
+	public static String cellFreeRouting(String melName) {
+		double differentiator = 0.1;
+		double maxMips = Collections.max(melProcessing.values());
+		double buffer = Math.max(maxMips - (Collections.min(melProcessing.values()) * differentiator), maxMips - differentiator);
+
+		for (String mel : melProcessing.keySet()) {
+			if (melProcessing.get(mel) == maxMips) {
+				melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
+				return mel;
+			}
+		}
+		return melName;
+	}
+
 	private void melResolution(SimEvent ev) {
 
 		Flow flow = (Flow) ev.getData();
 		String melName = flow.getAppNameDest();
 
-		if(Objects.equals(processingPolicy, "Quietest")) {
-			double differentiator = 0.1;
-			double maxMips = Collections.max(melProcessing.values());
-			double buffer = Math.max(maxMips - (Collections.min(melProcessing.values()) * differentiator), maxMips - differentiator);
-
-			for (String mel : melProcessing.keySet()) {
-				if (melProcessing.get(mel) == maxMips) {
-					melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
-					melName = "@" + mel;
-					break;
-				}
-			}
+		if(Objects.equals(processingPolicy, "Quietest") && time_conf.get().getRoutingAlgorithm().contains("SPMB")) {
+			melName = cellFreeRouting(melName);
 		}
 
 		String IoTDevice = flow.getAppNameSrc();
@@ -460,7 +455,6 @@ public class OsmoticBroker extends DatacenterBroker {
 		}*/
 
 		float maxEdgeBW = 100;
-		int messageSize = (int) this.getAppById(1).getMELOutputSize();
 
 		change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
 
@@ -468,17 +462,22 @@ public class OsmoticBroker extends DatacenterBroker {
 		activePerSource.putIfAbsent(change, 0);
 		eventQueue.add(ev);
 
-		float bw = edgeToCloudBandwidth.get(change);
 		int limit = DataCenterWithController.getCommunication_limit() == 0 ? Integer.MAX_VALUE : DataCenterWithController.getCommunication_limit();
 		/*if(activePerSource.get(((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName()) < limit) {
 			limit = bw >= messageSize ? Integer.MAX_VALUE : 10;
 		}*/
 
-		var toDelete = new TreeSet<SimEvent>();
-		for (var x : eventQueue) {
-			var streamMEL = choice.equals("MEL") ? ((EdgeLet) x.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) x.getData()).getOsmesisAppId()).getMELName();
-			if (eventMap.values().stream().filter(v -> v.equals(streamMEL)).count() < limit) {
-				eventMap.put(x, streamMEL);
+		toDelete.clear();
+		for (SimEvent x : eventQueue) {
+			String nameMEL = choice.equals("MEL") ? ((EdgeLet) x.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) x.getData()).getOsmesisAppId()).getMELName();
+			int count = 0;
+			for(String name : eventMap.values()) {
+				if(name.equals(nameMEL)) {
+					count++;
+				}
+			}
+			if (count < limit) {
+				eventMap.put(x, nameMEL);
 				toDelete.add(x);
 			}
 		}
@@ -487,11 +486,6 @@ public class OsmoticBroker extends DatacenterBroker {
 
 		while(!eventMap.isEmpty()) {
 			SimEvent newEv = eventMap.entrySet().iterator().next().getKey();
-			//var dest = ((EdgeLet) newEv.getData()).getWorkflowTag().getEdgeLet().getWorkflowTag().getIotDeviceFlow().getAppNameDest();
-			//bw = edgeToCloudBandwidth.get(dest);
-			/*if(bw > (float) messageSize / 2) {
-				limit = 1;
-			}*/
 			change = choice.equals("MEL") ? ((EdgeLet) newEv.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) newEv.getData()).getOsmesisAppId()).getMELName();
 			eventMap.remove(newEv, change);
 			if (activePerSource.get(change) < limit) {
@@ -561,13 +555,13 @@ public class OsmoticBroker extends DatacenterBroker {
 		int destId = this.getVmIdByName(app.getVmName()); // MEL or VM
 		int id = flowId.getAndIncrement();
 		int melDatacenter = this.getDatacenterIdByVmId(sourceId);
-		int thisSource = ev.getSource();
+		//int thisSource = ev.getSource();
 
 		change = choice.equals("MEL") ? ((EdgeLet) ev.getData()).getWorkflowTag().getIotDeviceFlow().getAppNameDest() : getAppById(((EdgeLet) ev.getData()).getOsmesisAppId()).getMELName();
 
 		int thisActive = activePerSource.get(change);
 		thisActive++;
-		String curMEl = ((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName();
+		//String curMEl = ((EdgeLet) ev.getData()).getWorkflowTag().getSourceDCName();
 		activePerSource.put(change, thisActive);
 		activeCount++;
 		comCount++;
@@ -584,13 +578,14 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 
 	private OsmoticAppDescription getAppById(int osmesisAppId) {
-		OsmoticAppDescription osmesis = null;
-		for(OsmoticAppDescription app : this.appList){
+		/*OsmoticAppDescription osmesis = null;
+		for(OsmoticAppDescription app : appList){
 			if(app.getAppID() == osmesisAppId){
 				osmesis = app;
 			}
 		}
-		return osmesis;
+		return osmesis;*/
+		return appList.stream().filter(o->o.getAppID()==osmesisAppId).findAny().get();
 	}
 
 	HashMultimap<String, String> map = null;

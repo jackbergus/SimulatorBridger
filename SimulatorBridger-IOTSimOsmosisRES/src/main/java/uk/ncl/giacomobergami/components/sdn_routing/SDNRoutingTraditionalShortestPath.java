@@ -22,6 +22,7 @@ import org.cloudbus.osmosis.core.Flow;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 
 /**
@@ -130,19 +131,18 @@ public class SDNRoutingTraditionalShortestPath extends SDNRoutingPolicy {
 			nodeToInt.put(srcNode, i);
 			intToNode.put(i,srcNode);
 			for(int k = 0; k < getNodeList().size(); k++){
-					NetworkNIC destNode = getNodeList().get(k); 									
-					nodeGraphDistance[i][k] = getDistanceWeight(srcNode, destNode);	// this can be used for link failure 
-					
+					NetworkNIC destNode = getNodeList().get(k);
+					var temp = OsmoticWrapper.linkChannels.get(srcNode.getAddress(), destNode.getAddress());
+					nodeGraphDistance[i][k] = getDistanceWeight(srcNode, destNode, temp);	// this can be used for link failure
 			}
 		}
 	}
-	private int getDistanceWeight(NetworkNIC srcNode, NetworkNIC destNode){
-		List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
-
-		if(links == null)
+	private int getDistanceWeight(NetworkNIC srcNode, NetworkNIC destNode, Object Channels){
+		//List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
+		if(Channels == null)
 			return 0;
-		
-		selectedLink.put(srcNode, destNode, links.get(0)); // you must store this one and return it to the SDN controller 
+
+		selectedLink.put(srcNode, destNode, topology.getLink(srcNode.getAddress(), destNode.getAddress())); // you must store this one and return it to the SDN controller
 		return 1;
 	}
 

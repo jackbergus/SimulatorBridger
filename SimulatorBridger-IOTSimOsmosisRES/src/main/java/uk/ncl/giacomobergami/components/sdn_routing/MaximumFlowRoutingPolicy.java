@@ -26,6 +26,7 @@ import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.osmosis.core.Flow;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -85,29 +86,32 @@ public class MaximumFlowRoutingPolicy extends SDNRoutingPolicy {
             for (int i = 0, N = ls.size()-1; i<N; i++) {
                 var srcNode = ls.get(i);
                 var destNode = ls.get(i+1);
-                List<Link> links = actualPolicy.topology.getNodeToNodeLinks(ls.get(i), ls.get(i+1));
-                if ((links == null) || (links.size() < 1)) {
-                    throw new RuntimeException("ERROR: expected link between " + ls.get(i)+" and "+ls.get(i+1));
-                }
-                /*
-                 * From LoadBalancing code:
-                 * Sometimes two nodes are connected via two links; therefore, find the max BW among the links!
-                 */
-                int numberChannel = 0;
-                double bw = 0;
                 Link linkWithHighestBW = null;
-                for(Link l : links){
-                    numberChannel = l.getChannelCount();
-                    if (numberChannel ==0 || srcNode instanceof SDNHost || destNode instanceof SDNHost){ // i think you may need to look the logic again!
-                        numberChannel = 1; // we cannot divide by 0
-                    } else {
-                        numberChannel++; // 1 for exisiting one , and one for this one
+                if(actualPolicy.topology.numLinks.get(srcNode.getAddress(),destNode.getAddress()) == 1 && actualPolicy.topology.numLinks.get(destNode.getAddress(),srcNode.getAddress()) == 1) {
+                    linkWithHighestBW = topology.getLink(srcNode.getAddress(),destNode.getAddress());
+                }else {
+                    List<Link> links = actualPolicy.topology.getNodeToNodeLinks(srcNode, destNode);
+                    if ((links == null) || (links.isEmpty())) {
+                        throw new RuntimeException("ERROR: expected link between " + ls.get(i) + " and " + ls.get(i + 1));
                     }
-                    double currentBw = l.getBw()/numberChannel;
-                    if(currentBw > bw){
-                        // link bw does not change, instead you need to get the bw and number of channel on the link
-                        bw = currentBw;
-                        linkWithHighestBW = l;
+                    /*
+                     * From LoadBalancing code:
+                     * Sometimes two nodes are connected via two links; therefore, find the max BW among the links!
+                     */
+                    double bw = 0;
+                    for (Link l : links) {
+                        int numberChannel = l.getChannelCount();
+                        if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
+                            numberChannel = 1; // we cannot divide by 0
+                        } else {
+                            numberChannel++; // 1 for exisiting one , and one for this one
+                        }
+                        double currentBw = l.getBw() / numberChannel;
+                        if (currentBw > bw) {
+                            // link bw does not change, instead you need to get the bw and number of channel on the link
+                            bw = currentBw;
+                            linkWithHighestBW = l;
+                        }
                     }
                 }
                 linkList.add(linkWithHighestBW);

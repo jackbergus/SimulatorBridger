@@ -20,6 +20,7 @@
 
 package uk.ncl.giacomobergami.components.simulator;
 
+import com.google.common.collect.HashBasedTable;
 import org.cloudbus.agent.AgentBroker;
 import org.cloudbus.agent.config.AgentConfigLoader;
 import org.cloudbus.agent.config.AgentConfigProvider;
@@ -54,6 +55,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -80,6 +82,9 @@ public class OsmoticWrapper {
     private static final File converter_file = new File("clean_example/converter.yaml");
     private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
     private static final String RA = time_conf.get().getRoutingAlgorithm();
+    public static AtomicInteger TopologyEntryID = new AtomicInteger(0);
+    public static AtomicInteger TopologyID = new AtomicInteger(0);
+    public static HashBasedTable<Integer, Integer, Integer> linkChannels = HashBasedTable.create();
 
     public OsmoticWrapper() {
         this(null);

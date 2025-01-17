@@ -67,7 +67,7 @@ public class CloudletSchedulerTimeSharedMutipleCPUs extends CloudletSchedulerTim
 		}
 		getCloudletExecList().add(rcl);
 		double extraSize = getCapacity(getCurrentMipsShare()) * fileTransferTime;		
-		double length = (double) (cloudlet.getCloudletLength() + extraSize);
+		double length = cloudlet.getCloudletLength() + extraSize;
 		cloudlet.setCloudletLength(length);
 		return cloudlet.getCloudletLength() / getCapacity(getCurrentMipsShare());
 	}

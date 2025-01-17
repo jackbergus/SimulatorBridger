@@ -8,6 +8,8 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
+
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,14 +35,14 @@ public class Link implements Serializable {
 	NetworkNIC highOrder; // order starts from core SW, to aggr SW, to edge SW, to Hosts
 	NetworkNIC lowOrder;  // order starts from Hosts, to edge SW, to aggr SW, to core SW
 	double bw;
-
+	int LinkID;
+	int ToplogyID;
 	public NetworkNIC src() {
 		return highOrder;
 	}
 	public NetworkNIC dst() {
 		return lowOrder;
 	}
-	
 	double availableBW; // if it is 0 for all links, choose any one randomly
 	
 	private List<Channel> upChannels;
@@ -48,14 +50,15 @@ public class Link implements Serializable {
 
 	private List<Channel> allChannels;
 
-	public Link(NetworkNIC highOrder, NetworkNIC lowOrder, double bw) {
+	public Link(NetworkNIC highOrder, NetworkNIC lowOrder, double bw, int LinkID, int TopologyID) {
 		this.highOrder = highOrder;
 		this.lowOrder = lowOrder;
 		// bw = 10^9 = 1.0E9 = 1000000000
 //		this.upBW = this.downBW = bw;
 		this.bw = bw;
 		this.availableBW = bw;
-		
+		this.LinkID = LinkID;
+		this.ToplogyID = TopologyID;
 		this.upChannels = new ArrayList<Channel>();
 		this.downChannels = new ArrayList<Channel>();
 
@@ -80,7 +83,10 @@ public class Link implements Serializable {
 	public double getBw() {
 		return bw;
 	}
-	
+
+	public int getLinkID() {
+		return LinkID;
+	}
 
 	public int getChannelCount() {
 		return this.allChannels.size();
@@ -88,14 +94,19 @@ public class Link implements Serializable {
 
 	public boolean addChannel(Channel ch) {
 		allChannels.add(ch);
+		OsmoticWrapper.linkChannels.put(this.src().getAddress(), this.dst().getAddress(),(OsmoticWrapper.linkChannels.get(this.src().getAddress(), this.dst().getAddress())+1));
+		OsmoticWrapper.linkChannels.put(this.dst().getAddress(), this.src().getAddress(),(OsmoticWrapper.linkChannels.get(this.dst().getAddress(), this.src().getAddress())+1));
 		return true;
 	}
-	
+
 	public boolean removeChannel(Channel ch) {
 		boolean ret = this.allChannels.remove(ch);
+		OsmoticWrapper.linkChannels.put(this.src().getAddress(), this.dst().getAddress(),(OsmoticWrapper.linkChannels.get(this.src().getAddress(), this.dst().getAddress())-1));
+		OsmoticWrapper.linkChannels.put(this.dst().getAddress(), this.src().getAddress(),(OsmoticWrapper.linkChannels.get(this.dst().getAddress(), this.src().getAddress())-1));
+
 		return ret;
 	}
-	
+
 	public double getFreeBandwidth() {
 		double freeBw = this.availableBW/getChannelCount();		
 		return freeBw;

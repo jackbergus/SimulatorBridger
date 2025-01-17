@@ -240,7 +240,7 @@ public class OsmoticBroker extends DatacenterBroker {
 				if (nowFirst != -1) {
 					for (int i = nowFirst; i <= nowLast; i++) {
 						String name = dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.VEHICLE_ID);
-						boolean injected = Boolean.parseBoolean(dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.INJECTED));
+						//boolean injected = Boolean.parseBoolean(dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.INJECTED));
 						double[] nowPos = {dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.X), dataRange.get(i).getValue(Vehinformation.VEHINFORMATION.Y)};
 						nowData.put(name, nowPos);
 					}

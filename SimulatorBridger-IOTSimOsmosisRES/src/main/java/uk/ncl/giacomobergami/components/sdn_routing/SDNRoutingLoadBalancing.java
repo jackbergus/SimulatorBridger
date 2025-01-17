@@ -29,6 +29,7 @@ import com.google.common.collect.Table;
 
 
 import org.cloudbus.osmosis.core.Flow;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 /**
  * 
@@ -138,44 +139,60 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 			nodeToInt.put(srcNode, i);
 			intToNode.put(i,srcNode);
 			for(int k = 0; k < getNodeList().size(); k++){
-					NetworkNIC destNode = getNodeList().get(k); 									
-					nodeGraphDistance[i][k] = getDistanceWeight(srcNode, destNode);	// this can be used for link failure 
-					nodeGraphBandwidth[i][k] = getBwWeight(srcNode, destNode);;
+					NetworkNIC destNode = getNodeList().get(k);
+					var temp = OsmoticWrapper.linkChannels.get(srcNode.getAddress(), destNode.getAddress());
+					nodeGraphDistance[i][k] = getDistanceWeight(srcNode, destNode, temp);	// this can be used for link failure
+					nodeGraphBandwidth[i][k] = getBwWeight(srcNode, destNode, temp);;
 			}
 		}
 	}
-	private int getDistanceWeight(NetworkNIC srcNode, NetworkNIC destNode){
-		List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
-		if(links == null)
+	private int getDistanceWeight(NetworkNIC srcNode, NetworkNIC destNode, Object Channels){
+		//List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
+		if(Channels == null)
 			return 0;
 		
 		return 1;
 	}
 	
-	private double getBwWeight(NetworkNIC srcNode, NetworkNIC destNode){			
-		List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
-		double bw = 0;
-		Link linkWithHighestBW = null;	
+	private double getBwWeight(NetworkNIC srcNode, NetworkNIC destNode, Object Channels){
+
 		// links == null, then nodes are not adjacent! 
-		if(links == null)
-			return 0;		
-		/*
-		 * Sometimes two nodes are connected via two links; therefore, find the max BW among the links! 
-		 * 
-		 */	
-		int numberChannel;
-		for(Link l : links){
-			numberChannel = l.getChannelCount();
-			if (numberChannel ==0 || srcNode instanceof SDNHost || destNode instanceof SDNHost){ // i think you may need to look the logic again!
+		if(Channels == null)
+			return 0;
+
+		double bw = 0;
+		Link linkWithHighestBW = null;
+		if(topology.numLinks.get(srcNode.getAddress(),destNode.getAddress()) == 1) {
+			int numberChannel = (int) Channels;
+			if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
 				numberChannel = 1; // we cannot divide by 0
-			} else {  
-				numberChannel++; // 1 for exisiting one , and one for this one  
+			} else {
+				numberChannel++; // 1 for exisiting one , and one for this one
 			}
-			double currentBw = l.getBw()/numberChannel;
-			if(currentBw > bw){
-				// link bw does not change, instead you need to get the bw and number of channel on the link			
-				bw = currentBw;  				
-				linkWithHighestBW = l;
+			linkWithHighestBW = topology.getLink(srcNode.getAddress(),destNode.getAddress());
+			bw = linkWithHighestBW.getBw() / numberChannel;
+		}else {
+
+			List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
+			/*
+			 * Sometimes two nodes are connected via two links; therefore, find the max BW among the links!
+			 *
+			 */
+			int ch = (int) Channels;
+			int numberChannel;
+			for (Link l : links) {
+				numberChannel = l.getChannelCount();
+				if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
+					numberChannel = 1; // we cannot divide by 0
+				} else {
+					numberChannel++; // 1 for exisiting one , and one for this one
+				}
+				double currentBw = l.getBw() / numberChannel;
+				if (currentBw > bw) {
+					// link bw does not change, instead you need to get the bw and number of channel on the link
+					bw = currentBw;
+					linkWithHighestBW = l;
+				}
 			}
 		}
 		selectedLink.put(srcNode, destNode, linkWithHighestBW); // you must store this one and return it to the SDN controller 

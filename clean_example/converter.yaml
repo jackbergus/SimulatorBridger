@@ -1,11 +1,11 @@
 clazzPath: uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter # Simulator Class
 YAMLConverterConfiguration: clean_example/sumo.yaml # Simulator Configuration for the Class
 begin: 0    # Start simulator time
-end: 125     # End simulator time
-step: 0.212   # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
+end: 300   # End simulator time
+step: 0.075  # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
 
 #Routing Algorithm
-routingAlgorithm: uk.ncl.giacomobergami.components.routing_algorithm.SPMB #choose either "...SPMB" or "...MCFR" to select these algorithms, or choose just "custom" to modify agent_config.json and edge/cloud_generator.yaml files
+routingAlgorithm: uk.ncl.giacomobergami.components.routing_algorithm.MCFR #choose either "...SPMB" or "...MCFR" to select these algorithms, or choose just "custom" to modify agent_config.json and edge/cloud_generator.yaml files
 
 #MEL processing policy
 melProcessing: Quietest #choose either "Nearest" to process incoming communications on the nearest MEL or "Quietest" to process incoming communications in the quietest MEL
@@ -13,12 +13,12 @@ melProcessing: Quietest #choose either "Nearest" to process incoming communicati
 ## Injected data
 isInjectCSVData: false
 injectedCSVData: example-injection-data.csv
-isInjectJSONData : true
+isInjectJSONData : false
 injectedJSONData: PatientDigitalTwin/patient.json
 
 #these used if injected data needs boosted latency
-boostLatency: true #true if injected data needs boosted latency
-normalLatency: 0.212
+boostLatency: false #true if injected data needs boosted latency
+normalLatency: 1.0
 boostedLatency: 0.001
 
 ## Output

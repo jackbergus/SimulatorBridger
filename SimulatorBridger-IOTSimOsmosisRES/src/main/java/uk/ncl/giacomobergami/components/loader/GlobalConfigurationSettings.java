@@ -1,6 +1,8 @@
 package uk.ncl.giacomobergami.components.loader;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.cloudbus.cloudsim.core.MainEventManager;
+import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.cloudsim.edge.utils.LogUtil;
 import org.cloudbus.cloudsim.sdn.Switch;
@@ -368,6 +370,7 @@ public class GlobalConfigurationSettings {
         return input.stream()
                 .map(curr -> {
                     IoTDevice newInstance = IoTGeneratorFactory.generateFacade(curr.asLegacyConfiguration(), conf.flowId);
+                    MainEventManager.IoTDeviceList.add(newInstance.getName());
                     if ((curr.associatedEdge != null) && (!curr.associatedEdge.isEmpty()))
                         newInstance.setAssociatedEdge(curr.associatedEdge);
                     broker.addIoTDevice(newInstance);

@@ -7,9 +7,12 @@
 
 package uk.ncl.giacomobergami.components.cloudlet_scheduler;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
+import org.apache.poi.ss.formula.functions.T;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.ResCloudlet;
@@ -17,6 +20,8 @@ import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
+import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 /**
  * CloudletSchedulerTimeShared implements a policy of scheduling performed by a virtual machine.
@@ -30,6 +35,9 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 
 	/** The current cp us. */
 	protected int currentCPUs;
+	private static final File converter_file = new File("clean_example/converter.yaml");
+	private static Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+	private boolean processing = time_conf.get().getRoutingAlgorithm().contains("SPMB");
 
 	/**
 	 * Creates a new CloudletSchedulerTimeShared object. This method must be invoked before starting
@@ -53,19 +61,22 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	 * @pre currentTime >= 0
 	 * @post $none
 	 */
+	double getMipsShare;
 	@Override
 	public double updateVmProcessing(double currentTime, List<Double> mipsShare) {
 		setCurrentMipsShare(mipsShare);
 		double timeSpam = currentTime - getPreviousTime();
-		double getMipsShare = (getCapacity(mipsShare));
+		List<ResCloudlet> cloudletExecList = getCloudletExecList();
+		getMipsShare = (getCapacity(mipsShare, cloudletExecList));
 
-		for (ResCloudlet rcl : getCloudletExecList()) {
+		for (ResCloudlet rcl : cloudletExecList) {
 			rcl.updateCloudletFinishedSoFar((long) (getMipsShare * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
 			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
-			OsmoticWrapper.melList.put(mel, getMipsShare);
+			if(processing)
+				OsmoticWrapper.melList.put(mel, getMipsShare);
 		}
 
-		if (getCloudletExecList().size() == 0) {
+		if (cloudletExecList.isEmpty()) {
 			setPreviousTime(currentTime);
 			return 0.0;
 		}
@@ -73,18 +84,18 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		// check finished cloudlets
 		double nextEvent = Double.MAX_VALUE;
 		List<ResCloudlet> toRemove = new ArrayList<ResCloudlet>();
-		for (ResCloudlet rcl : getCloudletExecList()) {
+		for (ResCloudlet rcl : cloudletExecList) {
 			double remainingLength = rcl.getRemainingCloudletLength();
 			if (remainingLength == 0) {// finished: remove from the list
 				toRemove.add(rcl);
 				cloudletFinish(rcl);
             }
 		}
-		getCloudletExecList().removeAll(toRemove);
+		cloudletExecList.removeAll(toRemove);
 
 		// estimate finish time of cloudlets
 		getMipsShare = (getCapacity(mipsShare));
-		for (ResCloudlet rcl : getCloudletExecList()) {
+		for (ResCloudlet rcl : cloudletExecList) {
 			double estimatedFinishTime = currentTime
 					+ (rcl.getRemainingCloudletLength() /  getMipsShare * rcl.getNumberOfPes());
 			if (estimatedFinishTime - currentTime < MainEventManager.getMinTimeBetweenEvents()) {
@@ -96,7 +107,8 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 			}
 
 			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
-			OsmoticWrapper.melList.put(mel, getMipsShare);
+			if(processing)
+				OsmoticWrapper.melList.put(mel, getMipsShare);
 		}
 
 		setPreviousTime(currentTime);
@@ -122,6 +134,31 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 
 		int pesInUse = 0;
 		for (ResCloudlet rcl : getCloudletExecList()) {
+			pesInUse += rcl.getNumberOfPes();
+		}
+
+		if (pesInUse > currentCPUs) {
+			capacity /= pesInUse;
+		} else {
+			capacity /= currentCPUs;
+		}
+
+		return capacity;
+	}
+
+	protected double getCapacity(List<Double> mipsShare, List<ResCloudlet> cloudletExecList) {
+		double capacity = 0.0;
+		int cpus = 0;
+		for (Double mips : mipsShare) {
+			capacity += mips;
+			if (mips > 0.0) {
+				cpus++;
+			}
+		}
+		currentCPUs = cpus;
+
+		int pesInUse = 0;
+		for (ResCloudlet rcl : cloudletExecList) {
 			pesInUse += rcl.getNumberOfPes();
 		}
 

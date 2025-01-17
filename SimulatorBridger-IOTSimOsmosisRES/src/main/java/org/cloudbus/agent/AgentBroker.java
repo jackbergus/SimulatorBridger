@@ -29,6 +29,9 @@ public class AgentBroker {
     private Map<String, DeviceAgent> updateAgentDevices = new HashMap<>();
     private CentralAgent ca;
 
+    public static HashMap<String, Integer> timesPerMel = new HashMap<>();
+    public static HashMap<String, Integer> timesPerEdgeNetwork = new HashMap<>();
+
     public Stream<OsmoticDatacenter> getOsmoticDataCentersStream() {
         return agentsDC.values().stream().map(x-> x.osmesisDatacenter);
     }

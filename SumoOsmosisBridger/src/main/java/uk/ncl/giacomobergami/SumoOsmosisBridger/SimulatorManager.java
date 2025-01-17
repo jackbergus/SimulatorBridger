@@ -15,6 +15,7 @@ import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.components.simulator.SimulatorBridger;
 import uk.ncl.giacomobergami.traffic_converter.TrafficConverterRunner;
 import uk.ncl.giacomobergami.traffic_converter.abstracted.TrafficConverter;
@@ -99,6 +100,8 @@ public class SimulatorManager implements SimulatorBridger {
     private double currentLatency;
     public double loopEndTime = 0;
 
+    public HashSet<String> IoTDevices = new HashSet<>();
+
     static {
         File file = new File("log4j2.xml");
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
@@ -115,7 +118,7 @@ public class SimulatorManager implements SimulatorBridger {
         }
     }
 
-    public void configStep1(File converter_file, String finalOrchestrator, TrafficConfiguration y, Connection conn, DSLContext context) {
+    public void configStep1(File converter_file, String finalOrchestrator, TrafficConfiguration y, Connection conn, DSLContext context, double latency) {
         output_folder_1 = new File(converter_file.getParentFile(), converter_out);
         if (!output_folder_1.exists()) {
             output_folder_1.mkdirs();
@@ -125,7 +128,7 @@ public class SimulatorManager implements SimulatorBridger {
         TrafficConverter conv1 = TrafficConverterRunner.generateFacade(y);
         if (step1) {
             try {
-                conv1.run(conn, context);
+                conv1.run(conn, context, latency);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
@@ -303,31 +306,33 @@ public class SimulatorManager implements SimulatorBridger {
         IoTEntityGenerator.IoTGlobalConfiguration conf = conv3.ioTEntityGenerator.conf;
 
         for (String allVeh : allVehs) {
-            IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
-            idtc.beginX = (int) FirstSet.get(allVeh).getX();
-            idtc.beginY = (int) FirstSet.get(allVeh).getY();
-            idtc.movable = SecondSet.containsKey(allVeh);
-            if (idtc.movable) {
-                idtc.hasMovingRange = true;
-                idtc.endX = (int) SecondSet.get(allVeh).getX();
-                idtc.endY = (int) SecondSet.get(allVeh).getY();
+            if(!MainEventManager.IoTDeviceList.contains(allVeh)) {
+                IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
+                idtc.beginX = (int) FirstSet.get(allVeh).getX();
+                idtc.beginY = (int) FirstSet.get(allVeh).getY();
+                idtc.movable = SecondSet.containsKey(allVeh);
+                if (idtc.movable) {
+                    idtc.hasMovingRange = true;
+                    idtc.endX = (int) SecondSet.get(allVeh).getX();
+                    idtc.endY = (int) SecondSet.get(allVeh).getY();
+                }
+                idtc.latency = conf.latency;
+                idtc.match = conf.match;
+                idtc.signalRange = conf.signalRange;
+                idtc.associatedEdge = null;
+                idtc.networkType = conf.networkType;
+                idtc.stepSizeEditorPath = conf.stepSizeEditorPath;
+                idtc.velocity = FirstSet.get(allVeh).getSpeed();
+                idtc.name = allVeh;
+                idtc.communicationProtocol = conf.communicationProtocol;
+                idtc.bw = conf.bw;
+                idtc.max_battery_capacity = conf.max_battery_capacity;
+                idtc.battery_sensing_rate = conf.battery_sensing_rate;
+                idtc.battery_sending_rate = conf.battery_sending_rate;
+                idtc.ioTClassName = conf.ioTClassName;
+                idtc.setInjected(true);
+                deviceList.add(idtc);
             }
-            idtc.latency = conf.latency;
-            idtc.match = conf.match;
-            idtc.signalRange = conf.signalRange;
-            idtc.associatedEdge = null;
-            idtc.networkType = conf.networkType;
-            idtc.stepSizeEditorPath = conf.stepSizeEditorPath;
-            idtc.velocity = FirstSet.get(allVeh).getSpeed();
-            idtc.name = allVeh;
-            idtc.communicationProtocol = conf.communicationProtocol;
-            idtc.bw = conf.bw;
-            idtc.max_battery_capacity = conf.max_battery_capacity;
-            idtc.battery_sensing_rate = conf.battery_sensing_rate;
-            idtc.battery_sending_rate = conf.battery_sending_rate;
-            idtc.ioTClassName = conf.ioTClassName;
-            idtc.setInjected(true);
-            deviceList.add(idtc);
         }
         System.out.print("IoT Device Info Configuration Completed\n");
     }
@@ -446,7 +451,9 @@ public class SimulatorManager implements SimulatorBridger {
                 simBegin = conf1.get().getBegin();
                 simEnd = conf1.get().getEnd();
                 deltaTime = conf1.get().getStep();
-                configStep1(converter_file, finalOrchestrator, y, conn, context);
+                normalLatency = (conf1.get().boostLatency) ? conf1.get().normalLatency : conf1.get().step;
+                boostedLatency = (conf1.get().boostLatency) ? conf1.get().boostedLatency : normalLatency;
+                configStep1(converter_file, finalOrchestrator, y, conn, context, normalLatency);
                 conf2.ifPresent(x -> {
                     configStep2(orchestrator_file, x, y);
                     if (step3) {
@@ -454,8 +461,6 @@ public class SimulatorManager implements SimulatorBridger {
                         collectGlobalConfigurationSettings(conn, context);
                         System.out.print("Starting Running from Configuration\n");
                         double simulationStart = start == simBegin ? deltaTime : start;
-                        normalLatency = (conf1.get().boostLatency) ? conf1.get().normalLatency : conf1.get().step;
-                        boostedLatency = (conf1.get().boostLatency) ? conf1.get().boostedLatency : normalLatency;
                         updateCurrentLatency(normalLatency);
                         OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, simBegin, simulationStart);
                     }

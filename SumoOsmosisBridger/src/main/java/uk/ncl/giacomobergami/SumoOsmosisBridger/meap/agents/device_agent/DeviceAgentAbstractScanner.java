@@ -93,7 +93,7 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                 .map(x -> new ImmutablePair<>(((EdgeDataCenter)x.getLeft()), ((EdgeDevice) x.getRight())))
                 .collect(Collectors.toList());
 
-        if (Objects.equals(time_conf.get().getMelProcessing(), "Quietest")) {
+        if (Objects.equals(time_conf.get().getMelProcessing(), "Quietest") && time_conf.get().getRoutingAlgorithm().contains("MCFR")) {
 
             List<String> initialMels = new ArrayList<>();
             for (ImmutablePair<EdgeDataCenter, EdgeDevice> l : ls) {

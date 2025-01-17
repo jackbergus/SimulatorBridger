@@ -82,7 +82,7 @@ public class MainEventManager {
 	protected static transient final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
 	/** The termination time. */
 	private static double terminateAt = time_conf.get().getIsBatch() ? time_conf.get().getBatchEnd() :-1;
-
+	public static HashSet<String> IoTDeviceList = new HashSet<>();
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = Double.MIN_NORMAL*2;
 	private static boolean swap = true;

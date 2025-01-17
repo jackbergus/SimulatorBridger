@@ -25,23 +25,23 @@ public class TrafficConverterRunner {
                                 conf);
     }
 
-    public static void convert(String configuration, Connection conn, DSLContext context) {
+    public static void convert(String configuration, Connection conn, DSLContext context, double latency) {
         Optional<TrafficConfiguration> conf = YAML.parse(TrafficConfiguration.class, new File(configuration));
         conf.ifPresent(x -> {
             TrafficConverter conv = generateFacade(x);
             try {
-                conv.run(conn, context);
+                conv.run(conn, context, latency);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
             }
         });
     }
 
-    public static void main(String[] args, Connection conn, DSLContext context) {
+    public static void main(String[] args, Connection conn, DSLContext context, double latency) {
         String configuration = "converter.yaml";
         if (args.length > 0) {
             configuration = args[0];
         }
-        convert(configuration, conn, context);
+        convert(configuration, conn, context, latency);
     }
 }

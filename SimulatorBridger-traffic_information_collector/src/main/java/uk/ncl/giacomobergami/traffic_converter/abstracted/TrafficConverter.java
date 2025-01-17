@@ -69,7 +69,7 @@ public abstract class TrafficConverter {
     protected abstract HashSet<TimedEdge> getTimedEdgeNodes(Double tick);
     protected abstract void endReadSimulatorOutput();
 
-    public boolean run(Connection conn, DSLContext context) throws SQLException {
+    public boolean run(Connection conn, DSLContext context, double latency) throws SQLException {
         logger.trace("TRAFFIC CONVERTER: running the simulator as per configuration: " + conf.YAMLConverterConfiguration);
         runSimulator(conf);
         if (!initReadSimulatorOutput()) {

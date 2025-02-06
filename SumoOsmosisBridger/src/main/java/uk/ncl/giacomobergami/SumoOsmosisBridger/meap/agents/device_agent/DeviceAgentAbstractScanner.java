@@ -52,6 +52,7 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
     protected List<ImmutablePair<EdgeDataCenter, EdgeDevice>> ls = Collections.emptyList();
     private static final File converter_file = new File("clean_example/converter.yaml");
     private static final Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
+    private static final int policyNumber = time_conf.get().getPolicyNumber();
     List<String> mels = new ArrayList<>();
     HashMap<String, Integer> timesPerMel = new HashMap<>();
     HashMap<String, Integer> timesPerEdgeNetwork = new HashMap<>();
@@ -73,8 +74,12 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
         double currentTime = (double) Math.round(MainEventManager.clock() * 1000) /1000;
         // Returning if the agent, at this current time, is not scheduled for transmission
         if (!iot.transmit || !setWUT.contains(currentTime) ||currentTime > endSUMO) return;
+
         HashMap<String, String> edgeToMelList = new HashMap<>();
         HashMap<String, Integer> thisLoop = new HashMap<>();
+        if(policyNumber != 1 && policyNumber != 2) {
+            throw new RuntimeException("The policy number " + policyNumber + " is not supported, must be 1 or 2, see converter.yaml.");
+        }
         ls = AgentBroker
                 .getInstance()
                 .getOsmoticDataCentersStream()
@@ -83,8 +88,13 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                 .filter(x -> {
                     if (!(x.getRight() instanceof EdgeDevice obj)) return false;
                     edgeToMelList.put(obj.getDeviceName(), x.getLeft().getName());
-                    timesPerEdgeNetwork.putIfAbsent(x.getLeft().getName(), 0);
-                    timesPerMel.putIfAbsent(obj.getDeviceName(), 0);
+                    if(policyNumber == 1) {
+                        AgentBroker.timesPerEdgeNetwork.putIfAbsent(x.getLeft().getName(), 0);
+                        AgentBroker.timesPerMel.putIfAbsent(obj.getDeviceName(), 0);
+                    } else {
+                        timesPerEdgeNetwork.putIfAbsent(x.getLeft().getName(), 0);
+                        timesPerMel.putIfAbsent(obj.getDeviceName(), 0);
+                    }
                     thisLoop.putIfAbsent(obj.getDeviceName(), 0);
                     double distance = Math.sqrt(f.getDistance(iot, obj.location));
                     boolean outcome = ((distance <= iot.mobility.signalRange) && (distance <= obj.signalRange));
@@ -101,25 +111,50 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
             }
 
             List<String> actNetwork = new ArrayList<>();
-            for (String network : timesPerEdgeNetwork.keySet()) {
-                if (timesPerEdgeNetwork.get(network) == (int) Collections.min(timesPerEdgeNetwork.values())) {
-                    actNetwork.add(network);
+            if(policyNumber == 1) {
+                for (String network : AgentBroker.timesPerEdgeNetwork.keySet()) {
+                    if (AgentBroker.timesPerEdgeNetwork.get(network) == (int) Collections.min(AgentBroker.timesPerEdgeNetwork.values())) {
+                        actNetwork.add(network);
+                    }
+                }
+            } else {
+                for (String network : timesPerEdgeNetwork.keySet()) {
+                    if (timesPerEdgeNetwork.get(network) == (int) Collections.min(timesPerEdgeNetwork.values())) {
+                        actNetwork.add(network);
+                    }
                 }
             }
 
             HashMap<String, Integer> quietestMels = new HashMap<>();
-            for (String chosenMels : edgeToMelList.keySet()) {
-                if (actNetwork.contains(edgeToMelList.get(chosenMels))) {
-                    quietestMels.put(chosenMels, timesPerMel.get(chosenMels));
+            if(policyNumber == 1) {
+                for (String chosenMels : edgeToMelList.keySet()) {
+                    if (actNetwork.contains(edgeToMelList.get(chosenMels))) {
+                        quietestMels.put(chosenMels, AgentBroker.timesPerMel.get(chosenMels));
+                    }
                 }
-            }
 
-            for (String mel : quietestMels.keySet()) {
-                if (quietestMels.get(mel) == (int) Collections.min(quietestMels.values()) && !mels.contains("@" + mel)) {
-                    mels.add("@" + mel);
-                    timesPerMel.put(mel, timesPerMel.get(mel) + 1);
-                    thisLoop.put(mel, thisLoop.get(mel) + 1);
-                    if (mels.size() == ls.size()) break;
+                for (String mel : quietestMels.keySet()) {
+                    if (quietestMels.get(mel) == (int) Collections.min(quietestMels.values()) && !mels.contains("@" + mel)) {
+                        mels.add("@" + mel);
+                        AgentBroker.timesPerMel.put(mel, AgentBroker.timesPerMel.get(mel) + 1);
+                        thisLoop.put(mel, thisLoop.get(mel) + 1);
+                        if (mels.size() == ls.size()) break;
+                    }
+                }
+            } else {
+                for (String chosenMels : edgeToMelList.keySet()) {
+                    if (actNetwork.contains(edgeToMelList.get(chosenMels))) {
+                        quietestMels.put(chosenMels, timesPerMel.get(chosenMels));
+                    }
+                }
+
+                for (String mel : quietestMels.keySet()) {
+                    if (quietestMels.get(mel) == (int) Collections.min(quietestMels.values()) && !mels.contains("@" + mel)) {
+                        mels.add("@" + mel);
+                        timesPerMel.put(mel, timesPerMel.get(mel) + 1);
+                        thisLoop.put(mel, thisLoop.get(mel) + 1);
+                        if (mels.size() == ls.size()) break;
+                    }
                 }
             }
 
@@ -135,8 +170,14 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                     .map(x -> new ImmutablePair<>(((EdgeDataCenter) x.getLeft()), ((EdgeDevice) x.getRight())))
                     .collect(Collectors.toList());
 
-            for (String mel : timesPerMel.keySet()) {
-                timesPerEdgeNetwork.put(edgeToMelList.get(mel), timesPerEdgeNetwork.get(edgeToMelList.get(mel)) + thisLoop.get(mel));
+            if(policyNumber == 1) {
+                for (String mel : AgentBroker.timesPerMel.keySet()) {
+                    AgentBroker.timesPerEdgeNetwork.put(edgeToMelList.get(mel), AgentBroker.timesPerEdgeNetwork.get(edgeToMelList.get(mel)) + thisLoop.get(mel));
+                }
+            } else  {
+                for (String mel : timesPerMel.keySet()) {
+                    timesPerEdgeNetwork.put(edgeToMelList.get(mel), timesPerEdgeNetwork.get(edgeToMelList.get(mel)) + thisLoop.get(mel));
+                }
             }
             mels.clear();
         }

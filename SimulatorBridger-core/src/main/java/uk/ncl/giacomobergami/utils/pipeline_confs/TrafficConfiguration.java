@@ -11,6 +11,7 @@ public class TrafficConfiguration {
     public double step;
     public String routingAlgorithm;
     public String melProcessing;
+    public int policyNumber;
     public boolean isInjectCSVData;
     public String injectedCSVData;
     public boolean isInjectJSONData;
@@ -56,6 +57,10 @@ public class TrafficConfiguration {
     public String getMelProcessing() { return melProcessing;}
 
     public void setMelProcessing(String melProcessing) { this.melProcessing = melProcessing;}
+
+    public int getPolicyNumber() { return policyNumber;}
+
+    public void setPolicyNumber(int policyNumber) { this.policyNumber = policyNumber;}
 
     public boolean isInjectCSVData() { return isInjectCSVData;}
 

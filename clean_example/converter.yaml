@@ -9,7 +9,7 @@ routingAlgorithm: uk.ncl.giacomobergami.components.routing_algorithm.MCFR #choos
 
 #MEL processing policy
 melProcessing: Quietest #choose either "Nearest" to process incoming communications on the nearest MEL or "Quietest" to process incoming communications in the quietest MEL
-policyNumber: 1 #choose 1 to choose for MCFR Quietest1 or choose 2 for MCFR Quietest2; when using SPMB this value has no impact
+policyNumber: 2 #choose 1 to choose for MCFR Quietest1 or choose 2 for MCFR Quietest2; when using SPMB this value has no impact
 
 ## Injected data
 isInjectCSVData: false

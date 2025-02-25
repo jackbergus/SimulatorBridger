@@ -173,7 +173,7 @@ public class SUMOConverter extends TrafficConverter {
             }
             int finish = readFile.exitValue();
 
-            System.out.print("Active vehicle data collected");
+            System.out.print("Active vehicle data collected\n");
             
             trajectory_python = new File(concreteConf.active_trace_file);
         } else {

@@ -57,7 +57,7 @@ public class AbstractNetworkAgent extends AbstractAgent {
     }
 
     @Override
-    public void plan() {
+    public void plan(String PowerModel) {
         var messagesFromIoTDevices = actualAgent.getReceivedMessages(x -> ((MessageWithPayload<PayloadFromIoTAgent>)x).getPayload());
         if (messagesFromIoTDevices.isEmpty()) return;
         HashMap<String, IoTDevice> devices = new HashMap<>();
@@ -136,10 +136,10 @@ public class AbstractNetworkAgent extends AbstractAgent {
                 for (var net : networks.entrySet()) {
                     var actualNetwork = net.getValue();
                     for (var edge : actualNetwork.getTopology().getAllLinks()) {
-                        var src = actualNetwork.resolveNode(edge.src());
+                        var src = actualNetwork.resolveNode(edge.src(), PowerModel);
                         if (src == null)
                             throw new RuntimeException("Unresolved node: "+edge.src());
-                        var dst = actualNetwork.resolveNode(edge.dst());
+                        var dst = actualNetwork.resolveNode(edge.dst(), PowerModel);
                         if (dst == null)
                             throw new RuntimeException("Unresolved node: "+edge.dst());
                         // A disambiguated name contains the nome name as well as its network's name
@@ -200,10 +200,10 @@ public class AbstractNetworkAgent extends AbstractAgent {
                 for (var net : networks.entrySet()) {
                     var actualNetwork = net.getValue();
                     for (var edge : actualNetwork.getTopology().getAllLinks()) {
-                        var src = actualNetwork.resolveNode(edge.src());
+                        var src = actualNetwork.resolveNode(edge.src(), PowerModel);
                         if (src == null)
                             throw new RuntimeException("Unresolved node: "+edge.src());
-                        var dst = actualNetwork.resolveNode(edge.dst());
+                        var dst = actualNetwork.resolveNode(edge.dst(), PowerModel);
                         if (dst == null)
                             throw new RuntimeException("Unresolved node: "+edge.dst());
                         // A disambiguated name contains the nome name as well as its network's name

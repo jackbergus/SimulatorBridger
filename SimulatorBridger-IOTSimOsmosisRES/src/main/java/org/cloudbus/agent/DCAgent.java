@@ -30,7 +30,7 @@ public class DCAgent extends AbstractAgent {
     @Override
     public void analyze() { }
     @Override
-    public void plan()    { }
+    public void plan(String PowerModel)    { }
     @Override
     public void execute() { }
 }

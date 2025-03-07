@@ -242,17 +242,17 @@ public class AgentBroker {
 
     private double lastMAPEloop=-1;
 
-    public void executeMAPE(double clock){
+    public void executeMAPE(double clock, String PowerModel){
         if (lastMAPEloop < 0){
-            executeMAPE();
+            executeMAPE(PowerModel);
             lastMAPEloop = clock;
         } else if (lastMAPEloop + timeIntervalMAPE < clock){
-            executeMAPE();
+            executeMAPE(PowerModel);
             lastMAPEloop = clock;
         }
     }
 
-    public void executeMAPE(){
+    public void executeMAPE(String PowerModel){
         //Monitor & Analyze
         for(Agent agent: agentsDC.values()){
             agent.setCurrentTime(lastMAPEloop);
@@ -274,15 +274,15 @@ public class AgentBroker {
 
         //Plan & Execute
         if (ca != null) {
-            ca.plan();
+            ca.plan(PowerModel);
             ca.execute();
         }
         for(Agent agent: agentsDC.values()){
-            agent.plan();
+            agent.plan("None");
             agent.execute();
         }
         for(Agent agent: updateAgentDevices.values()){
-            agent.plan();
+            agent.plan("None");
             agent.execute();
         }
     }

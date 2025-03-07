@@ -9,6 +9,7 @@ public class TrafficConfiguration {
     public boolean outputVehicleCsvFile;
     public long begin, end;
     public double step;
+    public String powerModel;
     public String routingAlgorithm;
     public String melProcessing;
     public int policyNumber;
@@ -47,6 +48,10 @@ public class TrafficConfiguration {
     public void setStep(double step) {
         this.step = step;
     }
+
+    public String getPowerModel() { return this.powerModel; }
+
+    public void setPowerModel(String powerModel) { this.powerModel = powerModel; }
 
     public String getRoutingAlgorithm() { return routingAlgorithm;}
 

@@ -23,6 +23,9 @@ import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
+import org.cloudbus.cloudsim.power.PowerHost;
+import org.cloudbus.cloudsim.power.models.PowerModel;
+import org.cloudbus.cloudsim.power.models.PowerModelGeneratorFactory;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicy;
 import org.cloudbus.cloudsim.VmScheduler;
@@ -76,6 +79,8 @@ public abstract class OsmoticDatacenter extends Datacenter{
 	public List<Host> getHosts() {
 		return hosts;
 	}
+
+	public List<Switch> getSwitches() { return switches; }
 	
 	public String getDcType() {
 		return dcType;
@@ -114,7 +119,7 @@ public abstract class OsmoticDatacenter extends Datacenter{
 		}
 	}	
 		
-	protected Host createHost(int hostId, int ram, double bw, long storage, long pes, double mips) {
+	protected Host createHost(int hostId, int ram, double bw, long storage, long pes, double mips, String powermodel) {
 		LinkedList<Pe> peList = new LinkedList<Pe>();
 		int peId=0;
 		for(int i=0;i<pes;i++) peList.add(new Pe(peId++,new PeProvisionerSimple(mips)));
@@ -122,7 +127,10 @@ public abstract class OsmoticDatacenter extends Datacenter{
 		RamProvisioner ramPro = new RamProvisionerSimple(ram);
 		BwProvisioner bwPro = new BwProvisionerSimple(bw);
 		VmScheduler vmScheduler = new VmSchedulerTimeSharedEnergy(peList);		
-		Host newHost = new Host(hostId, ramPro, bwPro, storage, peList, vmScheduler);
+		//Host newHost = new Host(hostId, ramPro, bwPro, storage, peList, vmScheduler);
+		PowerModel newPowerModel = PowerModelGeneratorFactory.generateFacade(powermodel);
+		newPowerModel.setPower(1.0, 0.01);
+		PowerHost newHost = new PowerHost(hostId, ramPro, bwPro, storage, peList, vmScheduler, newPowerModel);
 		
 		return newHost;		
 	}
@@ -159,7 +167,7 @@ public abstract class OsmoticDatacenter extends Datacenter{
 		this.sdnhosts = sdnhosts;
 	}
 
-	public NetworkNodeType resolveNode(NetworkNIC node) {
+	public NetworkNodeType resolveNode(NetworkNIC node, String PowerModel) {
 		var name = node.getName();
 		if ((gateway != null) && (gateway.getName().equals(name))) {
 			return NetworkNodeType.gateway(gateway);
@@ -177,4 +185,13 @@ public abstract class OsmoticDatacenter extends Datacenter{
 		}
 		return null;
 	}
+
+	public static void updatePowerUtilization(String PowerModel, List<OsmoticDatacenter> datacenters) {
+		for (OsmoticDatacenter datacentre : datacenters) {
+			for(Switch switch_ : datacentre.getSwitches()) {
+				switch_.updateNetworkUtilization();
+			}
+		}
+	}
+
 }

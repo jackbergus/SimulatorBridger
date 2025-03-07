@@ -23,12 +23,14 @@ package org.cloudbus.cloudsim.power.models;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 3.0
  */
-public abstract class PowerModelSpecPower implements PowerModel {
+public abstract class PowerModelSpecPower extends PowerModel {
 
 	/*
 	 * (non-Javadoc)
 	 * @see org.cloudbus.cloudsim.power.models.PowerModel#getPower(double)
 	 */
+
+
 	@Override
 	public double getPower(double utilization) throws IllegalArgumentException {
 		if (utilization < 0 || utilization > 1) {

@@ -73,20 +73,20 @@ public class LegacyTopologyBuilder {
 		//new OsmoticBroker("OsmesisBroker", edgeLetId, flowId);
 	}
 
-	public LegacyTopologyBuilder buildTopology(File filename) {
-		return buildTopology(Objects.requireNonNull(LegacyConfiguration.fromFile(Objects.requireNonNull(filename))));
+	public LegacyTopologyBuilder buildTopology(File filename, String PowerModel) {
+		return buildTopology(Objects.requireNonNull(LegacyConfiguration.fromFile(Objects.requireNonNull(filename))), PowerModel);
 	}
 
 	public List<OsmoticDatacenter> getOsmesisDatacentres() {
 		return osmesisDatacentres;
 	}
 
-    public LegacyTopologyBuilder buildTopology(LegacyConfiguration topologyEntity) {
+    public LegacyTopologyBuilder buildTopology(LegacyConfiguration topologyEntity, String PowerModel) {
 		new GlobalConfigurationSettings().fromLegacyConfiguration(topologyEntity);
 
 		List<Switch> datacenterGateways = new ArrayList<>();
 		for (var x : topologyEntity.getCloudDatacenter()) {
-			var y = createCloudDatacenter(x);
+			var y = createCloudDatacenter(x, PowerModel);
 			var controller = y.getSdnController();
 			datacenterGateways.add(controller.getGateway());
 			osmesisDatacentres.add(y);
@@ -105,7 +105,7 @@ public class LegacyTopologyBuilder {
 		return this;
     }
 
-	private CloudDatacenter createCloudDatacenter(CloudDataCenterEntity datacentreEntity) {
+	private CloudDatacenter createCloudDatacenter(CloudDataCenterEntity datacentreEntity, String PowerModel) {
 		SDNController sdnController = new CloudSDNController(datacentreEntity.getControllers().get(0));
 		List<Host> hostList = sdnController.getHostList();
 		LinkedList<Storage> storageList = new LinkedList<>();
@@ -120,7 +120,7 @@ public class LegacyTopologyBuilder {
 					                                 storageList,
 					                                 0,
 					                                 sdnController,
-					hostId);
+					hostId,	PowerModel);
 
 			List<Vm> vmList = datacentreEntity
 					.getVMs()

@@ -74,8 +74,8 @@ public class RES_example6_DCAgent extends DCAgent {
     }
 
     @Override
-    public void plan() {
-        super.plan();
+    public void plan(String PowerModel) {
+        super.plan(PowerModel);
 
         //There should not be any message in input queue.
 

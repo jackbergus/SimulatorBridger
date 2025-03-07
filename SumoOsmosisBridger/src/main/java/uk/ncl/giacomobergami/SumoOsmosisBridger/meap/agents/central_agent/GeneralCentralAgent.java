@@ -27,9 +27,9 @@ public class GeneralCentralAgent extends CentralAgent {
     }
 
     @Override
-    public void plan() {
-        super.plan();
-        abstractNetworkAgent.plan();
+    public void plan(String PowerModel) {
+        super.plan(PowerModel);
+        abstractNetworkAgent.plan(PowerModel);
     }
 
     @Override

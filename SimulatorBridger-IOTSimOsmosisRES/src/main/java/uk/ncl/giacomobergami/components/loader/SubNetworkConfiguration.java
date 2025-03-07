@@ -59,7 +59,8 @@ public class SubNetworkConfiguration implements Serializable {
                                                  AtomicInteger hostId,
                                                  AtomicInteger vmId,
                                                  Map<String, Collection<LegacyConfiguration.LinkEntity>> linkMap,
-                                                 String RA) {
+                                                 String RA,
+                                                 String PowerModel) {
         if (conf.scheduling_interval != 0.0)
             throw new RuntimeException("0.0 expected scheduling interval: "+conf.scheduling_interval);
         if (!Objects.equals(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getName(), "custom"))
@@ -83,7 +84,7 @@ public class SubNetworkConfiguration implements Serializable {
                     .map(x -> x.asLegacySwitchEntity(conf.controller_name));
             var s_links = linkMap.get(conf.datacenter_name);
 
-            loc_datacentre.initCloudTopology(s_host, s_switch, s_links, hostId);
+            loc_datacentre.initCloudTopology(s_host, s_switch, s_links, hostId, PowerModel);
             loc_datacentre.feedSDNWithTopology();
             loc_datacentre.setGateway(loc_datacentre.getSdnController().getGateway());
             loc_datacentre.setDcType(conf.datacenter_type);

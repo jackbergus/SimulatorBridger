@@ -22,7 +22,7 @@ package org.cloudbus.cloudsim.power.models;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 2.0
  */
-public class PowerModelSqrt implements PowerModel {
+public class PowerModelSqrt extends PowerModel {
 
 	/** The max power. */
 	private double maxPower;
@@ -43,6 +43,17 @@ public class PowerModelSqrt implements PowerModel {
 		setMaxPower(maxPower);
 		setStaticPower(staticPowerPercent * maxPower);
 		setConstant((maxPower - getStaticPower()) / Math.sqrt(100));
+	}
+
+	public PowerModelSqrt() {
+
+	}
+
+	@Override
+	public void setPower(double maxPower, double staticPowerPercent) {
+		setMaxPower(maxPower);
+		setStaticPower(staticPowerPercent * maxPower);
+		setConstant((maxPower - getStaticPower()) / 100);
 	}
 
 	/*

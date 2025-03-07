@@ -398,7 +398,7 @@ public class GlobalConfigurationSettings {
         return TopologyLink.asNetworkedLinks(new File(topologyLinksFile));
     }
 
-    public GlobalConfigurationSettings buildTopologyForSimulator(OsmoticBroker broker, String RoutingAlgo) {
+    public GlobalConfigurationSettings buildTopologyForSimulator(OsmoticBroker broker, String RoutingAlgo, String PowerModel) {
         if (actualEdgeDataCenters == null || actualCloudDataCenters == null || iotDevices == null ||global_network_links == null||sdwan == null || sdwan.switches == null || apps == null ||
                 (actualEdgeDataCenters.isEmpty()) ||
                 actualCloudDataCenters.isEmpty() ||
@@ -411,7 +411,7 @@ public class GlobalConfigurationSettings {
         List<Switch> datacenterGateways = new ArrayList<>();
         // Cloud Data Centers
         for (var reader : actualCloudDataCenters) {
-            var y = reader.createCloudDatacenter(broker, conf.hostId, conf.vmId, global_network_links, RoutingAlgo);
+            var y = reader.createCloudDatacenter(broker, conf.hostId, conf.vmId, global_network_links, RoutingAlgo, PowerModel);
             var controller = y.getSdnController();
             datacenterGateways.add(controller.getGateway());
             conf.osmesisDatacentres.add(y);

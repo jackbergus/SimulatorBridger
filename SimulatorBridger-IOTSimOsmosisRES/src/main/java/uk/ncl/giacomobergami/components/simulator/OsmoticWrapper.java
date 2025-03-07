@@ -163,7 +163,7 @@ public class OsmoticWrapper {
                 LegacyConfiguration config = LegacyConfiguration.fromFile(confFile);
                 if(config !=  null) {
                     try {
-                        topologyBuilder.buildTopology(config);
+                        topologyBuilder.buildTopology(config, time_conf.get().getPowerModel());
                     } catch (Exception e) {
                         e.printStackTrace();
                         return init;
@@ -369,7 +369,7 @@ public class OsmoticWrapper {
             osmoticBroker.setFullInterval(time_conf.get().getBegin(), time_conf.get().getEnd());
         MELSwitchPolicy melSwitchPolicy = MELRoutingPolicyGeneratorFacade.generateFacade(conf.mel_switch_policy);
         osmoticBroker.setMelRouting(melSwitchPolicy);
-        conf.buildTopologyForSimulator(osmoticBroker, RA);
+        conf.buildTopologyForSimulator(osmoticBroker, RA, time_conf.get().getPowerModel());
 
         OsmosisOrchestrator conductor = new OsmosisOrchestrator();
         List<SDNController> controllers = new ArrayList<>();

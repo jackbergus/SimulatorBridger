@@ -33,7 +33,7 @@ public class DeviceAgent extends AbstractAgent{
     }
 
     @Override
-    public void plan() {
+    public void plan(String PowerModel) {
         //Plan actions based on the locally collected informations and from the messages received from other agents.
 
     }

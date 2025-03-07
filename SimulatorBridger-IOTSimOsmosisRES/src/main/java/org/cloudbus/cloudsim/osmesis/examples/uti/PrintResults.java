@@ -714,7 +714,7 @@ public class PrintResults {
 		private String dcName;
 		private String name;
 		public double startTime;
-		public double numActivePorts;
+		public int numActivePorts;
 
 		public ActualHistoryEntry(String dcName, String name, Switch.HistoryEntry entry) {
 			this.dcName = dcName;

@@ -24,7 +24,7 @@ package org.cloudbus.cloudsim.power.models;
  * @author Anton Beloglazov
  * @since CloudSim Toolkit 2.0
  */
-public class PowerModelCubic implements PowerModel {
+public class PowerModelCubic extends PowerModel {
 
 	/** The max power. */
 	private double maxPower;
@@ -47,10 +47,19 @@ public class PowerModelCubic implements PowerModel {
 		setConstant((maxPower - getStaticPower()) / Math.pow(100, 3));
 	}
 
+	public PowerModelCubic() {}
+
 	/*
 	 * (non-Javadoc)
 	 * @see gridsim.virtualization.power.PowerModel#getPower(double)
 	 */
+	@Override
+	public void setPower(double maxPower, double staticPowerPercent) {
+		setMaxPower(maxPower);
+		setStaticPower(staticPowerPercent * maxPower);
+		setConstant((maxPower - getStaticPower()) / 100);
+	}
+
 	@Override
 	public double getPower(double utilization) throws IllegalArgumentException {
 		if (utilization < 0 || utilization > 1) {

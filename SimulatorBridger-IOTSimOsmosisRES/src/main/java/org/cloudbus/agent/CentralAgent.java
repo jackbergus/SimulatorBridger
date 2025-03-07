@@ -26,7 +26,7 @@ public class CentralAgent extends AbstractAgent{
     }
 
     @Override
-    public void plan() {
+    public void plan(String PowerModel) {
 
     }
 

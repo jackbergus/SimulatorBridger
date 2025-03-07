@@ -81,8 +81,8 @@ public class RES_example6_DeviceAgent extends DeviceAgent {
     }
 
     @Override
-    public void plan() {
-        super.plan();
+    public void plan(String PowerModel) {
+        super.plan(PowerModel);
 
         //Get already received messages and analyze the data.
         //It clears the incoming buffer.

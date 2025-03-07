@@ -5,7 +5,7 @@ public interface Agent {
     void receiveMessage(AgentMessage message);
     void monitor();
     void analyze();
-    void plan();
+    void plan(String PowerModel);
     void execute();
     default void setAgentProgram(Object program) {
         System.out.println("Program set to: " + program.toString());

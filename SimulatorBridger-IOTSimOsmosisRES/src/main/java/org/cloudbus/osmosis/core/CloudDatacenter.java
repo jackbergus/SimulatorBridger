@@ -45,14 +45,16 @@ public class CloudDatacenter extends OsmoticDatacenter {
 						   List<Storage> storageList,
 						   double schedulingInterval,
 						   SDNController sdnController,
-						   AtomicInteger hostId) {
+						   AtomicInteger hostId,
+						   String PowerModel) {
 			super(dataCenterEntity.getName(), characteristics, vmAllocationPolicy, storageList, schedulingInterval);
 			this.sdnController = sdnController;
 			this.sdnController.setDatacenter(this);
 			initCloudTopology(dataCenterEntity.getHosts(),
 					dataCenterEntity.getSwitches(),
 					dataCenterEntity.getLinks(),
-					hostId);
+					hostId,
+					PowerModel);
 			feedSDNWithTopology();
 			setGateway(getSdnController().getGateway());
 			setDcType(dataCenterEntity.getType());
@@ -99,7 +101,8 @@ public class CloudDatacenter extends OsmoticDatacenter {
 	public void initCloudTopology(Stream<HostEntity> hostEntites,
 								  Stream<SwitchEntity> switchEntites,
 								  Collection<LinkEntity> linkEntites,
-								  AtomicInteger hostId) {
+								  AtomicInteger hostId,
+								  String PowerModel) {
 		topology  = new Topology();
 		sdnhosts = new ArrayList<>();
 		switches= new ArrayList<>();
@@ -111,7 +114,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 			long storage = hostEntity.getStorage();
 			double bw = hostEntity.getBw();
 			String hostName = hostEntity.getName();
-			Host host = createHost(hostId.getAndIncrement(), ram, bw, storage, pes, mips);
+			Host host = createHost(hostId.getAndIncrement(), ram, bw, storage, pes, mips, PowerModel);
 			host.setDatacenter(this);
 			SDNHost sdnHost = new SDNHost(host, hostName);
 			nameIdTable.put(hostName, sdnHost.getAddress());
@@ -125,7 +128,8 @@ public class CloudDatacenter extends OsmoticDatacenter {
 	public void initCloudTopology(List<HostEntity> hostEntites,
 								  List<SwitchEntity> switchEntites,
 								  List<LinkEntity> linkEntites,
-								  AtomicInteger hostId) {
+								  AtomicInteger hostId,
+								  String  PowerModel) {
 		 topology  = new Topology();		 
 		 sdnhosts = new ArrayList<>();
 		 switches= new ArrayList<>();
@@ -138,7 +142,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 			long storage = hostEntity.getStorage();					
 			double bw = hostEntity.getBw();
 			String hostName = hostEntity.getName();					
-			Host host = createHost(hostId.getAndIncrement(), ram, bw, storage, pes, mips);
+			Host host = createHost(hostId.getAndIncrement(), ram, bw, storage, pes, mips, PowerModel);
 			host.setDatacenter(this);
 			SDNHost sdnHost = new SDNHost(host, hostName);
 			nameIdTable.put(hostName, sdnHost.getAddress());

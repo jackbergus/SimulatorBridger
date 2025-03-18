@@ -10,6 +10,6 @@ public class PowerModelGeneratorFactory {
     public static PowerModel generateFacade(String clazzPath) {
         return ReflectiveFactoryMethod
                 .getInstance(PowerModel.class)
-                .generateFacade(clazzPath, (Supplier<PowerModel>) PowerModelLinear::new);
+                .generateFacade(clazzPath, (Supplier<PowerModel>) PowerModelSpecPowerHpProLiantMl110G3PentiumD930::new);
     }
 }

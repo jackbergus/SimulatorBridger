@@ -27,6 +27,7 @@ import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 
+import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.osmosis.core.Topology;
 
 /**
@@ -44,6 +45,7 @@ public abstract class NetworkOperatingSystem extends SimEntity {
 	protected Topology topology;
 
 	protected List<Host> hosts;
+	protected List<PowerHost> powerHosts;
 	protected List<SDNHost> sdnhosts;
 	protected List<Switch> switches= new ArrayList<Switch>();
 

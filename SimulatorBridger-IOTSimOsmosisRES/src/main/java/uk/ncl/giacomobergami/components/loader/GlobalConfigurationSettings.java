@@ -419,7 +419,7 @@ public class GlobalConfigurationSettings {
 
         // Edge Data Centers
         for (var reader : actualEdgeDataCenters) {
-            var y = reader.createEdgeDatacenter(broker, conf.hostId, conf.vmId, global_network_links, RoutingAlgo);
+            var y = reader.createEdgeDatacenter(broker, conf.hostId, conf.vmId, global_network_links, RoutingAlgo, PowerModel);
             var controller = y.getSdnController();
             datacenterGateways.add(controller.getGateway());
             conf.osmesisDatacentres.add(y);

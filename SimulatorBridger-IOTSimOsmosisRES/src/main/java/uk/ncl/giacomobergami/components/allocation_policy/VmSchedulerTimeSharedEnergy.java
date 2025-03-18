@@ -8,14 +8,20 @@
 
 package uk.ncl.giacomobergami.components.allocation_policy;
 
+import java.math.RoundingMode;
+import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.VmSchedulerTimeShared;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.sdn.power.PowerUtilizationHistoryEntry;
 import org.cloudbus.cloudsim.sdn.power.PowerUtilizationInterface;
+import org.jooq.meta.duckdb.system.main.Main;
 
 /**
  * VmSchedulerTimeSharedEnergy is a VMM allocation policy that allocates one or more Pe to a VM, and
@@ -40,16 +46,20 @@ public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implement
 		addUtilizationEntry();		
 	}
 	
-	private List<PowerUtilizationHistoryEntry> utilizationHistories = null;
-	private static double powerOffDuration = 0; //if host is idle for 1 hours, it's turned off.
+	private TreeMap<Double, PowerUtilizationHistoryEntry> utilizationHistories = null;
+	private static double powerOffDuration = 3600; //if host is idle for 1 hours, it's turned off.
 	
 	public void addUtilizationEntryTermination(double terminatedTime) {
+		DecimalFormat df = new DecimalFormat("#.###");
+		df.setRoundingMode(RoundingMode.HALF_UP);
+		terminatedTime = Double.parseDouble(df.format(terminatedTime));
 		if(this.utilizationHistories != null)
-			this.utilizationHistories.add(new PowerUtilizationHistoryEntry(terminatedTime, 0));
+			this.utilizationHistories.put(terminatedTime, new PowerUtilizationHistoryEntry(terminatedTime, 0));
 	}
 	
-	public List<PowerUtilizationHistoryEntry> getUtilizationHisotry() {
-		return utilizationHistories;
+	public List<PowerUtilizationHistoryEntry> getUtilizationHistory() {
+		List<PowerUtilizationHistoryEntry> LUHL = this.utilizationHistories.values().stream().toList();
+		return LUHL;
 	}
 
 	public double getUtilizationEnergyConsumption() {
@@ -60,7 +70,7 @@ public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implement
 		if(this.utilizationHistories == null)
 			return 0;
 		
-		for(PowerUtilizationHistoryEntry h:this.utilizationHistories) {
+		for(PowerUtilizationHistoryEntry h : this.utilizationHistories.values()) {
 			double duration = h.startTime - lastTime;
 			double utilPercentage = lastMips/ getTotalMips();
 			double power = calculatePower(utilPercentage);
@@ -82,16 +92,19 @@ public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implement
 		return power;
 	}
 
-	private void addUtilizationEntry() {
-		double time = MainEventManager.clock();
+
+	public void addUtilizationEntry() {
+		DecimalFormat df = new DecimalFormat("#.###");
+		df.setRoundingMode(RoundingMode.HALF_UP);
+		double time = Double.parseDouble(df.format(MainEventManager.clock()));
 		double totalMips = getTotalMips();
 		double usingMips = totalMips - this.getAvailableMips();
 		if(usingMips < 0) {
 			logger.error("addUtilizationEntry : using mips is negative, No way!");
 		}
 		if(utilizationHistories == null)
-			utilizationHistories = new ArrayList<>();
-		this.utilizationHistories.add(new PowerUtilizationHistoryEntry(time, usingMips));
+			utilizationHistories = new TreeMap<>();//new ArrayList<>();
+		this.utilizationHistories.put(time, new PowerUtilizationHistoryEntry(time, usingMips));
 	}
 	
 	private double getTotalMips() {

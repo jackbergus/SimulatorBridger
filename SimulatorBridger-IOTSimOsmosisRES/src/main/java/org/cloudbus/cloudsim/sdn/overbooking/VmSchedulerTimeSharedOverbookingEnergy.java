@@ -40,14 +40,14 @@ public class VmSchedulerTimeSharedOverbookingEnergy extends VmSchedulerTimeShare
 	}
 	
 	private List<PowerUtilizationHistoryEntry> utilizationHistories = null;
-	private static double powerOffDuration = 0; //if host is idle for 1 hours, it's turned off.
+	private static double powerOffDuration = 3600; //if host is idle for 1 hours, it's turned off.
 	
 	public void addUtilizationEntryTermination(double terminatedTime) {
 		if(this.utilizationHistories != null)
 			this.utilizationHistories.add(new PowerUtilizationHistoryEntry(terminatedTime, 0));
 	}
 	
-	public List<PowerUtilizationHistoryEntry> getUtilizationHisotry() {
+	public List<PowerUtilizationHistoryEntry> getUtilizationHistory() {
 		return utilizationHistories;
 	}
 

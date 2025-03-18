@@ -86,7 +86,7 @@ public class Switch extends SimEntity implements NetworkNIC{
 	 *  Calculate Utilization history
 	 ************************************************/
 	private List<HistoryEntry> utilizationHistories = null;
-	private static double powerOffDuration = 0; //if switch was idle for 1 hours, it's turned off.
+	private static double powerOffDuration = 3600; //if switch was idle for 1 hours, it's turned off.
 
 	// HistoryEntry is a nested class (class within another class) 
 	public class HistoryEntry {
@@ -111,7 +111,7 @@ public class Switch extends SimEntity implements NetworkNIC{
 			double energyConsumption = power * duration;
 			
 			// Assume that the host is turned off when duration is long enough
-			if(duration > powerOffDuration && lastPort == 0)
+			if(duration > powerOffDuration && lastPort == 0|| duration < 0)
 				energyConsumption = 0;
 			
 			total += energyConsumption;
@@ -137,7 +137,7 @@ public class Switch extends SimEntity implements NetworkNIC{
 		else {
 			HistoryEntry hist = this.utilizationHistories.get(this.utilizationHistories.size()-1);
 			if(hist.numActivePorts == totalActivePorts) {
-				return;
+				//return;
 			}
 		}		
 		this.utilizationHistories.add(new HistoryEntry(time, totalActivePorts));

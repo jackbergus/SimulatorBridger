@@ -23,6 +23,7 @@ import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Pe;
 import org.cloudbus.cloudsim.Storage;
+import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.power.models.PowerModel;
 import org.cloudbus.cloudsim.power.models.PowerModelGeneratorFactory;
@@ -59,13 +60,14 @@ public abstract class OsmoticDatacenter extends Datacenter{
 	
 	protected Topology topology;
 	protected SDNController sdnController;
-	protected List<Host> hosts = new ArrayList<>();	
+	protected List<Host> hosts = new ArrayList<>();
+	protected List<PowerHost> powerHosts = new ArrayList<>();
 	protected List<SDNHost> sdnhosts;
 	protected List<Switch> switches;
 
 	public abstract void initCloudTopology(List<HostEntity> hostEntites, List<SwitchEntity> switchEntites, List<LinkEntity> linkEntites);
 
-	public abstract void initEdgeTopology(List<EdgeDevice> devices, List<SwitchEntity> switchEntites, List<LinkEntity> linkEntites);
+	public abstract void initEdgeTopology(List<EdgeDevice> devices, List<SwitchEntity> switchEntites, List<LinkEntity> linkEntites, String PowerModel);
 		
 	public OsmoticDatacenter(String name, DatacenterCharacteristics characteristics,
 							 VmAllocationPolicy vmAllocationPolicy, List<Storage> storageList, double schedulingInterval)
@@ -129,9 +131,8 @@ public abstract class OsmoticDatacenter extends Datacenter{
 		VmScheduler vmScheduler = new VmSchedulerTimeSharedEnergy(peList);		
 		//Host newHost = new Host(hostId, ramPro, bwPro, storage, peList, vmScheduler);
 		PowerModel newPowerModel = PowerModelGeneratorFactory.generateFacade(powermodel);
-		newPowerModel.setPower(1.0, 0.01);
 		PowerHost newHost = new PowerHost(hostId, ramPro, bwPro, storage, peList, vmScheduler, newPowerModel);
-		
+		powerHosts.add(newHost);
 		return newHost;		
 	}
 
@@ -186,9 +187,9 @@ public abstract class OsmoticDatacenter extends Datacenter{
 		return null;
 	}
 
-	public static void updatePowerUtilization(String PowerModel, List<OsmoticDatacenter> datacenters) {
-		for (OsmoticDatacenter datacentre : datacenters) {
-			for(Switch switch_ : datacentre.getSwitches()) {
+	public static void updatePowerUtilization(String PowerModel, List<OsmoticDatacenter> datacenters, Double time) {
+		for (OsmoticDatacenter datacenter : datacenters) {
+			for(Switch switch_ : datacenter.getSwitches()) {
 				switch_.updateNetworkUtilization();
 			}
 		}

@@ -19,6 +19,7 @@ import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.power.PowerHost;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicy;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEvent;
@@ -115,7 +116,6 @@ public class CloudDatacenter extends OsmoticDatacenter {
 			double bw = hostEntity.getBw();
 			String hostName = hostEntity.getName();
 			Host host = createHost(hostId.getAndIncrement(), ram, bw, storage, pes, mips, PowerModel);
-			host.setDatacenter(this);
 			SDNHost sdnHost = new SDNHost(host, hostName);
 			nameIdTable.put(hostName, sdnHost.getAddress());
 			this.topology.addNode(sdnHost);
@@ -129,7 +129,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 								  List<SwitchEntity> switchEntites,
 								  List<LinkEntity> linkEntites,
 								  AtomicInteger hostId,
-								  String  PowerModel) {
+								  String PowerModel) {
 		 topology  = new Topology();		 
 		 sdnhosts = new ArrayList<>();
 		 switches= new ArrayList<>();
@@ -141,14 +141,13 @@ public class CloudDatacenter extends OsmoticDatacenter {
 			int ram = hostEntity.getRam();
 			long storage = hostEntity.getStorage();					
 			double bw = hostEntity.getBw();
-			String hostName = hostEntity.getName();					
+			String hostName = hostEntity.getName();
 			Host host = createHost(hostId.getAndIncrement(), ram, bw, storage, pes, mips, PowerModel);
-			host.setDatacenter(this);
 			SDNHost sdnHost = new SDNHost(host, hostName);
 			nameIdTable.put(hostName, sdnHost.getAddress());
 			this.topology.addNode(sdnHost);
 			this.hosts.add(host);
-			this.sdnhosts.add(sdnHost);			
+			this.sdnhosts.add(sdnHost);
 		}
 
 		switchEntites.forEach(x -> x.initializeSwitch(nameIdTable, topology, switches));
@@ -162,7 +161,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 
 	@Override
 	public void initEdgeTopology(List<EdgeDevice> devices, List<SwitchEntity> switchEntites,
-			List<LinkEntity> linkEntites) {
+			List<LinkEntity> linkEntites, String powerModel) {
 	}
 
 

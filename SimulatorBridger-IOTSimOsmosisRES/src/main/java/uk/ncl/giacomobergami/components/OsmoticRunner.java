@@ -57,6 +57,14 @@ public class OsmoticRunner {
         System.out.println("Global Device List Updated");
     }
 
+    public static void numberOfActiveCommsPerEdge(){
+        conv.numberOfActiveCommsPerEdge();
+    }
+
+    public static void numberOfDevicesPerEdge() {
+        conv.numberOfDevicesPerEdge();
+    }
+
     @Deprecated
     public static void legacyOrchestrate(String configuration, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         List<OsmoticConfiguration> ls = JSON.stringToArray(new File(configuration), OsmoticConfiguration[].class);
@@ -76,8 +84,8 @@ public class OsmoticRunner {
         //conv.log(conf, conn, context);
     }
 
-    public static void LogOutput(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
-        conv.log(conf, conn, context);
+    public static void LogOutput(GlobalConfigurationSettings conf, Connection conn, DSLContext context, Double endTime) {
+        conv.log(conf, conn, context, endTime);
     }
 
     @Deprecated

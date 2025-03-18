@@ -29,6 +29,8 @@ import org.cloudbus.agent.AgentBroker;
 import org.cloudbus.cloudsim.DatacenterCharacteristics;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.power.PowerHost;
+import org.cloudbus.cloudsim.power.models.PowerModelGeneratorFactory;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicy;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEvent;
@@ -62,7 +64,7 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 	public EdgeDataCenter(LegacyConfiguration.EdgeDataCenterEntity edgeDCEntity,
 						  DatacenterCharacteristics characteristics,
 						  LinkedList<Storage> storageList,
-						  double schedulingInterval) {
+						  double schedulingInterval, String powerModel) {
 		this(edgeDCEntity.getName(),
 				characteristics,
 				VmAllocationPolicyGeneratorFactory.generateFacade(edgeDCEntity.getVmAllocationPolicy().getClassName()),
@@ -75,10 +77,10 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 	public EdgeDataCenter(LegacyConfiguration.EdgeDataCenterEntity edgeDCEntity,
 						  List<EdgeDevice> hostList,
 						  LinkedList<Storage> storageList,
-						  double schedulingInterval) {
-		this(edgeDCEntity, new DatacenterCharacteristics(hostList, edgeDCEntity.getCharacteristics()), storageList, schedulingInterval);
+						  double schedulingInterval, String powerModel) {
+		this(edgeDCEntity, new DatacenterCharacteristics(hostList, edgeDCEntity.getCharacteristics()), storageList, schedulingInterval, powerModel);
 		setSdnController(new EdgeSDNController(edgeDCEntity.getControllers().get(0), this));
-		initEdgeTopology(hostList, edgeDCEntity.getSwitches(),edgeDCEntity.getLinks());
+		initEdgeTopology(hostList, edgeDCEntity.getSwitches(),edgeDCEntity.getLinks(), powerModel);
 		getSdnController().setTopology(topology, hosts, sdnhosts, switches);
 		setGateway(getSdnController().getGateway());
 	}
@@ -237,19 +239,23 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 	@Override
 	public void initEdgeTopology(List<EdgeDevice> devices,
 								 List<SwitchEntity> switchEntites,
-								 List<LinkEntity> linkEntites){
-		this.hosts.addAll(devices); 
-		topology  = new Topology();		 
+								 List<LinkEntity> linkEntites,
+								 String PowerModel){
+
+		this.hosts.addAll(devices);
+		topology  = new Topology();
 		sdnhosts = new ArrayList<>();
 		switches= new ArrayList<>();
 		Hashtable<String,Integer> nameIdTable = new Hashtable<>();
 					    		    		    
 		for(EdgeDevice device : devices){
+			PowerHost powerHost = new PowerHost(device.getId(), device.getRamProvisioner(), device.getBwProvisioner(), (long) device.getStorage(), device.getPeList(), device.getVmScheduler(), PowerModelGeneratorFactory.generateFacade(PowerModel));
 			String hostName = device.getDeviceName();					
 			SDNHost sdnHost = new SDNHost(device, hostName);
 			nameIdTable.put(hostName, sdnHost.getAddress());											
 			this.topology.addNode(sdnHost);		
-			this.sdnhosts.add(sdnHost);			
+			this.sdnhosts.add(sdnHost);
+			//this.powerHosts.add(powerHost);
 		}
 
 		switchEntites.forEach(x -> x.initializeSwitch(nameIdTable, topology, switches));
@@ -258,7 +264,8 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 
 	public void initEdgeTopology(List<EdgeDevice> devices,
 								 Stream<SwitchEntity> switchEntites,
-								 Collection<LinkEntity> linkEntites){
+								 Collection<LinkEntity> linkEntites,
+								 String PowerModel){
 		this.hosts.addAll(devices);
 		topology  = new Topology();
 		sdnhosts = new ArrayList<>();
@@ -266,11 +273,13 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 		Hashtable<String,Integer> nameIdTable = new Hashtable<>();
 
 		for(EdgeDevice device : devices){
+			PowerHost powerHost = new PowerHost(device.getId(), device.getRamProvisioner(), device.getBwProvisioner(), (long) device.getStorage(), device.getPeList(), device.getVmScheduler(), PowerModelGeneratorFactory.generateFacade(PowerModel));
 			String hostName = device.getDeviceName();
 			SDNHost sdnHost = new SDNHost(device, hostName);
 			nameIdTable.put(hostName, sdnHost.getAddress());
 			this.topology.addNode(sdnHost);
 			this.sdnhosts.add(sdnHost);
+			//this.powerHosts.add(powerHost);
 		}
 
 		switchEntites.forEach(x -> x.initializeSwitch(nameIdTable, topology, switches));

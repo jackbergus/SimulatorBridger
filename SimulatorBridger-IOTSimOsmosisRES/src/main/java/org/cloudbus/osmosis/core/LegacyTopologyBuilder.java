@@ -22,7 +22,6 @@ import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration.CloudDataCenterEntity;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration.EdgeDataCenterEntity;
-import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration.LogEntity;
 import org.cloudbus.cloudsim.edge.core.edge.MEL;
 import org.cloudbus.cloudsim.sdn.Switch;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicyGeneratorFactory;
@@ -92,7 +91,7 @@ public class LegacyTopologyBuilder {
 			osmesisDatacentres.add(y);
 		}
 		for (var x : topologyEntity.getEdgeDatacenter()) {
-			var y = buildEdgeDatacenter(x);
+			var y = buildEdgeDatacenter(x, PowerModel);
 			var controller = y.getSdnController();
 			datacenterGateways.add(controller.getGateway());
 			osmesisDatacentres.add(y);
@@ -143,13 +142,13 @@ public class LegacyTopologyBuilder {
 		}
 	}
 
-	private EdgeDataCenter buildEdgeDatacenter(EdgeDataCenterEntity edgeDCEntity) {
+	private EdgeDataCenter buildEdgeDatacenter(EdgeDataCenterEntity edgeDCEntity, String powerModel) {
 		if (edgeDCEntity.getControllers().size() > 1)
 			throw new RuntimeException("Expected size 1 for "+edgeDCEntity.getControllers().size());
 
 		var hostList = edgeDCEntity.getHosts()
 				.stream()
-				.map(x -> new EdgeDevice(hostId, x))
+				.map(x -> new EdgeDevice(hostId, x, powerModel))
 				.collect(Collectors.toList());
 
 		LinkedList<Storage> storageList = new LinkedList<>();
@@ -158,7 +157,8 @@ public class LegacyTopologyBuilder {
 		EdgeDataCenter datacenter = new EdgeDataCenter(edgeDCEntity,
 				hostList,
 				storageList,
-				edgeDCEntity.getSchedulingInterval());
+				edgeDCEntity.getSchedulingInterval(),
+				powerModel);
 		logger.trace("Edge SDN cotroller " + edgeDCEntity.getName() + "has been created");
 
 		var MELList = edgeDCEntity.getMELEntities()

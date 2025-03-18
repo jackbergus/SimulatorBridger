@@ -20,6 +20,9 @@ import java.util.stream.IntStream;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Pe;
+import org.cloudbus.cloudsim.power.PowerHost;
+import org.cloudbus.cloudsim.power.models.PowerModel;
+import org.cloudbus.cloudsim.power.models.PowerModelGeneratorFactory;
 import org.cloudbus.cloudsim.provisioners.*;
 import uk.ncl.giacomobergami.components.allocation_policy.VmSchedulerTimeSharedEnergy;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
@@ -33,7 +36,7 @@ import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
  * 
 **/
 
-public class EdgeDevice extends Host implements CartesianPoint {
+public class EdgeDevice extends PowerHost implements CartesianPoint {
 	private String deviceName;	
 	public Mobility.Location location;
 	public double signalRange;
@@ -43,7 +46,17 @@ public class EdgeDevice extends Host implements CartesianPoint {
 	EdgeDevice(int id, String deviceName, RamProvisioner ramProvisioner, BwProvisioner bwProvisioner,
 			long storage, List<? extends Pe> peList) {
 		super(id, ramProvisioner, bwProvisioner, storage, peList,
-				new VmSchedulerTimeSharedEnergy(peList));
+				new VmSchedulerTimeSharedEnergy(peList), PowerModelGeneratorFactory.generateFacade(null));
+		this.deviceName = deviceName;
+		this.enabled = true;
+		location = new Mobility.Location(0,0,0);
+		signalRange = Double.MAX_VALUE;
+	}
+
+	EdgeDevice(int id, String deviceName, RamProvisioner ramProvisioner, BwProvisioner bwProvisioner,
+			   long storage, List<? extends Pe> peList, String powerModel) {
+		super(id, ramProvisioner, bwProvisioner, storage, peList,
+				new VmSchedulerTimeSharedEnergy(peList), PowerModelGeneratorFactory.generateFacade(powerModel));
 		this.deviceName = deviceName;
 		this.enabled = true;
 		location = new Mobility.Location(0,0,0);
@@ -57,13 +70,13 @@ public class EdgeDevice extends Host implements CartesianPoint {
 	}
 
     public EdgeDevice(AtomicInteger idGen,
-					  LegacyConfiguration.EdgeDeviceEntity hostEntity) {
+					  LegacyConfiguration.EdgeDeviceEntity hostEntity, String powerModel) {
         this(idGen.getAndIncrement(),
 				hostEntity.getName(),
 				new RamProvisionerSimple(hostEntity.getRamSize()),
 				new BwProvisionerSimple(hostEntity.getBwSize()),
 				hostEntity.getStorage(),
-				generatePEList(hostEntity));
+				generatePEList(hostEntity), powerModel);
 
 		location = hostEntity.location;
 		signalRange = hostEntity.signalRange;

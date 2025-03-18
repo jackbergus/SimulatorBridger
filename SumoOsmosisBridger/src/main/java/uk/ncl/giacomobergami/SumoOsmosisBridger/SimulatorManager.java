@@ -514,6 +514,9 @@ public class SimulatorManager implements SimulatorBridger {
             addNewCSVData = false;
         }
 
+        OsmoticRunner.numberOfActiveCommsPerEdge();
+        OsmoticRunner.numberOfDevicesPerEdge();
+
         loopDuration = (double) Math.round(normalLatency * 1000) / 1000;
         scheduleNewWakeUpTime(IoTEntityGenerator.getNewWakeUpTimes(), Double.parseDouble(df.format(MainEventManager.clock())));
         loopEndTime = MainEventManager.legacy_run(conn, context, loopEndTime, currentLatency);
@@ -522,9 +525,9 @@ public class SimulatorManager implements SimulatorBridger {
 
     @Override
     public void fini() {
-        MainEventManager.finishSimulation(conn, context, deltaTime);
+        double endTime = MainEventManager.finishSimulation(conn, context, deltaTime);
         MainEventManager.runStop();
-        OsmoticRunner.LogOutput(globalConfigurationSettings, conn, context);
+        OsmoticRunner.LogOutput(globalConfigurationSettings, conn, context, endTime);
         DisconnectFromSource(conn);
     }
 }

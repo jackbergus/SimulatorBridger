@@ -1326,7 +1326,7 @@ public class MainEventManager {
 	 * Internal method that allows the entities to terminate. This method should <b>not</b> be used
 	 * in user simulations.
 	 */
-	public static void finishSimulation(Connection conn, DSLContext context, double deltaTime) {
+	public static double finishSimulation(Connection conn, DSLContext context, double deltaTime) {
 		// Allow all entities to exit their body method
 		if (!abruptTerminate) {
 			for (SimEntity ent : entities) {
@@ -1350,6 +1350,7 @@ public class MainEventManager {
 		entitiesByName = null;
 		future = null;
 		deferred = null;
+		double endTime = clock;
 		clock = 0L;
 		running = false;
 
@@ -1357,6 +1358,8 @@ public class MainEventManager {
 		paused = false;
 		pauseAt = -1;
 		abruptTerminate = false;
+
+		return endTime;
 	}
 
 	/**

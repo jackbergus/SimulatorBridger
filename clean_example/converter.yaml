@@ -1,8 +1,11 @@
 clazzPath: uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter # Simulator Class
 YAMLConverterConfiguration: clean_example/sumo.yaml # Simulator Configuration for the Class
 begin: 0    # Start simulator time
-end: 300   # End simulator time
+end: 50   # End simulator time
 step: 0.075  # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
+
+#PowerModel
+powerModel: "org.cloudbus.cloudsim.power.models.PowerModelSpecPowerHpProLiantMl110G3PentiumD930"
 
 #Routing Algorithm
 routingAlgorithm: uk.ncl.giacomobergami.components.routing_algorithm.MCFR #choose either "...SPMB" or "...MCFR" to select these algorithms, or choose just "custom" to modify agent_config.json and edge/cloud_generator.yaml files

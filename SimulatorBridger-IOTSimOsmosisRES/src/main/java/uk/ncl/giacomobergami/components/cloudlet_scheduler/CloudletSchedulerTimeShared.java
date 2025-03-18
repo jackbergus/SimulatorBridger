@@ -481,6 +481,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	@Override
 	public List<Double> getCurrentRequestedMips() {
 		List<Double> mipsShare = new ArrayList<Double>();
+		mipsShare.add(250.0);
 		return mipsShare;
 	}
 

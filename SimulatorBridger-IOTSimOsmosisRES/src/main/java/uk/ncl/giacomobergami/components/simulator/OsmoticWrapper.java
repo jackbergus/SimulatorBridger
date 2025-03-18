@@ -25,8 +25,12 @@ import org.cloudbus.agent.AgentBroker;
 import org.cloudbus.agent.config.AgentConfigLoader;
 import org.cloudbus.agent.config.AgentConfigProvider;
 import org.cloudbus.agent.config.TopologyLink;
+import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.ResCloudlet;
+import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEntity;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.cloudsim.edge.utils.LogUtil;
 import org.cloudbus.cloudsim.osmesis.examples.uti.PrintResults;
@@ -36,16 +40,12 @@ import org.cloudbus.res.EnergyController;
 import org.cloudbus.res.config.AppConfig;
 import org.cloudbus.res.dataproviders.res.RESResponse;
 import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.mel_routing.MELRoutingPolicyGeneratorFacade;
 import uk.ncl.giacomobergami.components.mel_routing.MELSwitchPolicy;
-import uk.ncl.giacomobergami.components.network_type.NetworkTypingGeneratorFactory;
-import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
 import uk.ncl.giacomobergami.components.routing_algorithm.RoutingAlgorithmGeneratorFactory;
-import uk.ncl.giacomobergami.components.routing_algorithm.routing_algorithms;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
@@ -111,6 +111,56 @@ public class OsmoticWrapper {
 
     public void addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList) {
         globalConfigurationSettings.getIoTDevices(osmoticBroker, deviceList);
+    }
+
+    private HashMap<String, Integer> IoTActiveComms = new HashMap<>();
+    private HashMap<String, Integer> edgeActiveComms = new HashMap<String, Integer>();
+    private HashMap<String, Integer> edgeNumDevices = new HashMap<String, Integer>();
+    private HashSet<String> activeDevices = new HashSet<>();
+    public void numberOfDevicesPerEdge(){
+
+        for(OsmoticDatacenter datacenter: osmoticBroker.datacenters) {
+            if(!datacenter.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter"))
+                continue;
+            for (Vm mel : datacenter.getVmList()) {
+                for(ResCloudlet rC : mel.getCloudletScheduler().getCloudletExecList()) {
+                    activeDevices.add(((EdgeLet)rC.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getAppNameSrc());
+                }
+            }
+            edgeNumDevices.put(datacenter.getName(), activeDevices.size());
+            activeDevices.clear();
+        }
+    }
+
+    public void numberOfActiveCommsPerEdge(){
+
+        for(OsmoticDatacenter datacenter: osmoticBroker.datacenters) {
+            if(!datacenter.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter"))
+                continue;
+            edgeActiveComms.put(datacenter.getName(),0);
+        }
+
+        for(Cloudlet edgeLet : osmoticBroker.getEdgeletList()) {
+            WorkflowInfo tag = ((EdgeLet) edgeLet).getWorkflowTag();
+            if(tag.getFinishTime() == 0)
+                continue;
+            edgeActiveComms.put(tag.getSourceDCName(), edgeActiveComms.get(tag.getSourceDCName()) + 1);
+        }
+        for(OsmoticDatacenter datacenter: osmoticBroker.datacenters) {
+            if(!datacenter.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter"))
+                continue;
+
+            IoTActiveComms.put(datacenter.getName(),numCommsIoTtoMELs(datacenter));
+        }
+    }
+
+    public int numCommsIoTtoMELs(OsmoticDatacenter vm) {
+        int sum = 0;
+
+        for (Vm mel : vm.getVmList()) {
+            sum += mel.getCloudletScheduler().getCloudletExecList().size();
+        }
+        return sum;
     }
 
     public void stop(Connection conn, DSLContext context, double deltaTime) {
@@ -299,11 +349,12 @@ public class OsmoticWrapper {
     }
 
 
-    public void log(GlobalConfigurationSettings conf, Connection conn, DSLContext context) {
+    public void log(GlobalConfigurationSettings conf, Connection conn, DSLContext context, Double endTime) {
         if (finished) {
             LogUtil.logger.trace("Simulation finished...");
             bandwidthInfoList = OsmosisOrchestrator.getBandwidthShareInfo();
             PrintResults pr = new PrintResults();
+            pr.createCSVFiles(new File(conf.output_simulation_file));
             pr.collectTrustworthyBatteryData(osmoticBroker.getDevices(), injectedPacketsInTime, injectedActionToFlowID, injctedConsumptionInTime);
             pr.collectNetworkData(appList, osmoticBroker);
             pr.collectBandwidthInfo(bandwidthInfoList);
@@ -312,10 +363,11 @@ public class OsmoticWrapper {
                 pr.collectDataCenterData(osmesisDC.getName(),
                         osmesisDC.getSdnhosts(),
                         osmesisDC.getSdnController().getSwitchList(),
-                        runTime);
+                        endTime);
             }
 
-            pr.collectDataCenterData(conf.sdWanController.getName(), null, conf.sdWanController.getSwitchList(), runTime);
+            pr.collectDataCenterData(conf.sdWanController.getName(), null, conf.sdWanController.getSwitchList(), endTime);
+            pr.endPUDP();
 
             if (energyControllers != null) {
                 RESPrinter res_printer = new RESPrinter();

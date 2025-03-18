@@ -25,6 +25,7 @@ public class MainExample {
             for (TimedIoT timedIoT : currentDelta) {
                 timedIoTList.remove(timedIoT);
             }
+            currentDelta.clear();
             start = sb.run(loopStart, deltaTime, currentDelta); //providing the current time interval, as a starting time and a delta time
             running = start < sb.getSimEnd(); //explicitly incrementing the start time to the next slot
         }

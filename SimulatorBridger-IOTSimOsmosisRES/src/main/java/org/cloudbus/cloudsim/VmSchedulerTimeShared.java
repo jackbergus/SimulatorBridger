@@ -123,7 +123,7 @@ public class VmSchedulerTimeShared extends VmScheduler {
 	/**
 	 * Update allocation of VMs on PEs.
 	 */
-	protected void updatePeProvisioning() {
+	public void updatePeProvisioning() {
 		getPeMap().clear();
 		for (Pe pe : getPeList()) {
 			pe.getPeProvisioner().deallocateMipsForAllVms();

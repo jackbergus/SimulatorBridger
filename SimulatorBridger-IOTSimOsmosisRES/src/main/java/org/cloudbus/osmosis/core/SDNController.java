@@ -23,6 +23,7 @@ import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration.LinkEntity;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration.SwitchEntity;
+import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkOperatingSystem;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
@@ -200,9 +201,23 @@ public class SDNController extends NetworkOperatingSystem {
 		}		
 	}
 	
-	public void setTopology(Topology topology, List<Host> hosts, List<SDNHost> sdnhosts, List<Switch> switches){	
+	public void setTopology(Topology topology, List<Host> hosts, List<SDNHost> sdnhosts, List<Switch> switches) {
 		this.topology = topology;
 		this.hosts = hosts;
+		this.sdnhosts = sdnhosts;
+		this.switches = switches;
+		this.sdnRoutingPolicy.setNodeList(topology.getAllNodes(), topology);
+		this.sdnRoutingPolicy.buildNodeRelations(topology);
+		for (Switch sw : switches) {
+			if (sw.getSwType().equals("gateway")) {
+				this.gateway = sw;
+			}
+		}
+	}
+
+	public void setTopologyPower(Topology topology, List<PowerHost> powerHosts, List<SDNHost> sdnhosts, List<Switch> switches){
+		this.topology = topology;
+		this.powerHosts = powerHosts;
 		this.sdnhosts = sdnhosts;
 		this.switches = switches;
 		this.sdnRoutingPolicy.setNodeList(topology.getAllNodes(), topology);
@@ -212,8 +227,8 @@ public class SDNController extends NetworkOperatingSystem {
 				this.gateway = sw;
 			}
 		}
-	}				
-	
+	}
+
 	public void setEdgeDataCenterBroker(OsmoticBroker edgeDataCenterBroker) {
 		edgeDatacenterBroker = edgeDataCenterBroker;
 	}

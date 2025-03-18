@@ -1,5 +1,6 @@
 package uk.ncl.giacomobergami.components.loader;
 
+import org.apache.commons.math3.analysis.function.Pow;
 import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter;
@@ -113,10 +114,10 @@ public class SubNetworkConfiguration implements Serializable {
                                                 AtomicInteger hostId,
                                                AtomicInteger vmId,
                                                Map<String, Collection<LegacyConfiguration.LinkEntity>> linkMap,
-                                               String RA) {
+                                               String RA, String PowerModel) {
         var hostList = hosts
                 .stream()
-                .map(x-> new EdgeDevice(hostId, x.asLegacyEdgeDeviceEntity()))
+                .map(x-> new EdgeDevice(hostId, x.asLegacyEdgeDeviceEntity(), PowerModel))
                 .collect(Collectors.toList());
         var s_switch = switches
                 .stream()
@@ -134,7 +135,7 @@ public class SubNetworkConfiguration implements Serializable {
         if (!Objects.equals(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getName(), "custom"))
             conf.setController_routingPolicy(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getEdge_routing_policy_class());
         datacenter.setSdnController(conf.asEdgeSDNController(datacenter));
-        datacenter.initEdgeTopology(hostList, s_switch, s_links);
+        datacenter.initEdgeTopology(hostList, s_switch, s_links, PowerModel);
 
         logger.info("Edge SDN cotroller has been created: "+conf.datacenter_name);
 

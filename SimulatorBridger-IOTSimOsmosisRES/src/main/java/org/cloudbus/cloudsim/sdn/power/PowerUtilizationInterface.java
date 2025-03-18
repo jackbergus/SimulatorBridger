@@ -20,7 +20,7 @@ import java.util.List;
  */
 public interface PowerUtilizationInterface extends Serializable {
 	public void addUtilizationEntryTermination(double terminatedTime);
-	public List<PowerUtilizationHistoryEntry> getUtilizationHisotry();
+	public List<PowerUtilizationHistoryEntry> getUtilizationHistory();
 	public double getUtilizationEnergyConsumption();
 }
 

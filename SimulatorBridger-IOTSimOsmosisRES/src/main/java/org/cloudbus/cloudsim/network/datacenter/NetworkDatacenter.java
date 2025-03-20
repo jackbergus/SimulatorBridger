@@ -136,9 +136,10 @@ public class NetworkDatacenter extends Datacenter {
 	 * @pre ev != null
 	 * @post $none
 	 */
+
 	@Override
-	protected void processCloudletSubmit(SimEvent ev, boolean ack) {
-		updateCloudletProcessing();
+	protected void processCloudletSubmit(SimEvent ev, boolean ack, double deltaTime) {
+		updateCloudletProcessing(deltaTime);
 
 		try {
 			// gets the Cloudlet object

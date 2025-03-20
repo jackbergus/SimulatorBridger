@@ -476,17 +476,6 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 
 	/*
 	 * (non-Javadoc)
-	 * @see cloudsim.CloudletScheduler#getCurrentRequestedMips()
-	 */
-	@Override
-	public List<Double> getCurrentRequestedMips() {
-		List<Double> mipsShare = new ArrayList<Double>();
-		mipsShare.add(250.0);
-		return mipsShare;
-	}
-
-	/*
-	 * (non-Javadoc)
 	 * @see cloudsim.CloudletScheduler#getTotalCurrentAvailableMipsForCloudlet(cloudsim.ResCloudlet,
 	 * java.util.List)
 	 */

@@ -195,7 +195,13 @@ public abstract class CloudletScheduler implements Serializable {
 	 * 
 	 * @return the current mips
 	 */
-	public abstract List<Double> getCurrentRequestedMips();
+	public List<Double> getCurrentRequestedMips() {
+		List<Double> mipsShare = new ArrayList<>();
+		if (getCurrentMipsShare() != null) {
+			mipsShare.addAll(getCurrentMipsShare());
+		}
+		return mipsShare;
+	}
 
 	/**
 	 * Gets the total current mips for the Cloudlet.

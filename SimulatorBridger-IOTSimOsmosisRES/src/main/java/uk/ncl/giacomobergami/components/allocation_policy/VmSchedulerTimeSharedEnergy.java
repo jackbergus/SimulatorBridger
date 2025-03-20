@@ -35,6 +35,7 @@ import org.jooq.meta.duckdb.system.main.Main;
  */
 public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implements PowerUtilizationInterface{
 
+	private double lastTime = 0.0;
 	
 	public VmSchedulerTimeSharedEnergy(List<? extends Pe> pelist) {
 		super(pelist);
@@ -43,10 +44,10 @@ public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implement
 	@Override
 	protected void setAvailableMips(double availableMips) {
 		super.setAvailableMips(availableMips);
-		addUtilizationEntry();		
+		addUtilizationEntry();
 	}
 	
-	private TreeMap<Double, PowerUtilizationHistoryEntry> utilizationHistories = null;
+	private HashMap<Double, PowerUtilizationHistoryEntry> utilizationHistories = null;
 	private static double powerOffDuration = 3600; //if host is idle for 1 hours, it's turned off.
 	
 	public void addUtilizationEntryTermination(double terminatedTime) {
@@ -94,16 +95,14 @@ public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implement
 
 
 	public void addUtilizationEntry() {
-		DecimalFormat df = new DecimalFormat("#.###");
-		df.setRoundingMode(RoundingMode.HALF_UP);
-		double time = Double.parseDouble(df.format(MainEventManager.clock()));
 		double totalMips = getTotalMips();
 		double usingMips = totalMips - this.getAvailableMips();
 		if(usingMips < 0) {
 			logger.error("addUtilizationEntry : using mips is negative, No way!");
 		}
 		if(utilizationHistories == null)
-			utilizationHistories = new TreeMap<>();//new ArrayList<>();
+			utilizationHistories = new HashMap<>();//new ArrayList<>();
+		double time = (double) (Math.round(MainEventManager.clock()) * 1000) /1000;
 		this.utilizationHistories.put(time, new PowerUtilizationHistoryEntry(time, usingMips));
 	}
 	

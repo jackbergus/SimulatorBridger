@@ -85,7 +85,7 @@ public class PowerDatacenter extends Datacenter {
 	 * @post $none
 	 */
 	@Override
-	protected void updateCloudletProcessing() {
+	protected void updateCloudletProcessing(double deltaTime) {
 		if (getCloudletSubmitted() == -1 || getCloudletSubmitted() == MainEventManager.clock()) {
 			MainEventManager.cancelAll(getId(), new PredicateType(CloudSimTags.VM_DATACENTER_EVENT));
 			schedule(getId(), getSchedulingInterval(), CloudSimTags.VM_DATACENTER_EVENT);
@@ -265,8 +265,8 @@ logger.debug(
 	 * @see cloudsim.Datacenter#processCloudletSubmit(cloudsim.core.SimEvent, boolean)
 	 */
 	@Override
-	protected void processCloudletSubmit(SimEvent ev, boolean ack) {
-		super.processCloudletSubmit(ev, ack);
+	protected void processCloudletSubmit(SimEvent ev, boolean ack, double deltaTime) {
+		super.processCloudletSubmit(ev, ack, deltaTime);
 		setCloudletSubmitted(MainEventManager.clock());
 	}
 

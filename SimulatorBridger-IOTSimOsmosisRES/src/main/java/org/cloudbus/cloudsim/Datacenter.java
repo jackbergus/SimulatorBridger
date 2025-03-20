@@ -158,12 +158,12 @@ public class Datacenter extends SimEntity {
 
 		// New Cloudlet arrives
 		case CloudSimTags.CLOUDLET_SUBMIT:
-			processCloudletSubmit(ev, false);
+			processCloudletSubmit(ev, false, MainEventManager.clock());
 			break;
 
 		// New Cloudlet arrives, but the sender asks for an ack
 		case CloudSimTags.CLOUDLET_SUBMIT_ACK:
-			processCloudletSubmit(ev, true);
+			processCloudletSubmit(ev, true, MainEventManager.clock());
 			break;
 
 		// Cancels a previously submitted Cloudlet
@@ -256,7 +256,7 @@ public class Datacenter extends SimEntity {
 			break;
 
 		case CloudSimTags.VM_DATACENTER_EVENT:
-			updateCloudletProcessing();
+			updateCloudletProcessing(0.0);
 			checkCloudletCompletion();
 			break;
 
@@ -308,12 +308,12 @@ public class Datacenter extends SimEntity {
 
 			// New Cloudlet arrives
 			case CloudSimTags.CLOUDLET_SUBMIT:
-				processCloudletSubmit(ev, false);
+				processCloudletSubmit(ev, false, deltaTime);
 				break;
 
 			// New Cloudlet arrives, but the sender asks for an ack
 			case CloudSimTags.CLOUDLET_SUBMIT_ACK:
-				processCloudletSubmit(ev, true);
+				processCloudletSubmit(ev, true, deltaTime);
 				break;
 
 			// Cancels a previously submitted Cloudlet
@@ -406,7 +406,7 @@ public class Datacenter extends SimEntity {
 				break;
 
 			case CloudSimTags.VM_DATACENTER_EVENT:
-				updateCloudletProcessing();
+				updateCloudletProcessing(deltaTime);
 				checkCloudletCompletion();
 				break;
 
@@ -780,7 +780,7 @@ public class Datacenter extends SimEntity {
 	 * @post $none
 	 */
 	protected void processCloudletMove(int[] receivedData, int type) {
-		updateCloudletProcessing();
+		updateCloudletProcessing(0.0);
 
 		int[] array = receivedData;
 		int cloudletId = array[0];
@@ -850,7 +850,7 @@ public class Datacenter extends SimEntity {
 	 * @post $none
 	 */
 
-	protected void processCloudletSubmit(SimEvent ev, boolean ack) {
+	protected void processCloudletSubmit(SimEvent ev, boolean ack, double deltaTime) {
 
 		Cloudlet cl = (Cloudlet) ev.getData();
 //		IoTask js1 = (IoTask) cl;		
@@ -859,8 +859,8 @@ public class Datacenter extends SimEntity {
 //				System.out.println(js1.getJobName());	
 //			}			
 //			lastProcessTime = 0;						
-//		}							
-		updateCloudletProcessing();
+//		}
+		updateCloudletProcessing(deltaTime);
 
 		try {
 			// checks whether this Cloudlet has finished or not
@@ -1058,12 +1058,15 @@ public class Datacenter extends SimEntity {
 	 * @pre $none
 	 * @post $none
 	 */
-	protected void updateCloudletProcessing() {
+	protected void updateCloudletProcessing(double deltaTime) {
 		// if some time passed since last processing
 		// R: for term is to allow loop at simulation start. Otherwise, one initial
 		// simulation step is skipped and schedulers are not properly initialized
+		if(this.getClass().getName().equals("org.cloudbus.osmosis.core.CloudDatacenter") && Math.abs(MainEventManager.clock() - lastProcessTime) < deltaTime) {
+			return;
+		}
 
-		if (/*MainEventManager.clock() < 0.111 ||*/ MainEventManager.clock() > getLastProcessTime() + MainEventManager.getMinTimeBetweenEvents()) {
+		if (MainEventManager.clock() > getLastProcessTime() + MainEventManager.getMinTimeBetweenEvents()) {
 			List<? extends Host> list = getVmAllocationPolicy().getHostList();
 			double smallerTime = Double.MAX_VALUE;
 			// for each host...
@@ -1389,7 +1392,7 @@ public class Datacenter extends SimEntity {
 	protected void processCloudletSubmitIoTSim(SimEvent ev, boolean ack) {
 		Cloudlet cl = (Cloudlet) ev.getData();				
 
-		updateCloudletProcessing();
+		updateCloudletProcessing(0.0);
 		try {
 			// checks whether this Cloudlet has finished or not
 			if (cl.isFinished()) {

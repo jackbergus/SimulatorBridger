@@ -6,6 +6,8 @@ package uk.ncl.giacomobergami.utils.database.jooq;
 
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Accuratebatteryinfo;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.AccuratebatteryinfoImport;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Ambulanceinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.AmbulanceinformationImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Applist;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.ApplistImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Bandwidthshareinfo;
@@ -49,6 +51,16 @@ public class Tables {
      * The table <code>public.accuratebatteryinfo_import</code>.
      */
     public static final AccuratebatteryinfoImport ACCURATEBATTERYINFO_IMPORT = AccuratebatteryinfoImport.ACCURATEBATTERYINFO_IMPORT;
+
+    /**
+     * The table <code>public.ambulanceinformation</code>.
+     */
+    public static final Ambulanceinformation AMBULANCEINFORMATION = Ambulanceinformation.AMBULANCEINFORMATION;
+
+    /**
+     * The table <code>public.ambulanceinformation_import</code>.
+     */
+    public static final AmbulanceinformationImport AMBULANCEINFORMATION_IMPORT = AmbulanceinformationImport.AMBULANCEINFORMATION_IMPORT;
 
     /**
      * The table <code>public.applist</code>.

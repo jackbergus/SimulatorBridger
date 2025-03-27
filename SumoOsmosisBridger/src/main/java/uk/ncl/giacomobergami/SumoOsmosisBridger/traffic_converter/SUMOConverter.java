@@ -47,10 +47,14 @@ public class SUMOConverter extends TrafficConverter {
     StraightforwardAdjacencyList<String> connectionPath;
     HashMap<Double, List<TimedIoT>> timedIoTDevices;
     HashSet<TimedEdge> roadSideUnits;
+    public static HashMap<String, Double []> RSULocations = new HashMap<>();
     private static Logger logger = LogManager.getRootLogger();
     String path = "clean_example/3_extIOTSim_configuration/iot_generators.yaml";
     transient final IoTEntityGenerator.IoTGlobalConfiguration conf = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration .class, new File(path)).orElseThrow();
 
+    public static HashMap<String, Double[]> getRSULocations() {
+        return RSULocations;
+    }
 
     public SUMOConverter(TrafficConfiguration conf)  {
         super(conf);
@@ -73,8 +77,8 @@ public class SUMOConverter extends TrafficConverter {
         connectionPath = new StraightforwardAdjacencyList<>();
     }
 
-    @Override
-    protected boolean initReadSimulatorOutput() {
+    String RSULocs;
+    protected boolean preSimulatorSorting() {
         connectionPath.clear();
         temporalOrdering.clear();
         timedIoTDevices.clear();
@@ -119,21 +123,22 @@ public class SUMOConverter extends TrafficConverter {
         }
 
         NodeList traffic_lights = null;
-        String RSULocs = String.valueOf(' ');
+        RSULocs = String.valueOf(' ');
         try {
             traffic_lights = XPathUtil.evaluateNodeList(networkFile, "/net/junction[@type='traffic_light']");
         } catch (XPathExpressionException e) {
             e.printStackTrace();
             return false;
         }
-        for (int i = 0, N = traffic_lights.getLength(); i<N; i++) {
+        ArrayList<String> edges = new ArrayList<>();
+        for (int i = 0, N = traffic_lights.getLength(); i < N; i++) {
             var curr = traffic_lights.item(i).getAttributes();
             Double x = Double.parseDouble(curr.getNamedItem("x").getTextContent());
             Double y = Double.parseDouble(curr.getNamedItem("y").getTextContent());
-            if(i + 1 < traffic_lights.getLength()) {
-                RSULocs = RSULocs + x + "," +y + ",";
+            if (i + 1 < traffic_lights.getLength()) {
+                RSULocs = RSULocs + x + "," + y + ",";
             } else {
-                RSULocs = RSULocs + x + "," +y;
+                RSULocs = RSULocs + x + "," + y;
             }
             var rsu = new TimedEdge(curr.getNamedItem("id").getTextContent(),
                     Double.parseDouble(curr.getNamedItem("x").getTextContent()),
@@ -142,17 +147,38 @@ public class SUMOConverter extends TrafficConverter {
                     concreteConf.default_max_vehicle_communication, 0);
             rsuUpdater.accept(rsu);
             roadSideUnits.add(rsu);
+            edges.add(rsu.getId());
+            Double loc[] = new Double[2];
+            loc[0] = rsu.x;
+            loc[1] = rsu.y;
+            RSULocations.put(rsu.getId(), loc);
         }
         connectionPath.clear();
+
+        var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
+        if(conf2.getUse_ambulances()) {
+            String ambulancePath = conf2.getSumo_ambulance_path();
+            String pyPath = conf2.getPython_filepath();
+            ambulancePath = pyPath + ' ' + ambulancePath + ' ' + String.join(",", edges);
+        try {
+            Runtime.getRuntime().exec(ambulancePath);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        }
 
         var tmp = netGen.apply(roadSideUnits);
         tmp.forEach((k, v) -> {
             connectionPath.put(k.id, v.id);
         });
+        return true;
+    }
 
+    @Override
+    protected boolean initReadSimulatorOutput() {
         File trajectory_python;
+        var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
         if(concreteConf.presort) {
-            var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
             String pyPath = conf2.getPython_filepath();
             var checkPath = conf2.getSumo_active_check_path();
             int radius = (int) conf2.getDefault_rsu_communication_radius();
@@ -377,6 +403,7 @@ public class SUMOConverter extends TrafficConverter {
 
     @Override
     public boolean runSimulator(TrafficConfiguration conf) {
+        preSimulatorSorting();
         var conf1 = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration.class, new File("clean_example/3_extIOTSim_configuration/iot_generators.yaml")).orElseThrow();
         var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
 

@@ -2,6 +2,7 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger;
 
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
+import com.mysql.cj.jdbc.result.ResultSetImpl;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvException;
@@ -10,7 +11,9 @@ import org.apache.logging.log4j.core.LoggerContext;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
+import org.jooq.Result;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
+import uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
@@ -22,6 +25,9 @@ import uk.ncl.giacomobergami.traffic_converter.abstracted.TrafficConverter;
 import uk.ncl.giacomobergami.traffic_orchestrator.CentralAgentPlannerRunner;
 import uk.ncl.giacomobergami.traffic_orchestrator.PreSimulatorEstimator;
 import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Ambulanceinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.AmbulanceinformationRecord;
 import uk.ncl.giacomobergami.utils.pipeline_confs.OrchestratorConfiguration;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.Edge;
@@ -88,6 +94,7 @@ public class SimulatorManager implements SimulatorBridger {
     List<IoTDeviceTabularConfiguration> deviceList;
     static HashMap<String, TimedIoT> FirstSet = new HashMap<>();
     static HashMap<String, TimedIoT> SecondSet = new HashMap<>();
+    HashMap<String, String> patientAmbulance = new HashMap<>();
     GlobalConfigurationSettings globalConfigurationSettings = new GlobalConfigurationSettings();
 
     private boolean firstLoop = true;
@@ -361,7 +368,14 @@ public class SimulatorManager implements SimulatorBridger {
         return CSVFilePath;
     }
 
+    private double distance(double x1, double y1, double x2, double y2) {
+        double ac = Math.abs(y2 - y1);
+        double cb = Math.abs(x2 - x1);
+        return Math.hypot(ac, cb);
+    }
+
     public List<TimedIoT> parseJSONHealthData(String path) {
+        double dist = 100.0;
         List<TimedIoT> jsonTimedIoTList = new ArrayList<>();
         try (
                 InputStream inputStream = Files.newInputStream(Path.of(path));
@@ -386,6 +400,23 @@ public class SimulatorManager implements SimulatorBridger {
                             boolean risk = reader.nextBoolean();
                             String simTimeTag = reader.nextName();
                             double simTime = parseDouble(reader.nextString());
+                            Result<AmbulanceinformationRecord> dataRange = context.select(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID, Ambulanceinformation.AMBULANCEINFORMATION.X, Ambulanceinformation.AMBULANCEINFORMATION.Y, Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME, Ambulanceinformation.AMBULANCEINFORMATION.INJECTED).from(Ambulanceinformation.AMBULANCEINFORMATION).where("simtime between " + (simTime - deltaTime / 2) + " and " + (simTime + deltaTime / 2)).orderBy(Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME).fetchInto(Ambulanceinformation.AMBULANCEINFORMATION);
+                            if (risk) {
+                                for (AmbulanceinformationRecord amb : dataRange) {
+                                    if (distance(amb.get(Ambulanceinformation.AMBULANCEINFORMATION.X), amb.get(Ambulanceinformation.AMBULANCEINFORMATION.Y), x, y) < dist) {
+                                        if (amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID).contains("from"))
+                                            patientAmbulance.putIfAbsent(id, amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID));
+                                        break;
+                                    }
+                                }
+                            }
+
+                            Result<AmbulanceinformationRecord> attachedVehicle = context.select(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID, Ambulanceinformation.AMBULANCEINFORMATION.X, Ambulanceinformation.AMBULANCEINFORMATION.Y, Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME, Ambulanceinformation.AMBULANCEINFORMATION.INJECTED).from(Ambulanceinformation.AMBULANCEINFORMATION).where("simtime between " + (simTime - deltaTime / 2) + " and " + (simTime + deltaTime / 2) + " AND vehicle_id ='" + patientAmbulance.get(id) + "'").orderBy(Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME).fetchInto(Ambulanceinformation.AMBULANCEINFORMATION);
+                            if (!attachedVehicle.isEmpty() && patientAmbulance.get(id) != null) {
+                                x = attachedVehicle.get(0).get(Ambulanceinformation.AMBULANCEINFORMATION.X);
+                                y = attachedVehicle.get(0).get(Ambulanceinformation.AMBULANCEINFORMATION.Y);
+                            }
+
                             TimedIoT TIoT = new TimedIoT(id, x, y, 0, "patient", 0.0, 0.0, "", 0.0, simTime, true);
                             jsonTimedIoTList.add(TIoT);
                             reader.endObject();

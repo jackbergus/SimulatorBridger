@@ -15,7 +15,7 @@ public class MainExample {
         boolean running = true;
         double start = (args.length >= 1) ? parseDouble(args[0]) : 0;
         sb.init(start, new ArrayList<>());
-        double deltaTime = (args.length >= 2) ? parseDouble(args[1]) : 0.075;
+        double deltaTime = (args.length >= 2) ? parseDouble(args[1]) : 5.0;
         sb.loopDuration = (args.length >= 3) ? parseDouble(args[2]) : sb.getCurrentLatency();
 
         List<TimedIoT> timedIoTList = sb.parseJSONHealthData("PatientDigitalTwin/patient.json");
@@ -25,7 +25,7 @@ public class MainExample {
             for (TimedIoT timedIoT : currentDelta) {
                 timedIoTList.remove(timedIoT);
             }
-            currentDelta.clear();
+            //currentDelta.clear();
             start = sb.run(loopStart, deltaTime, currentDelta); //providing the current time interval, as a starting time and a delta time
             running = start < sb.getSimEnd(); //explicitly incrementing the start time to the next slot
         }

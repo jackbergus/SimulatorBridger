@@ -138,6 +138,18 @@ public class JavaPostGres {
         System.out.print("vehInformation SQL table indexing complete\n");
     }
 
+    public static void indexAMBULANCEINFORMATION(Connection conn) {
+        System.out.print("Starting indexing of vehInformation SQL table...\n");
+        PreparedStatement stmt;
+        try {
+            stmt = conn.prepareStatement("DROP INDEX CONCURRENTLY IF EXISTS ambulanceIndex; CREATE INDEX ambulanceIndex ON ambulanceInformation(simtime, vehicle_id, x, y);");
+            int rs = stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.print("vehInformation SQL table indexing complete\n");
+    }
+
     public static DSLContext getDSLContext (Connection conn) {
         return DSL.using(conn, SQLDialect.POSTGRES);
     }

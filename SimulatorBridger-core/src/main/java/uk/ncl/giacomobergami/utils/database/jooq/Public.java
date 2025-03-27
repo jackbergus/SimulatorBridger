@@ -13,6 +13,8 @@ import org.jooq.impl.SchemaImpl;
 
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Accuratebatteryinfo;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.AccuratebatteryinfoImport;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Ambulanceinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.AmbulanceinformationImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Applist;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.ApplistImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Bandwidthshareinfo;
@@ -63,6 +65,16 @@ public class Public extends SchemaImpl {
      * The table <code>public.accuratebatteryinfo_import</code>.
      */
     public final AccuratebatteryinfoImport ACCURATEBATTERYINFO_IMPORT = AccuratebatteryinfoImport.ACCURATEBATTERYINFO_IMPORT;
+
+    /**
+     * The table <code>public.ambulanceinformation</code>.
+     */
+    public final Ambulanceinformation AMBULANCEINFORMATION = Ambulanceinformation.AMBULANCEINFORMATION;
+
+    /**
+     * The table <code>public.ambulanceinformation_import</code>.
+     */
+    public final AmbulanceinformationImport AMBULANCEINFORMATION_IMPORT = AmbulanceinformationImport.AMBULANCEINFORMATION_IMPORT;
 
     /**
      * The table <code>public.applist</code>.
@@ -212,6 +224,8 @@ public class Public extends SchemaImpl {
         return Arrays.asList(
             Accuratebatteryinfo.ACCURATEBATTERYINFO,
             AccuratebatteryinfoImport.ACCURATEBATTERYINFO_IMPORT,
+            Ambulanceinformation.AMBULANCEINFORMATION,
+            AmbulanceinformationImport.AMBULANCEINFORMATION_IMPORT,
             Applist.APPLIST,
             ApplistImport.APPLIST_IMPORT,
             Bandwidthshareinfo.BANDWIDTHSHAREINFO,

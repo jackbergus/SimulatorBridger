@@ -32,7 +32,7 @@ with open(newTrace, 'wb') as file:
             for vehicle in elem:
                 veh_x = float(vehicle.attrib['x'])
                 veh_y = float(vehicle.attrib['y'])
-                if not (willTransmit(veh_x, veh_y, arr, larr)):
+                if not (willTransmit(veh_x, veh_y, arr, larr) or ("ambulance" in str(vehicle.attrib['id']))):
                     elem.remove(vehicle)
             file.write(etree.tostring(elem, encoding='UTF-8', xml_declaration=False))
              

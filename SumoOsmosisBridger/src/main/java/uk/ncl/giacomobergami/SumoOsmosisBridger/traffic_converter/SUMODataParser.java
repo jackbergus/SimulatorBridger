@@ -23,11 +23,14 @@ public class SUMODataParser extends DefaultHandler {
     private static final String TIMESTEP = "timestep";
     private static final String VEHICLE = "vehicle";
     private SUMOData SD;
+    private SUMOData AD;
     private StringBuilder elementValue;
     static List<Double> temporalOrdering;
     double timestep = 0;
     CSVWriter writer = null;
+    CSVWriter ambulanceWriter = null;
     String CSVFilePath;
+    String AmbulanceCSVFilePath;
     static HashMap<String, TimedIoT> FirstEntry = new HashMap<>();
     static HashMap<String, TimedIoT> SecondEntry = new HashMap<>();
     static TreeSet<Double> wakeUpTimes = new TreeSet<>();
@@ -35,6 +38,7 @@ public class SUMODataParser extends DefaultHandler {
     public SUMODataParser(List<Double> temporalOrdering, String vehicleCSVFile) {
             SUMODataParser.temporalOrdering = temporalOrdering;
             CSVFilePath = vehicleCSVFile;
+            AmbulanceCSVFilePath = vehicleCSVFile.replace("vehicle", "ambulance");
     }
 
     @Override
@@ -49,13 +53,21 @@ public class SUMODataParser extends DefaultHandler {
     @Override
     public void startDocument() {
         SD = new SUMOData();
+        AD = new SUMOData();
         try {
             writer = new CSVWriter(new FileWriter(CSVFilePath));
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+
+        try {
+            ambulanceWriter = new CSVWriter(new FileWriter(AmbulanceCSVFilePath));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
         String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime", "injected"};
         writer.writeNext(headers);
+        ambulanceWriter.writeNext(headers);
     }
 
     @Override
@@ -63,6 +75,7 @@ public class SUMODataParser extends DefaultHandler {
         switch (qName) {
             case TIMESTEP:
                 SD.setSUMOData(new ArrayList<>());
+                AD.setSUMOData(new ArrayList<>());
                 for (int i = 0; i < attr.getLength(); i++) {
                     if (Objects.equals(attr.getLocalName(i), "time")) {
                         timestep = Double.parseDouble(attr.getValue(i));
@@ -72,6 +85,23 @@ public class SUMODataParser extends DefaultHandler {
                 break;
             case VEHICLE:
                 TimedIoT TI = new TimedIoT();
+                TimedIoT ambulance = new TimedIoT();
+
+                if (attr.getValue(0).contains("ambulance")) {
+                    ambulance.setId(attr.getValue(0));
+                    ambulance.setX(Double.parseDouble(attr.getValue(1)));
+                    ambulance.setY(Double.parseDouble(attr.getValue(2)));
+                    ambulance.setAngle(Double.parseDouble(attr.getValue(3)));
+                    ambulance.setType(attr.getValue(4));
+                    ambulance.setSpeed(Double.parseDouble(attr.getValue(5)));
+                    ambulance.setPos(Double.parseDouble(attr.getValue(6)));
+                    ambulance.setLane(attr.getValue(7));
+                    ambulance.setSlope(Double.parseDouble(attr.getValue(8)));
+                    ambulance.setSimtime(timestep);
+                    ambulance.setInjected(false);
+                    AD.sdAddTo(ambulance);
+                    toTimedIoTCSV(ambulance, ambulanceWriter);
+                }
                 TI.setId(attr.getValue(0));
                 TI.setX(Double.parseDouble(attr.getValue(1)));
                 TI.setY(Double.parseDouble(attr.getValue(2)));
@@ -132,6 +162,16 @@ public class SUMODataParser extends DefaultHandler {
         }
         try {
             writer.close();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            ambulanceWriter.flush();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        try {
+            ambulanceWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

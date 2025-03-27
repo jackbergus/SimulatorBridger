@@ -10,6 +10,7 @@ import org.jooq.impl.DSL;
 import org.jooq.impl.Internal;
 
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Accuratebatteryinfo;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Ambulanceinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Applist;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Bandwidthshareinfo;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Connectionpersimtime;
@@ -25,6 +26,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.Switchpowerconsumption;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.AccuratebatteryinfoRecord;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.AmbulanceinformationRecord;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.ApplistRecord;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.BandwidthshareinfoRecord;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.ConnectionpersimtimeRecord;
@@ -53,6 +55,7 @@ public class Keys {
     // -------------------------------------------------------------------------
 
     public static final UniqueKey<AccuratebatteryinfoRecord> ACCURATEBATTERYINFO_PKEY = Internal.createUniqueKey(Accuratebatteryinfo.ACCURATEBATTERYINFO, DSL.name("accuratebatteryinfo_pkey"), new TableField[] { Accuratebatteryinfo.ACCURATEBATTERYINFO.UNIQUE_ENTRY_ID }, true);
+    public static final UniqueKey<AmbulanceinformationRecord> AMBULANCEINFORMATION_PKEY = Internal.createUniqueKey(Ambulanceinformation.AMBULANCEINFORMATION, DSL.name("ambulanceinformation_pkey"), new TableField[] { Ambulanceinformation.AMBULANCEINFORMATION.DI_ENTRY_ID }, true);
     public static final UniqueKey<ApplistRecord> APPLIST_PKEY = Internal.createUniqueKey(Applist.APPLIST, DSL.name("applist_pkey"), new TableField[] { Applist.APPLIST.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<BandwidthshareinfoRecord> BANDWIDTHSHAREINFO_PKEY = Internal.createUniqueKey(Bandwidthshareinfo.BANDWIDTHSHAREINFO, DSL.name("bandwidthshareinfo_pkey"), new TableField[] { Bandwidthshareinfo.BANDWIDTHSHAREINFO.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<ConnectionpersimtimeRecord> CONNECTIONPERSIMTIME_PKEY = Internal.createUniqueKey(Connectionpersimtime.CONNECTIONPERSIMTIME, DSL.name("connectionpersimtime_pkey"), new TableField[] { Connectionpersimtime.CONNECTIONPERSIMTIME.UNIQUE_ENTRY_ID }, true);

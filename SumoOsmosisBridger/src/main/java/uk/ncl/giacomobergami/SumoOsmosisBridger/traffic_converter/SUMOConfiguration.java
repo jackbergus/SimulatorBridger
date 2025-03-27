@@ -16,6 +16,9 @@ public class SUMOConfiguration {
     public String DfT_file_path;
     public String sumo_active_check_path;
     public boolean presort;
+    public boolean use_ambulances;
+    public String sumo_ambulance_path;
+    public String sumo_ambulance_csvpath;
 
 
     public String getGenerateRSUAdjacencyList() {
@@ -95,4 +98,20 @@ public class SUMOConfiguration {
     public void setSumo_active_check_path(String sumo_active_check_path) {this.sumo_active_check_path = sumo_active_check_path;}
     public boolean getPresort() { return presort; }
     public void setPresort(boolean presort) { this.presort = presort; }
+    public boolean getUse_ambulances() { return use_ambulances; }
+    public void setUse_ambulances(boolean use_ambulances) {
+        this.use_ambulances = use_ambulances;
+    }
+    public String getSumo_ambulance_path() {
+        return sumo_ambulance_path;
+    }
+    public void setSumo_ambulance_path(String sumo_ambulance_path) {
+        this.sumo_ambulance_path = sumo_ambulance_path;
+    }
+    public String getSumo_detectors_path() {
+        return sumo_ambulance_csvpath;
+    }
+    public void setSumo_detectors_path(String sumo_ambulance_csvpath) {
+        this.sumo_ambulance_csvpath = sumo_ambulance_csvpath;
+    }
 }

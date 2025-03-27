@@ -12,3 +12,6 @@ generateRSUAdjacencyList: "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_orch
 DfT_file_path: "/home/giacomo/Scaricati/Re_ DfT Experiment Chapter/Manchester.csv"
 sumo_active_check_path: "clean_example/Active.py"
 presort: "true"                                                                           #allows for a python script to presort the SUMO traffic data to remove vehicles' data when out of range of RSUs before running IoT simulator
+use_ambulances: "true"                                                                    #boolean for deciding if the patients should be collected by ambulances
+sumo_ambulance_path: "clean_example/ambulance.py"                                         #The path to the python file which generated the ambulances within the SUMO scenario
+sumo_ambulance_csvpath: "clean_example/1_traffic_information_collector_output/ambulance.csv"

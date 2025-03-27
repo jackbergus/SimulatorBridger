@@ -36,6 +36,7 @@ public abstract class TrafficConverter {
 
     private final String RSUCsvFile;
     protected final String vehicleCSVFile;
+    protected final String amubulanceCSVFile;
     private final TrafficConfiguration conf;
     protected TimedEdgeMediator rsum;
     protected TimedIoTMediator vehm;
@@ -54,6 +55,7 @@ public abstract class TrafficConverter {
         this.conf = conf;
         this.RSUCsvFile = conf.RSUCsvFile;
         vehicleCSVFile = conf.VehicleCsvFile;
+        amubulanceCSVFile = vehicleCSVFile.replace("vehicle", "ambulance");
         rsum = new TimedEdgeMediator();
         rsuwrite = null;
         vehm = new TimedIoTMediator();
@@ -134,9 +136,13 @@ public abstract class TrafficConverter {
 
     protected void write_to_SQL(Connection conn, DSLContext context, boolean deleteIoTSQLData, boolean deleteEdgeSQLData, Object Timed_SCCData, boolean deleteTimed_SCCData, Object NeighbourData, boolean deleteNeighbourData) {
         if (deleteIoTSQLData) emptyTABLE(conn, "vehInformation");
+        emptyTABLE(conn, "ambulanceInformation");
         INSERTTimedIoTData(conn);
         indexVEHINFORMATION(conn);
+        INSERTAmbulanceData(conn);
+        indexAMBULANCEINFORMATION(conn);
         emptyTABLE(conn, "vehInformation_import");
+        emptyTABLE(conn, "ambulanceInformation_import");
         if (deleteEdgeSQLData) emptyTABLE(conn, "rsuInformation");
         INSERTTimedEdgeData(conn);
         emptyTABLE(conn, "rsuInformation_import");
@@ -159,6 +165,22 @@ public abstract class TrafficConverter {
         long endTime = System.nanoTime();
         long executionTime = (endTime - startTime) / 1000000;
         System.out.print("Sending vehInformation to SQL Database\n");
+        System.out.println("This takes " + executionTime + "ms");
+    }
+
+    protected void INSERTAmbulanceData(Connection conn) {
+        String targetTABLE = "ambulanceInformation";
+        if (TABLEsize(conn, targetTABLE) != 0) {
+            return;
+        }
+        System.out.print("Organising Ambulance Data...\n");
+        long startTime = System.nanoTime();
+        copyCSVDATA(conn, amubulanceCSVFile, targetTABLE);
+        transferDATABetweenTables(conn, "ambulanceInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected)",
+                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected", targetTABLE);
+        long endTime = System.nanoTime();
+        long executionTime = (endTime - startTime) / 1000000;
+        System.out.print("Sending Ambulance to SQL Database\n");
         System.out.println("This takes " + executionTime + "ms");
     }
 

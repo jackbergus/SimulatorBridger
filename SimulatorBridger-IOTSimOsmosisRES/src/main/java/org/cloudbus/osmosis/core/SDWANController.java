@@ -13,6 +13,7 @@
 package org.cloudbus.osmosis.core;
 
 
+import java.sql.Connection;
 import java.util.*;
 
 import org.cloudbus.cloudsim.Vm;
@@ -22,6 +23,7 @@ import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration.SwitchEntity;
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
 import org.cloudbus.cloudsim.sdn.Switch;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.sdn_routing.SDNRoutingPolicyGeneratorFacade;
 import uk.ncl.giacomobergami.components.sdn_traffic.SDNTrafficPolicyGeneratorFacade;
 import uk.ncl.giacomobergami.components.sdn_traffic.SDNTrafficSchedulingPolicy;
@@ -42,14 +44,14 @@ public class SDWANController extends SDNController {
 	protected Topology topology;
 
 	public SDWANController(LegacyConfiguration.WanEntity controllerEntity,
-						   List<Switch> datacenterGateways) {
+						   List<Switch> datacenterGateways, Connection conn) {
 		this(controllerEntity.getControllers().getName(),
 				SDNTrafficPolicyGeneratorFacade.generateFacade(controllerEntity.getControllers().getTrafficPolicy()),
 				SDNRoutingPolicyGeneratorFacade.generateFacade(controllerEntity.getControllers().getRoutingPolicy()));
 		setName(controllerEntity.getControllers().getName());
 		initSdWANTopology(controllerEntity.getSwitches(),
 				(Collection<LinkEntity>)controllerEntity.getLinks(),
-				          datacenterGateways);
+				          datacenterGateways, conn);
 	}
 
 	public SDWANController(String name,
@@ -93,7 +95,7 @@ public class SDWANController extends SDNController {
 		return datacenter;
 	}
 	
-	public void startTransmitting(Flow flow) {				
+	public void startTransmitting(Flow flow, Connection conn, DSLContext context) {
 
 		int srcVm = flow.getOrigin();
 		int dstVm = flow.getDestination();
@@ -110,7 +112,7 @@ public class SDWANController extends SDNController {
 		{		
 			List<NetworkNIC> route = sdnRoutingPolicy.getRoute(flow.getOrigin(), flow.getDestination());
 			if(route == null){
-				sdnRoutingPolicy.buildRoute(srchost, dsthost, flow);
+				sdnRoutingPolicy.buildRoute(srchost, dsthost, flow, conn, context);
 			}
 				 												
 			List<NetworkNIC> endToEndRoute = sdnRoutingPolicy.getRoute(flow.getOrigin(), flow.getDestination());
@@ -146,7 +148,7 @@ public class SDWANController extends SDNController {
 
 	public void initSdWANTopology(List<SwitchEntity> switchEntites,
 								  Collection<LinkEntity> linkEntites,
-								  List<Switch> datacenterGateway) {
+								  List<Switch> datacenterGateway, Connection conn) {
 		topology  = new Topology();		 		 
 		switches= new ArrayList<>();
 		 
@@ -185,7 +187,7 @@ public class SDWANController extends SDNController {
 					System.out.println("Null!");			
 				}
 				int dstAddress = nameIdTable.get(dst);
-				topology.addLink(srcAddress, dstAddress, bw);
+				topology.addLink(srcAddress, dstAddress, bw, conn, false);
 		}
 		this.sdnRoutingPolicy.setNodeList(topology.getAllNodes(), topology);
 	}

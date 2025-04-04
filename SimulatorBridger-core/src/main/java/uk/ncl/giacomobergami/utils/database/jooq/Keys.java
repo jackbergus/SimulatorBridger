@@ -22,6 +22,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.Osmoticappsstats;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Overallappresults;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Powerutilisationhistory;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Rsuinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Sourcetodestlinks;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Switchpowerconsumption;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
@@ -38,6 +39,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.records.Osmoticappsstats
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.OverallappresultsRecord;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.PowerutilisationhistoryRecord;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.RsuinformationRecord;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.SourcetodestlinksRecord;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.SwitchpowerconsumptionRecord;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.TimedSccRecord;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
@@ -67,6 +69,7 @@ public class Keys {
     public static final UniqueKey<OverallappresultsRecord> OVERALLAPPRESULTS_PKEY = Internal.createUniqueKey(Overallappresults.OVERALLAPPRESULTS, DSL.name("overallappresults_pkey"), new TableField[] { Overallappresults.OVERALLAPPRESULTS.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<PowerutilisationhistoryRecord> POWERUTILISATIONHISTORY_PKEY = Internal.createUniqueKey(Powerutilisationhistory.POWERUTILISATIONHISTORY, DSL.name("powerutilisationhistory_pkey"), new TableField[] { Powerutilisationhistory.POWERUTILISATIONHISTORY.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<RsuinformationRecord> RSUINFORMATION_PKEY = Internal.createUniqueKey(Rsuinformation.RSUINFORMATION, DSL.name("rsuinformation_pkey"), new TableField[] { Rsuinformation.RSUINFORMATION.UNIQUE_ENTRY_ID }, true);
+    public static final UniqueKey<SourcetodestlinksRecord> SOURCETODESTLINKS_PKEY = Internal.createUniqueKey(Sourcetodestlinks.SOURCETODESTLINKS, DSL.name("sourcetodestlinks_pkey"), new TableField[] { Sourcetodestlinks.SOURCETODESTLINKS.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<SwitchpowerconsumptionRecord> SWITCHPOWERCONSUMPTION_PKEY = Internal.createUniqueKey(Switchpowerconsumption.SWITCHPOWERCONSUMPTION, DSL.name("switchpowerconsumption_pkey"), new TableField[] { Switchpowerconsumption.SWITCHPOWERCONSUMPTION.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<TimedSccRecord> TIMED_SCC_PKEY = Internal.createUniqueKey(TimedScc.TIMED_SCC, DSL.name("timed_scc_pkey"), new TableField[] { TimedScc.TIMED_SCC.UNIQUE_ENTRY_ID }, true);
     public static final UniqueKey<VehinformationRecord> VEHINFORMATION_PKEY = Internal.createUniqueKey(Vehinformation.VEHINFORMATION, DSL.name("vehinformation_pkey"), new TableField[] { Vehinformation.VEHINFORMATION.DI_ENTRY_ID }, true);

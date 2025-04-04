@@ -12,6 +12,7 @@
 package org.cloudbus.osmosis.core;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -22,7 +23,9 @@ import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
+import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
+import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 
 /**
  * 
@@ -40,7 +43,7 @@ public class Topology implements Serializable {
 	List<Link> nodeLinkLists; 
 	AtomicInteger LinkID = new AtomicInteger(0);
 	ArrayList<Link> linkList;
-	public HashMap<Integer, Link> linkMap = new HashMap<>();
+	public HashMap<Integer, Link> linkMap;
 	public HashBasedTable<Integer, Integer, Integer> numLinks = HashBasedTable.create();
     private  List<CloudDatacenter> datacentres = null;
     private  SDNController wanController  = null;
@@ -51,6 +54,7 @@ public class Topology implements Serializable {
 		nodesTable = new Hashtable<>();
 		nodeLinks = HashMultimap.create();
 		links = HashBasedTable.create();
+		linkMap = new HashMap<>();
 		this.nTnlinks = HashBasedTable.create();
 		this.Topology_ID = OsmoticWrapper.TopologyID.getAndIncrement();
 	}
@@ -83,18 +87,19 @@ public class Topology implements Serializable {
 		}
 	}
 
-	public void addLink(int from, int to, double bw) {
-		NetworkNIC fromNode = nodesTable.get(from); 
-		NetworkNIC toNode = nodesTable.get(to); 
-			
+
+	public void addLink(int from, int to, double bw, Connection conn, boolean update) {
+		NetworkNIC fromNode = nodesTable.get(from);
+		NetworkNIC toNode = nodesTable.get(to);
+
 		if(!nodesTable.containsKey(from)||!nodesTable.containsKey(to)){
 			throw new IllegalArgumentException("Unknown node on link:"+nodesTable.get(from).getAddress()+"->"+nodesTable.get(to).getAddress());
 		}
 
 		Link l = new Link(fromNode, toNode, bw, LinkID.getAndIncrement(), this.Topology_ID);
-		
+
 		// Two way links (From -> to, To -> from)		
-		links.put(from, to, l); 
+		links.put(from, to, l);
 		links.put(to, from, l);
 
 		nodeLinks.put(fromNode, l);
@@ -102,7 +107,7 @@ public class Topology implements Serializable {
 		linkMap.put(l.getLinkID(), l);
 
 		if(nTnlinks.get(from, to)== null){
-			nodeLinkLists = new ArrayList<Link>(); 			
+			nodeLinkLists = new ArrayList<Link>();
 			nTnlinks.put(from, to, nodeLinkLists);
 			OsmoticWrapper.linkChannels.put(from, to, 0);
 		}
@@ -111,12 +116,18 @@ public class Topology implements Serializable {
 			nTnlinks.put(to, from, nodeLinkLists);
 			OsmoticWrapper.linkChannels.put(to, from, 0);
 		}
-		double temp;
+
 		List<Link> temLink_1 = nTnlinks.get(from, to);
 		if(!temLink_1.contains(l)){
 			temLink_1.add(l);
 			nTnlinks.put(from, to, temLink_1);
 			numLinks.put(from, to, temLink_1.size());
+			//if(update) {
+				String entry = "(" + OsmoticRunner.linkID.getAndIncrement() + ", " + l.getToplogyID() + ", " + l.getLinkID() + ", " + from + ", " + to + ", " + bw + ", " + 0 + ")";
+				JavaPostGres.INSERTLinkData(conn, "sourceToDestLinks (unique_entry_id, topology_id, link_id, from_id, to_id, bw, nochannels)", entry);
+			//}
+			//JavaPostGres.updateLinkData(conn, bw, from, to);
+
 		}
 		
 		List<Link> temLink_2 = nTnlinks.get(to, from);
@@ -124,7 +135,12 @@ public class Topology implements Serializable {
 			temLink_2.add(l);
 			nTnlinks.put(to, from, temLink_1);
 			numLinks.put(to, from, temLink_1.size());
-		}								
+			//if(update) {
+				String entry = "(" + OsmoticRunner.linkID.getAndIncrement() + ", " + l.getToplogyID() + ", " + l.getLinkID() + ", " + to + ", " + from + ", " + bw + ", " + 0 + ")";
+				JavaPostGres.INSERTLinkData(conn, "sourceToDestLinks (unique_entry_id, topology_id, link_id, from_id, to_id, bw, nochannels)", entry);
+			//}
+		}
+
 	}
 	
 	public Collection<Link> getAdjacentLinks(NetworkNIC node) {
@@ -137,6 +153,10 @@ public class Topology implements Serializable {
 	
 	public Collection<Link> getAllLinks() {
 		return nodeLinks.values();
+	}
+
+	public Link getLinkfromMap(Integer linkID) {
+		return linkMap.get(linkID);
 	}
 
 	public List<Link> getNodeToNodeLinks(NetworkNIC srcNode, NetworkNIC destNode) {

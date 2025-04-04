@@ -26,8 +26,17 @@ import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
 import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.osmosis.core.Flow;
+import org.cloudbus.osmosis.core.Topology;
+import org.jooq.DSLContext;
+import org.jooq.Result;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
+import uk.ncl.giacomobergami.utils.database.JavaPostGres;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Sourcetodestlinks;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.SourcetodestlinksRecord;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,7 +51,7 @@ import java.util.stream.Collectors;
  */
 public class MaximumFlowRoutingPolicy extends SDNRoutingPolicy {
     @Override @Deprecated
-    public void updateSDNNetworkGraph() { throw new RuntimeException("Unexpected method call!"); }
+    public void updateSDNNetworkGraph(Connection conn, DSLContext context) { throw new RuntimeException("Unexpected method call!"); }
 
 
     Table<Integer, Integer, List<NetworkNIC>> table = HashBasedTable.create();
@@ -53,7 +62,7 @@ public class MaximumFlowRoutingPolicy extends SDNRoutingPolicy {
     @Override
     public List<NetworkNIC> buildRoute(NetworkNIC srcHost,
                                        NetworkNIC destHost,
-                                       Flow pkt) {
+                                       Flow pkt, Connection conn, DSLContext context) {
         var attempt = table.get(pkt.getOrigin(), pkt.getDestination());
         if (attempt != null) {
             var mostUpdated = table2.get(srcHost.getName(), destHost.getName());
@@ -79,42 +88,54 @@ public class MaximumFlowRoutingPolicy extends SDNRoutingPolicy {
     public List<Link> getLinks(int source, int dest) { return linkTable.get(source, dest); }
 
     public void setNewPaths(Collection<List<String>> value,
-                            SDNRoutingPolicy actualPolicy) {
+                            SDNRoutingPolicy actualPolicy, Connection conn, DSLContext context) throws SQLException {
         for (var path : value) {
             List<Link> linkList = new ArrayList<>();
             var ls = path.stream().map(actualPolicy::inefficientNodeByName).collect(Collectors.toList());
             for (int i = 0, N = ls.size()-1; i<N; i++) {
                 var srcNode = ls.get(i);
                 var destNode = ls.get(i+1);
-                Link linkWithHighestBW = null;
-                if(actualPolicy.topology.numLinks.get(srcNode.getAddress(),destNode.getAddress()) == 1 && actualPolicy.topology.numLinks.get(destNode.getAddress(),srcNode.getAddress()) == 1) {
-                    linkWithHighestBW = topology.getLink(srcNode.getAddress(),destNode.getAddress());
-                }else {
-                    List<Link> links = actualPolicy.topology.getNodeToNodeLinks(srcNode, destNode);
-                    if ((links == null) || (links.isEmpty())) {
-                        throw new RuntimeException("ERROR: expected link between " + ls.get(i) + " and " + ls.get(i + 1));
-                    }
-                    /*
-                     * From LoadBalancing code:
-                     * Sometimes two nodes are connected via two links; therefore, find the max BW among the links!
-                     */
-                    double bw = 0;
-                    for (Link l : links) {
-                        int numberChannel = l.getChannelCount();
-                        if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
-                            numberChannel = 1; // we cannot divide by 0
-                        } else {
-                            numberChannel++; // 1 for exisiting one , and one for this one
-                        }
-                        double currentBw = l.getBw() / numberChannel;
-                        if (currentBw > bw) {
-                            // link bw does not change, instead you need to get the bw and number of channel on the link
-                            bw = currentBw;
-                            linkWithHighestBW = l;
-                        }
-                    }
-                }
-                linkList.add(linkWithHighestBW);
+//                Link linkWithHighestBW = null;
+//                if(actualPolicy.topology.numLinks.get(srcNode.getAddress(),destNode.getAddress()) == 1 && actualPolicy.topology.numLinks.get(destNode.getAddress(),srcNode.getAddress()) == 1) {
+//                    linkWithHighestBW = topology.getLink(srcNode.getAddress(),destNode.getAddress());
+//                }else {
+//                    List<Link> links = actualPolicy.topology.getNodeToNodeLinks(srcNode, destNode);
+//                    if ((links == null) || (links.isEmpty())) {
+//                        throw new RuntimeException("ERROR: expected link between " + ls.get(i) + " and " + ls.get(i + 1));
+//                    }
+//                    /*
+//                     * From LoadBalancing code:
+//                     * Sometimes two nodes are connected via two links; therefore, find the max BW among the links!
+//                     */
+//                    double bw = 0;
+//                    for (Link l : links) {
+//                        int numberChannel = l.getChannelCount();
+//                        if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
+//                            numberChannel = 1; // we cannot divide by 0
+//                        } else {
+//                            numberChannel++; // 1 for exisiting one , and one for this one
+//                        }
+//                        double currentBw = l.getBw() / numberChannel;
+//                        if (currentBw > bw) {
+//                            // link bw does not change, instead you need to get the bw and number of channel on the link
+//                            bw = currentBw;
+//                            linkWithHighestBW = l;
+//                        }
+//                    }
+//                }
+                int bestID = linkWithHighestBW(context.select().from(Sourcetodestlinks.SOURCETODESTLINKS)
+                        .where("from_ID in ( " + srcNode.getAddress()  + "," + destNode.getAddress() + ")"
+                            + " AND to_ID in (" + destNode.getAddress() + "," + srcNode.getAddress() + ")")
+                        .fetchInto(Sourcetodestlinks.SOURCETODESTLINKS).sortAsc(Sourcetodestlinks.SOURCETODESTLINKS.LINK_ID));
+                Link bestLink = this.getTopology().getLinkfromMap(bestID);
+//                boolean check = bestLink == linkWithHighestBW;
+//                if(!check) {
+//                    int checking = linkWithHighestBW(context.select().from(Sourcetodestlinks.SOURCETODESTLINKS)
+//                            .where("from_ID in ( " + srcNode.getAddress() + "," + destNode.getAddress() + ")"
+//                                    + " AND to_ID in (" + destNode.getAddress() + "," + srcNode.getAddress() + ")")
+//                            .fetchInto(Sourcetodestlinks.SOURCETODESTLINKS).sortAsc(Sourcetodestlinks.SOURCETODESTLINKS.LINK_ID));
+//                }
+                linkList.add(bestLink);
             }
             Collections.reverse(ls);
             Collections.reverse(linkList);
@@ -123,7 +144,22 @@ public class MaximumFlowRoutingPolicy extends SDNRoutingPolicy {
         }
     }
 
-    public void setNewPaths(Collection<List<String>> value) {
-        setNewPaths(value, this);
+    private int linkWithHighestBW(Result<SourcetodestlinksRecord> linksData) {
+        double bestLink = 0;
+        int j = 0;
+        for (int i = 0; i < linksData.size(); i++) {
+             SourcetodestlinksRecord link = linksData.get(i);
+            int noChannels = link.get(Sourcetodestlinks.SOURCETODESTLINKS.NOCHANNELS)+1;// == 0 ? 1 : link.get(Sourcetodestlinks.SOURCETODESTLINKS.NOCHANNELS);
+            double bwPerChannel = link.get(Sourcetodestlinks.SOURCETODESTLINKS.BW) / noChannels;
+            if (bwPerChannel > bestLink) {
+                bestLink = bwPerChannel;
+                j = i;
+            }
+        }
+        return linksData.get(j).get(Sourcetodestlinks.SOURCETODESTLINKS.LINK_ID);
+    }
+
+    public void setNewPaths(Collection<List<String>> value, Connection conn, DSLContext context) throws SQLException {
+        setNewPaths(value, this, conn, context);
     }
 }

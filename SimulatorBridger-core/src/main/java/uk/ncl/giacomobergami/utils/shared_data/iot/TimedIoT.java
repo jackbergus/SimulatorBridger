@@ -19,6 +19,10 @@ public class TimedIoT implements TimedObject<TimedIoT> {
     public double slope;
     public double simtime;
     public boolean injected;
+    public double batteryDepletion;
+    public boolean useBattery;
+    public double packetSize;
+    public boolean usePacket;
    
     public TimedIoT() {
     }
@@ -35,6 +39,10 @@ public class TimedIoT implements TimedObject<TimedIoT> {
         this.slope = slope;
         this.simtime = simtime;
         this.injected = false;
+        this.batteryDepletion = 0;
+        this.useBattery = false;
+        this.packetSize = 0;
+        this.usePacket = false;
     }
 
     public TimedIoT(String id, double x, double y, double angle, String type, double speed, double pos, String lane, double slope, double simtime, boolean injected) {
@@ -49,6 +57,46 @@ public class TimedIoT implements TimedObject<TimedIoT> {
         this.slope = slope;
         this.simtime = simtime;
         this.injected = injected;
+        this.batteryDepletion = 0;
+        this.useBattery = false;
+        this.packetSize = 0;
+        this.usePacket = false;
+    }
+
+    public TimedIoT(String id, double x, double y, double angle, String type, double speed, double pos, String lane, double slope, double simtime, boolean injected, double batteryDepletion, boolean useBattery) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.type = type;
+        this.speed = speed;
+        this.pos = pos;
+        this.lane = lane;
+        this.slope = slope;
+        this.simtime = simtime;
+        this.injected = injected;
+        this.batteryDepletion = batteryDepletion;
+        this.useBattery = useBattery;
+        this.packetSize = 0;
+        this.usePacket = false;
+    }
+
+    public TimedIoT(String id, double x, double y, double angle, String type, double speed, double pos, String lane, double slope, double simtime, boolean injected, double batteryDepletion, boolean useBattery, double packetSize, boolean usePacket) {
+        this.id = id;
+        this.x = x;
+        this.y = y;
+        this.angle = angle;
+        this.type = type;
+        this.speed = speed;
+        this.pos = pos;
+        this.lane = lane;
+        this.slope = slope;
+        this.simtime = simtime;
+        this.injected = injected;
+        this.batteryDepletion = batteryDepletion;
+        this.useBattery = useBattery;
+        this.packetSize = packetSize;
+        this.usePacket = usePacket;
     }
 
     @Override
@@ -145,6 +193,38 @@ public class TimedIoT implements TimedObject<TimedIoT> {
     }
 
     public void setInjected(boolean injected) { this.injected = injected; }
+
+    public double getBatteryDepletion() {
+        return batteryDepletion;
+    }
+
+    public void setBatteryDepletion(double batteryDepletion) {
+        this.batteryDepletion = batteryDepletion;
+    }
+
+    public boolean isUseBattery() {
+        return useBattery;
+    }
+
+    public void setUseBattery(boolean useBattery) {
+        this.useBattery = useBattery;
+    }
+
+    public double getPacketSize() {
+        return packetSize;
+    }
+
+    public void setPacketSize(double packetSize) {
+        this.packetSize = packetSize;
+    }
+
+    public boolean isUsePacket() {
+        return usePacket;
+    }
+
+    public void setUsePacket(boolean usePacket) {
+        this.usePacket = usePacket;
+    }
 
     @Override
     public boolean equals(Object o) {

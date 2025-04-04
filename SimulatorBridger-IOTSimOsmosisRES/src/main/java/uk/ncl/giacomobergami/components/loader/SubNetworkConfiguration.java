@@ -20,6 +20,7 @@ import uk.ncl.giacomobergami.utils.data.YAML;
 
 import java.io.File;
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -61,7 +62,7 @@ public class SubNetworkConfiguration implements Serializable {
                                                  AtomicInteger vmId,
                                                  Map<String, Collection<LegacyConfiguration.LinkEntity>> linkMap,
                                                  String RA,
-                                                 String PowerModel) {
+                                                 String PowerModel, Connection conn) {
         if (conf.scheduling_interval != 0.0)
             throw new RuntimeException("0.0 expected scheduling interval: "+conf.scheduling_interval);
         if (!Objects.equals(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getName(), "custom"))
@@ -85,7 +86,7 @@ public class SubNetworkConfiguration implements Serializable {
                     .map(x -> x.asLegacySwitchEntity(conf.controller_name));
             var s_links = linkMap.get(conf.datacenter_name);
 
-            loc_datacentre.initCloudTopology(s_host, s_switch, s_links, hostId, PowerModel);
+            loc_datacentre.initCloudTopology(s_host, s_switch, s_links, hostId, PowerModel, conn);
             loc_datacentre.feedSDNWithTopology();
             loc_datacentre.setGateway(loc_datacentre.getSdnController().getGateway());
             loc_datacentre.setDcType(conf.datacenter_type);
@@ -114,7 +115,7 @@ public class SubNetworkConfiguration implements Serializable {
                                                 AtomicInteger hostId,
                                                AtomicInteger vmId,
                                                Map<String, Collection<LegacyConfiguration.LinkEntity>> linkMap,
-                                               String RA, String PowerModel) {
+                                               String RA, String PowerModel, Connection conn) {
         var hostList = hosts
                 .stream()
                 .map(x-> new EdgeDevice(hostId, x.asLegacyEdgeDeviceEntity(), PowerModel))
@@ -135,7 +136,7 @@ public class SubNetworkConfiguration implements Serializable {
         if (!Objects.equals(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getName(), "custom"))
             conf.setController_routingPolicy(RoutingAlgorithmGeneratorFactory.generateFacade(RA).getEdge_routing_policy_class());
         datacenter.setSdnController(conf.asEdgeSDNController(datacenter));
-        datacenter.initEdgeTopology(hostList, s_switch, s_links, PowerModel);
+        datacenter.initEdgeTopology(hostList, s_switch, s_links, PowerModel, conn);
 
         logger.info("Edge SDN cotroller has been created: "+conf.datacenter_name);
 

@@ -11,6 +11,7 @@
 
 
 package uk.ncl.giacomobergami.components.sdn_routing;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,7 @@ import org.cloudbus.osmosis.core.Flow;
 
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Table;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 
@@ -123,7 +125,7 @@ public class SDNRoutingTraditionalShortestPath extends SDNRoutingPolicy {
 	}
 	
 	@Override
-	public void updateSDNNetworkGraph() {
+	public void updateSDNNetworkGraph(Connection conn, DSLContext context) {
 		int nodeSize = getNodeList().size();
 		nodeGraphDistance = new int[nodeSize][nodeSize];
 		for(int i = 0; i< getNodeList().size();i++){
@@ -147,8 +149,8 @@ public class SDNRoutingTraditionalShortestPath extends SDNRoutingPolicy {
 	}
 
 	@Override
-	public List<NetworkNIC> buildRoute(NetworkNIC srcHost, NetworkNIC destHost, Flow pkt) {
-		updateSDNNetworkGraph();
+	public List<NetworkNIC> buildRoute(NetworkNIC srcHost, NetworkNIC destHost, Flow pkt, Connection conn, DSLContext context) {
+		updateSDNNetworkGraph(conn, context);
 
 		int graphSize  = nodeGraphDistance.length; // u
 		

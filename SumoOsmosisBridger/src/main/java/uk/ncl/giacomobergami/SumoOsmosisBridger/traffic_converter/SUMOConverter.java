@@ -160,11 +160,11 @@ public class SUMOConverter extends TrafficConverter {
             String ambulancePath = conf2.getSumo_ambulance_path();
             String pyPath = conf2.getPython_filepath();
             ambulancePath = pyPath + ' ' + ambulancePath + ' ' + String.join(",", edges);
-        try {
-            Runtime.getRuntime().exec(ambulancePath);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+            try {
+                Runtime.getRuntime().exec(ambulancePath);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         var tmp = netGen.apply(roadSideUnits);

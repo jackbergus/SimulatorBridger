@@ -12,11 +12,8 @@
 
 package uk.ncl.giacomobergami.components.sdn_routing;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import java.util.List;
-import java.util.Map;
+import java.sql.Connection;
+import java.util.*;
 
 
 import org.cloudbus.cloudsim.sdn.Link;
@@ -29,7 +26,12 @@ import com.google.common.collect.Table;
 
 
 import org.cloudbus.osmosis.core.Flow;
+import org.jooq.DSLContext;
+import org.jooq.Result;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
+import uk.ncl.giacomobergami.utils.database.JavaPostGres;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Sourcetodestlinks;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.SourcetodestlinksRecord;
 
 /**
  * 
@@ -95,7 +97,7 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 		}
 		return minIndex;
 	}
-	protected List<NetworkNIC> buildRoute(int biultRoute[], NetworkNIC src, NetworkNIC dest, Flow pkt){
+	protected List<NetworkNIC> buildRoute(int biultRoute[], NetworkNIC src, NetworkNIC dest, Flow pkt, Connection conn, DSLContext context) {
 		List<NetworkNIC> nodeLists = new ArrayList<>();
 		List<Link> linkList = new ArrayList<>();
 
@@ -129,20 +131,27 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 	}
 	
 	@Override
-	public void updateSDNNetworkGraph() {
+	public void updateSDNNetworkGraph(Connection conn, DSLContext context) {
 		int nodeSize = getNodeList().size();
 		nodeGraphDistance = new int[nodeSize][nodeSize];
 		nodeGraphBandwidth = new double[nodeSize][nodeSize];
+
+		//JavaPostGres.indexLINKSDATA(conn);
 
 		for(int i = 0; i< getNodeList().size();i++){
 			NetworkNIC srcNode = getNodeList().get(i); 
 			nodeToInt.put(srcNode, i);
 			intToNode.put(i,srcNode);
+//			Result<SourcetodestlinksRecord> bestData = context.select().from(Sourcetodestlinks.SOURCETODESTLINKS)
+//					.where("from_ID in ( " + srcNode.getAddress() + ")" + " OR to_ID in ("  + srcNode.getAddress() + ")")
+//					.fetchInto(Sourcetodestlinks.SOURCETODESTLINKS);
 			for(int k = 0; k < getNodeList().size(); k++){
 					NetworkNIC destNode = getNodeList().get(k);
+					//List<SourcetodestlinksRecord> list = bestData.stream().filter(x -> x.getValue(Sourcetodestlinks.SOURCETODESTLINKS.FROM_ID) == destNode.getAddress() ||  x.getValue(Sourcetodestlinks.SOURCETODESTLINKS.TO_ID) == destNode.getAddress()).toList();
+					//Link bestLink = this.getTopology().getLinkfromMap((int) bestData[0]);
 					var temp = OsmoticWrapper.linkChannels.get(srcNode.getAddress(), destNode.getAddress());
 					nodeGraphDistance[i][k] = getDistanceWeight(srcNode, destNode, temp);	// this can be used for link failure
-					nodeGraphBandwidth[i][k] = getBwWeight(srcNode, destNode, temp);;
+					nodeGraphBandwidth[i][k] = getBwWeight(srcNode, destNode, temp, conn, context);;
 			}
 		}
 	}
@@ -154,24 +163,24 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 		return 1;
 	}
 	
-	private double getBwWeight(NetworkNIC srcNode, NetworkNIC destNode, Object Channels){
+	private double getBwWeight(NetworkNIC srcNode, NetworkNIC destNode, Object Channels, Connection conn, DSLContext context) {
 
 		// links == null, then nodes are not adjacent! 
-		if(Channels == null)
+		if (Channels == null)
 			return 0;
 
 		double bw = 0;
 		Link linkWithHighestBW = null;
-		if(topology.numLinks.get(srcNode.getAddress(),destNode.getAddress()) == 1) {
+		if (topology.numLinks.get(srcNode.getAddress(), destNode.getAddress()) == 1) {
 			int numberChannel = (int) Channels;
 			if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
 				numberChannel = 1; // we cannot divide by 0
 			} else {
 				numberChannel++; // 1 for exisiting one , and one for this one
 			}
-			linkWithHighestBW = topology.getLink(srcNode.getAddress(),destNode.getAddress());
+			linkWithHighestBW = topology.getLink(srcNode.getAddress(), destNode.getAddress());
 			bw = linkWithHighestBW.getBw() / numberChannel;
-		}else {
+		} else {
 
 			List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
 			/*
@@ -195,11 +204,40 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 				}
 			}
 		}
-		selectedLink.put(srcNode, destNode, linkWithHighestBW); // you must store this one and return it to the SDN controller 
+//		double[] bestData = linkWithHighestBW(context.select().from(Sourcetodestlinks.SOURCETODESTLINKS)
+//				.where("from_ID in ( " + srcNode.getAddress() + "," + destNode.getAddress() + ")"
+//						+ " AND to_ID in (" + destNode.getAddress() + "," + srcNode.getAddress() + ")")
+//				.fetchInto(Sourcetodestlinks.SOURCETODESTLINKS).sortAsc(Sourcetodestlinks.SOURCETODESTLINKS.LINK_ID));
+//		Link bestLink = this.getTopology().getLinkfromMap((int) bestData[0]);
+//		boolean check = bestLink == linkWithHighestBW && bestData[1] == bw;
+//		if (!check) {
+//			System.out.println("This was different from the best link " + srcNode.getAddress() + ", " + destNode.getAddress());
+//		}
+		selectedLink.put(srcNode, destNode, linkWithHighestBW);
 		return bw;
 	}
 
-	
+	private double [] linkWithHighestBW(Result<SourcetodestlinksRecord> linksData) {
+		if(linksData == null || linksData.isEmpty())
+			return new double[0];
+
+		double bestLink = 0;
+		int j = 0;
+		for (int i = 0; i < linksData.size(); i++) {
+			SourcetodestlinksRecord link = linksData.get(i);
+			int noChannels = link.get(Sourcetodestlinks.SOURCETODESTLINKS.NOCHANNELS)+1;// == 0 ? 1 : link.get(Sourcetodestlinks.SOURCETODESTLINKS.NOCHANNELS);
+			double bwPerChannel = link.get(Sourcetodestlinks.SOURCETODESTLINKS.BW) / noChannels;
+			if (bwPerChannel > bestLink) {
+				bestLink = bwPerChannel;
+				j = i;
+			}
+		}
+		double[] bestData = new double[2];
+		bestData[0] = (double)linksData.get(j).get(Sourcetodestlinks.SOURCETODESTLINKS.LINK_ID);
+		bestData[1] = bestLink;
+		return bestData;
+	}
+
 //	@Override
 //	public NetworkNIC getNode(SDNHost srcHost, NetworkNIC node, SDNHost desthost, String destApp) {
 //		return null;
@@ -209,9 +247,9 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 	@Override
 	public List<NetworkNIC> buildRoute(NetworkNIC srcHost,
 									   NetworkNIC destHost,
-									   Flow pkt) {
+									   Flow pkt, Connection conn, DSLContext context) {
 //		System.out.println("Packet: " + pkt.getFlowId() + " - Find Shortest Path and Max BW between " + pkt.getAppNameSrc() +" and " + pkt.getAppNameDest() );
-		updateSDNNetworkGraph();
+		updateSDNNetworkGraph(conn, context);
 
 		int graphSize  = nodeGraphDistance.length; // u
 		
@@ -268,7 +306,7 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 			}
 		}
 
-		List<NetworkNIC> routeBuilt = buildRoute(previousNode, srcHost, destHost, pkt);
+		List<NetworkNIC> routeBuilt = buildRoute(previousNode, srcHost, destHost, pkt, conn, context);
 		this.nodeGraphDistance = null;
 		this.nodeGraphBandwidth = null;
 		return routeBuilt;		

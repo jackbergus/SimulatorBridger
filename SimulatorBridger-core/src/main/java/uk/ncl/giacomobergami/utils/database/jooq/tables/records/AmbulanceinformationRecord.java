@@ -186,6 +186,62 @@ public class AmbulanceinformationRecord extends UpdatableRecordImpl<Ambulanceinf
         return (String) get(11);
     }
 
+    /**
+     * Setter for <code>public.ambulanceinformation.batterydepletion</code>.
+     */
+    public void setBatterydepletion(Double value) {
+        set(12, value);
+    }
+
+    /**
+     * Getter for <code>public.ambulanceinformation.batterydepletion</code>.
+     */
+    public Double getBatterydepletion() {
+        return (Double) get(12);
+    }
+
+    /**
+     * Setter for <code>public.ambulanceinformation.usebattery</code>.
+     */
+    public void setUsebattery(String value) {
+        set(13, value);
+    }
+
+    /**
+     * Getter for <code>public.ambulanceinformation.usebattery</code>.
+     */
+    public String getUsebattery() {
+        return (String) get(13);
+    }
+
+    /**
+     * Setter for <code>public.ambulanceinformation.packetsize</code>.
+     */
+    public void setPacketsize(Double value) {
+        set(14, value);
+    }
+
+    /**
+     * Getter for <code>public.ambulanceinformation.packetsize</code>.
+     */
+    public Double getPacketsize() {
+        return (Double) get(14);
+    }
+
+    /**
+     * Setter for <code>public.ambulanceinformation.usepacketinfo</code>.
+     */
+    public void setUsepacketinfo(String value) {
+        set(15, value);
+    }
+
+    /**
+     * Getter for <code>public.ambulanceinformation.usepacketinfo</code>.
+     */
+    public String getUsepacketinfo() {
+        return (String) get(15);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -209,7 +265,7 @@ public class AmbulanceinformationRecord extends UpdatableRecordImpl<Ambulanceinf
     /**
      * Create a detached, initialised AmbulanceinformationRecord
      */
-    public AmbulanceinformationRecord(Integer diEntryId, String vehicleId, Double x, Double y, Double angle, String vehicleType, Double speed, Double pos, String lane, Double slope, Double simtime, String injected) {
+    public AmbulanceinformationRecord(Integer diEntryId, String vehicleId, Double x, Double y, Double angle, String vehicleType, Double speed, Double pos, String lane, Double slope, Double simtime, String injected, Double batterydepletion, String usebattery, Double packetsize, String usepacketinfo) {
         super(Ambulanceinformation.AMBULANCEINFORMATION);
 
         setDiEntryId(diEntryId);
@@ -224,6 +280,10 @@ public class AmbulanceinformationRecord extends UpdatableRecordImpl<Ambulanceinf
         setSlope(slope);
         setSimtime(simtime);
         setInjected(injected);
+        setBatterydepletion(batterydepletion);
+        setUsebattery(usebattery);
+        setPacketsize(packetsize);
+        setUsepacketinfo(usepacketinfo);
         resetChangedOnNotNull();
     }
 }

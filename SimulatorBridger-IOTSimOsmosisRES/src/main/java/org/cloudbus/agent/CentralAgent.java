@@ -1,5 +1,9 @@
 package org.cloudbus.agent;
 
+import org.jooq.DSLContext;
+
+import java.sql.Connection;
+
 public class CentralAgent extends AbstractAgent{
     private static CentralAgent instance;
 
@@ -26,7 +30,7 @@ public class CentralAgent extends AbstractAgent{
     }
 
     @Override
-    public void plan(String PowerModel) {
+    public void plan(String PowerModel, Connection conn, DSLContext context) {
 
     }
 

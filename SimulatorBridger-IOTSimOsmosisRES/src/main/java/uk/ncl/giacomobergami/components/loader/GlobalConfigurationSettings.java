@@ -23,6 +23,7 @@ import uk.ncl.giacomobergami.utils.data.CSVMediator;
 import uk.ncl.giacomobergami.utils.data.YAML;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -398,7 +399,7 @@ public class GlobalConfigurationSettings {
         return TopologyLink.asNetworkedLinks(new File(topologyLinksFile));
     }
 
-    public GlobalConfigurationSettings buildTopologyForSimulator(OsmoticBroker broker, String RoutingAlgo, String PowerModel) {
+    public GlobalConfigurationSettings buildTopologyForSimulator(OsmoticBroker broker, String RoutingAlgo, String PowerModel, Connection conn){
         if (actualEdgeDataCenters == null || actualCloudDataCenters == null || iotDevices == null ||global_network_links == null||sdwan == null || sdwan.switches == null || apps == null ||
                 (actualEdgeDataCenters.isEmpty()) ||
                 actualCloudDataCenters.isEmpty() ||
@@ -411,7 +412,7 @@ public class GlobalConfigurationSettings {
         List<Switch> datacenterGateways = new ArrayList<>();
         // Cloud Data Centers
         for (var reader : actualCloudDataCenters) {
-            var y = reader.createCloudDatacenter(broker, conf.hostId, conf.vmId, global_network_links, RoutingAlgo, PowerModel);
+            var y = reader.createCloudDatacenter(broker, conf.hostId, conf.vmId, global_network_links, RoutingAlgo, PowerModel, conn);
             var controller = y.getSdnController();
             datacenterGateways.add(controller.getGateway());
             conf.osmesisDatacentres.add(y);
@@ -419,7 +420,7 @@ public class GlobalConfigurationSettings {
 
         // Edge Data Centers
         for (var reader : actualEdgeDataCenters) {
-            var y = reader.createEdgeDatacenter(broker, conf.hostId, conf.vmId, global_network_links, RoutingAlgo, PowerModel);
+            var y = reader.createEdgeDatacenter(broker, conf.hostId, conf.vmId, global_network_links, RoutingAlgo, PowerModel, conn);
             var controller = y.getSdnController();
             datacenterGateways.add(controller.getGateway());
             conf.osmesisDatacentres.add(y);
@@ -439,7 +440,7 @@ public class GlobalConfigurationSettings {
         sdWanController = asSDWANControllerWithNoInitializedTopology(datacenterGateways);
         sdWanController.initSdWANTopology(asLegacySDWANSwitches(sdwan.switches),
                                           global_network_links.get("sdwan"),
-                                          datacenterGateways);
+                                          datacenterGateways, conn);
         conf.osmesisDatacentres.forEach(datacenter -> datacenter.getSdnController().setWanController(sdWanController));
         sdWanController.addAllDatacenters(conf.osmesisDatacentres);
         return this;

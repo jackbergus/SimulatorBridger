@@ -21,6 +21,7 @@ package org.cloudbus.cloudsim.edge.core.edge;
 **/
 
 import java.math.RoundingMode;
+import java.sql.Connection;
 import java.text.DecimalFormat;
 import java.util.*;
 import java.util.stream.Stream;
@@ -31,6 +32,7 @@ import org.cloudbus.cloudsim.Storage;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.power.PowerHost;
 import org.cloudbus.cloudsim.power.models.PowerModelGeneratorFactory;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicy;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEvent;
@@ -77,16 +79,16 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 	public EdgeDataCenter(LegacyConfiguration.EdgeDataCenterEntity edgeDCEntity,
 						  List<EdgeDevice> hostList,
 						  LinkedList<Storage> storageList,
-						  double schedulingInterval, String powerModel) {
+						  double schedulingInterval, String powerModel, Connection conn) {
 		this(edgeDCEntity, new DatacenterCharacteristics(hostList, edgeDCEntity.getCharacteristics()), storageList, schedulingInterval, powerModel);
 		setSdnController(new EdgeSDNController(edgeDCEntity.getControllers().get(0), this));
-		initEdgeTopology(hostList, edgeDCEntity.getSwitches(),edgeDCEntity.getLinks(), powerModel);
+		initEdgeTopology(hostList, edgeDCEntity.getSwitches(),edgeDCEntity.getLinks(), powerModel, conn);
 		getSdnController().setTopology(topology, hosts, sdnhosts, switches);
 		setGateway(getSdnController().getGateway());
 	}
 
 	@Override
-	public void processEvent(SimEvent ev) {
+	public void processEvent(SimEvent ev, Connection conn, DSLContext context, double deltaTime) {
 		// TODO Auto-generated method stub
 
 		super.processEvent(ev);
@@ -240,7 +242,7 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 	public void initEdgeTopology(List<EdgeDevice> devices,
 								 List<SwitchEntity> switchEntites,
 								 List<LinkEntity> linkEntites,
-								 String PowerModel){
+								 String PowerModel, Connection conn){
 
 		this.hosts.addAll(devices);
 		topology  = new Topology();
@@ -259,13 +261,13 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 		}
 
 		switchEntites.forEach(x -> x.initializeSwitch(nameIdTable, topology, switches));
-		linkEntites.forEach(x -> x.initializeLink(nameIdTable, topology));
+		linkEntites.forEach(x -> x.initializeLink(nameIdTable, topology, conn, false));
 	}
 
 	public void initEdgeTopology(List<EdgeDevice> devices,
 								 Stream<SwitchEntity> switchEntites,
 								 Collection<LinkEntity> linkEntites,
-								 String PowerModel){
+								 String PowerModel, Connection conn){
 		this.hosts.addAll(devices);
 		topology  = new Topology();
 		sdnhosts = new ArrayList<>();
@@ -283,7 +285,7 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 		}
 
 		switchEntites.forEach(x -> x.initializeSwitch(nameIdTable, topology, switches));
-		linkEntites.forEach(x -> x.initializeLink(nameIdTable, topology));
+		linkEntites.forEach(x -> x.initializeLink(nameIdTable, topology, conn, true));
 		getSdnController().setTopology(topology, hosts, sdnhosts, switches);
 		setGateway(getSdnController().getGateway());
 	}

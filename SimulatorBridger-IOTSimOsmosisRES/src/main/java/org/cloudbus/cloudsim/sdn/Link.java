@@ -8,9 +8,13 @@
 
 package org.cloudbus.cloudsim.sdn;
 
+import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
+import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -88,22 +92,29 @@ public class Link implements Serializable {
 		return LinkID;
 	}
 
+	public int getToplogyID() {
+		return ToplogyID;
+	}
+
 	public int getChannelCount() {
 		return this.allChannels.size();
 	}
 
-	public boolean addChannel(Channel ch) {
+	public boolean addChannel(Channel ch, Connection conn, DSLContext context) {
 		allChannels.add(ch);
 		OsmoticWrapper.linkChannels.put(this.src().getAddress(), this.dst().getAddress(),(OsmoticWrapper.linkChannels.get(this.src().getAddress(), this.dst().getAddress())+1));
 		OsmoticWrapper.linkChannels.put(this.dst().getAddress(), this.src().getAddress(),(OsmoticWrapper.linkChannels.get(this.dst().getAddress(), this.src().getAddress())+1));
+		JavaPostGres.updateLinkChannels(conn, 1, this.src().getAddress(), this.dst().getAddress(), this.getLinkID(), this.getToplogyID());
+		JavaPostGres.updateLinkChannels(conn, 1, this.dst().getAddress(), this.src().getAddress(), this.getLinkID(), this.getToplogyID());
 		return true;
 	}
 
-	public boolean removeChannel(Channel ch) {
+	public boolean removeChannel(Channel ch, Connection conn, DSLContext context) {
 		boolean ret = this.allChannels.remove(ch);
 		OsmoticWrapper.linkChannels.put(this.src().getAddress(), this.dst().getAddress(),(OsmoticWrapper.linkChannels.get(this.src().getAddress(), this.dst().getAddress())-1));
 		OsmoticWrapper.linkChannels.put(this.dst().getAddress(), this.src().getAddress(),(OsmoticWrapper.linkChannels.get(this.dst().getAddress(), this.src().getAddress())-1));
-
+		JavaPostGres.updateLinkChannels(conn, -1, this.src().getAddress(), this.dst().getAddress(), this.getLinkID(), this.getToplogyID());
+		JavaPostGres.updateLinkChannels(conn, -1, this.dst().getAddress(), this.src().getAddress(), this.getLinkID(), this.getToplogyID());
 		return ret;
 	}
 

@@ -100,7 +100,27 @@ public class VehinformationImport extends TableImpl<VehinformationImportRecord> 
     /**
      * The column <code>public.vehinformation_import.injected</code>.
      */
-    public final TableField<VehinformationImportRecord, String> INJECTED = createField(DSL.name("injected"), SQLDataType.VARCHAR.nullable(false), this, "");
+    public final TableField<VehinformationImportRecord, String> INJECTED = createField(DSL.name("injected"), SQLDataType.VARCHAR(5).nullable(false), this, "");
+
+    /**
+     * The column <code>public.vehinformation_import.batterydepletion</code>.
+     */
+    public final TableField<VehinformationImportRecord, Double> BATTERYDEPLETION = createField(DSL.name("batterydepletion"), SQLDataType.DOUBLE.nullable(false), this, "");
+
+    /**
+     * The column <code>public.vehinformation_import.usebattery</code>.
+     */
+    public final TableField<VehinformationImportRecord, String> USEBATTERY = createField(DSL.name("usebattery"), SQLDataType.VARCHAR(5).nullable(false), this, "");
+
+    /**
+     * The column <code>public.vehinformation_import.packetsize</code>.
+     */
+    public final TableField<VehinformationImportRecord, Double> PACKETSIZE = createField(DSL.name("packetsize"), SQLDataType.DOUBLE.nullable(false), this, "");
+
+    /**
+     * The column <code>public.vehinformation_import.usepacketinfo</code>.
+     */
+    public final TableField<VehinformationImportRecord, String> USEPACKETINFO = createField(DSL.name("usepacketinfo"), SQLDataType.VARCHAR(5).nullable(false), this, "");
 
     private VehinformationImport(Name alias, Table<VehinformationImportRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);

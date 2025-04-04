@@ -30,6 +30,7 @@ import uk.ncl.giacomobergami.components.iot.IoTGeneratorFactory;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 
 import java.io.File;
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -72,39 +73,39 @@ public class LegacyTopologyBuilder {
 		//new OsmoticBroker("OsmesisBroker", edgeLetId, flowId);
 	}
 
-	public LegacyTopologyBuilder buildTopology(File filename, String PowerModel) {
-		return buildTopology(Objects.requireNonNull(LegacyConfiguration.fromFile(Objects.requireNonNull(filename))), PowerModel);
+	public LegacyTopologyBuilder buildTopology(File filename, String PowerModel, Connection conn) {
+		return buildTopology(Objects.requireNonNull(LegacyConfiguration.fromFile(Objects.requireNonNull(filename))), PowerModel, conn);
 	}
 
 	public List<OsmoticDatacenter> getOsmesisDatacentres() {
 		return osmesisDatacentres;
 	}
 
-    public LegacyTopologyBuilder buildTopology(LegacyConfiguration topologyEntity, String PowerModel) {
+    public LegacyTopologyBuilder buildTopology(LegacyConfiguration topologyEntity, String PowerModel, Connection conn) {
 		new GlobalConfigurationSettings().fromLegacyConfiguration(topologyEntity);
 
 		List<Switch> datacenterGateways = new ArrayList<>();
 		for (var x : topologyEntity.getCloudDatacenter()) {
-			var y = createCloudDatacenter(x, PowerModel);
+			var y = createCloudDatacenter(x, PowerModel, conn);
 			var controller = y.getSdnController();
 			datacenterGateways.add(controller.getGateway());
 			osmesisDatacentres.add(y);
 		}
 		for (var x : topologyEntity.getEdgeDatacenter()) {
-			var y = buildEdgeDatacenter(x, PowerModel);
+			var y = buildEdgeDatacenter(x, PowerModel, conn);
 			var controller = y.getSdnController();
 			datacenterGateways.add(controller.getGateway());
 			osmesisDatacentres.add(y);
 		}
 
 
-        sdWanController = new SDWANController(topologyEntity.getSdwan().get(0), datacenterGateways);
+        sdWanController = new SDWANController(topologyEntity.getSdwan().get(0), datacenterGateways, conn);
 		osmesisDatacentres.forEach(datacenter -> datacenter.getSdnController().setWanController(sdWanController));
         sdWanController.addAllDatacenters(osmesisDatacentres);
 		return this;
     }
 
-	private CloudDatacenter createCloudDatacenter(CloudDataCenterEntity datacentreEntity, String PowerModel) {
+	private CloudDatacenter createCloudDatacenter(CloudDataCenterEntity datacentreEntity, String PowerModel, Connection conn) {
 		SDNController sdnController = new CloudSDNController(datacentreEntity.getControllers().get(0));
 		List<Host> hostList = sdnController.getHostList();
 		LinkedList<Storage> storageList = new LinkedList<>();
@@ -119,7 +120,7 @@ public class LegacyTopologyBuilder {
 					                                 storageList,
 					                                 0,
 					                                 sdnController,
-					hostId,	PowerModel);
+					hostId,	PowerModel, conn);
 
 			List<Vm> vmList = datacentreEntity
 					.getVMs()
@@ -142,7 +143,7 @@ public class LegacyTopologyBuilder {
 		}
 	}
 
-	private EdgeDataCenter buildEdgeDatacenter(EdgeDataCenterEntity edgeDCEntity, String powerModel) {
+	private EdgeDataCenter buildEdgeDatacenter(EdgeDataCenterEntity edgeDCEntity, String powerModel, Connection conn) {
 		if (edgeDCEntity.getControllers().size() > 1)
 			throw new RuntimeException("Expected size 1 for "+edgeDCEntity.getControllers().size());
 
@@ -158,7 +159,8 @@ public class LegacyTopologyBuilder {
 				hostList,
 				storageList,
 				edgeDCEntity.getSchedulingInterval(),
-				powerModel);
+				powerModel,
+				conn);
 		logger.trace("Edge SDN cotroller " + edgeDCEntity.getName() + "has been created");
 
 		var MELList = edgeDCEntity.getMELEntities()

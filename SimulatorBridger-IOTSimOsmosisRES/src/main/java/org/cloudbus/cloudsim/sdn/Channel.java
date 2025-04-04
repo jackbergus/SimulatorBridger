@@ -9,11 +9,13 @@
 package org.cloudbus.cloudsim.sdn;
 
 import java.io.Serializable;
+import java.sql.Connection;
 import java.util.*;
 
 import org.cloudbus.osmosis.core.Flow;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.osmosis.core.OsmoticBroker;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
 
 /** 
@@ -30,7 +32,7 @@ import uk.ncl.giacomobergami.components.networking.DataCenterWithController;
  
 
 public class Channel implements Serializable {
-	private List<NetworkNIC> nodes;
+	//private List<NetworkNIC> nodes;
 	private List<Link> links;
 	private double allocatedBandwidth = 0; // Actual bandwidth allocated to the channel
 	private double previousTime;
@@ -43,20 +45,20 @@ public class Channel implements Serializable {
 	public static double transmissionTime = 0;	
 	private Map<Double, Double> bwChangesLogMap = new TreeMap<>();
 
-	public Channel(int chId, int srcId, int dstId, List<NetworkNIC> nodes, List<Link> links) {
+	public Channel(int chId, int srcId, int dstId, List<Link> links) {
 		this.chId = chId;
 		this.srcId = srcId;
 		this.dstId = dstId;
-		this.nodes = nodes;
+		//this.nodes = nodes;
 		this.links = links;		
 
 		this.inTransmission = new LinkedList<>();
 		this.completed = new LinkedList<>();
 	}		
 	
-	public void initialize() {
+	public void initialize(Connection conn, DSLContext context) {
 		links.forEach(link -> {
-			if (link != null) link.addChannel(this);
+			if (link != null) link.addChannel(this, conn, context);
 		});
 //		for(int i=0; i<nodes.size(); i++) {
 //// 			NetworkNIC from = nodes.get(i);
@@ -67,10 +69,10 @@ public class Channel implements Serializable {
 //		}
 	}
 	
-	public void terminate() {
+	public void terminate(Connection conn, DSLContext context) {
 		// Assign BW to all links
 		links.forEach(link -> {
-			if (link != null) link.removeChannel(this);
+			if (link != null) link.removeChannel(this, conn, context);
 		});
 	}
 	
@@ -112,8 +114,7 @@ public class Channel implements Serializable {
 		
 		boolean isChanged = this.updateFlowProcessing();
 		this.allocatedBandwidth = newBandwidth;
-		var name = this.nodes.toArray()[1];
-		this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
+        this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
 		if(!this.inTransmission.isEmpty()) {
 			//this.bwChangesLogMap.put(MainEventManager.clock(), newBandwidth);
 			var choice = DataCenterWithController.getLimiting();
@@ -238,10 +239,10 @@ public class Channel implements Serializable {
 				+"): BW:"+allocatedBandwidth+", Transmissions:"+inTransmission.size();
 	}
 
-	public NetworkNIC getLastNode() {
-		NetworkNIC node = this.nodes.get(this.nodes.size()-1);
-		return node;
-	}
+//	public NetworkNIC getLastNode() {
+//		NetworkNIC node = this.nodes.get(this.nodes.size()-1);
+//		return node;
+//	}
 
 	public int getSrcId() {
 		return srcId;

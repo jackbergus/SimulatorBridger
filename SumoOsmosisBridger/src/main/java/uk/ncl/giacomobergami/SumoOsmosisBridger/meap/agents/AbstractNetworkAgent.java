@@ -5,6 +5,7 @@ import org.cloudbus.agent.AbstractAgent;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.osmosis.core.NetworkNodeType;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.MessageWithPayload;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.PayloadForIoTAgent;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.PayloadFromIoTAgent;
@@ -15,6 +16,8 @@ import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
 import uk.ncl.giacomobergami.utils.gir.SquaredCartesianDistanceFunction;
 import uk.ncl.giacomobergami.utils.structures.ImmutablePair;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -57,7 +60,7 @@ public class AbstractNetworkAgent extends AbstractAgent {
     }
 
     @Override
-    public void plan(String PowerModel) {
+    public void plan(String PowerModel, Connection conn, DSLContext context) {
         var messagesFromIoTDevices = actualAgent.getReceivedMessages(x -> ((MessageWithPayload<PayloadFromIoTAgent>)x).getPayload());
         if (messagesFromIoTDevices.isEmpty()) return;
         HashMap<String, IoTDevice> devices = new HashMap<>();
@@ -344,7 +347,11 @@ public class AbstractNetworkAgent extends AbstractAgent {
                     var network_routing = networks.get(network).getSdnController().getSdnRoutingPoloicy();
                     if (network_routing instanceof MaximumFlowRoutingPolicy) {
                         // Updating the connections and the paths given the attempt to connections
-                        ((MaximumFlowRoutingPolicy)network_routing).setNewPaths(distinctPaths.getValue());
+                        try {
+                            ((MaximumFlowRoutingPolicy)network_routing).setNewPaths(distinctPaths.getValue(), conn, context);
+                        } catch (SQLException e) {
+                            throw new RuntimeException(e);
+                        }
                     }
                 }
 

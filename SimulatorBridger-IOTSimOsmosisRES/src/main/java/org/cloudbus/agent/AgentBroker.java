@@ -1,10 +1,12 @@
 package org.cloudbus.agent;
 
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import org.cloudbus.osmosis.core.OsmoticDatacenter;
 import org.cloudbus.res.EnergyController;
 import org.cloudbus.res.config.AppConfig;
 
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -242,17 +244,17 @@ public class AgentBroker {
 
     private double lastMAPEloop=-1;
 
-    public void executeMAPE(double clock, String PowerModel){
+    public void executeMAPE(double clock, String PowerModel, Connection conn, DSLContext context){
         if (lastMAPEloop < 0){
-            executeMAPE(PowerModel);
+            executeMAPE(PowerModel, conn, context);
             lastMAPEloop = clock;
         } else if (lastMAPEloop + timeIntervalMAPE < clock){
-            executeMAPE(PowerModel);
+            executeMAPE(PowerModel, conn , context);
             lastMAPEloop = clock;
         }
     }
 
-    public void executeMAPE(String PowerModel){
+    public void executeMAPE(String PowerModel, Connection conn, DSLContext context){
         //Monitor & Analyze
         for(Agent agent: agentsDC.values()){
             agent.setCurrentTime(lastMAPEloop);
@@ -274,15 +276,15 @@ public class AgentBroker {
 
         //Plan & Execute
         if (ca != null) {
-            ca.plan(PowerModel);
+            ca.plan(PowerModel, conn, context);
             ca.execute();
         }
         for(Agent agent: agentsDC.values()){
-            agent.plan("None");
+            agent.plan("None", conn, context);
             agent.execute();
         }
         for(Agent agent: updateAgentDevices.values()){
-            agent.plan("None");
+            agent.plan("None", conn, context);
             agent.execute();
         }
     }

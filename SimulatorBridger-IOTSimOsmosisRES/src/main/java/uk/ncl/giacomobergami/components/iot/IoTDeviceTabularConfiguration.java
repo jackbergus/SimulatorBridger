@@ -16,6 +16,10 @@ import java.io.Serializable;
 public class IoTDeviceTabularConfiguration implements Serializable {
     public String name;
     public boolean injected = false;
+    public boolean useBatteryInfo = false;
+    public boolean usePacketInfo = false;
+    public double batteryDepletion = 0.0;
+    public double packetSize = 0.0;
     public double bw;
     public double max_battery_capacity;
     public double  battery_sensing_rate;
@@ -195,6 +199,10 @@ public class IoTDeviceTabularConfiguration implements Serializable {
         result.setLatency(latency);
         result.setInjected(injected);
         result.setMobilityEntity(mobility);
+        result.setUseBattery(useBatteryInfo);
+        result.setUsePacketInfo(usePacketInfo);
+        result.setBatteryDepletion(batteryDepletion);
+        result.setPacketSize(packetSize);
 
         return result;
     }
@@ -499,6 +507,33 @@ public class IoTDeviceTabularConfiguration implements Serializable {
     public boolean isInjected() {
         return injected;
     }
-
     public void setInjected(boolean injected) { this.injected = injected; }
+
+    public boolean isUseBatteryInfo() {
+        return useBatteryInfo;
+    }
+    public void setUseBatteryInfo(boolean useBatteryInfo) {
+        this.useBatteryInfo = useBatteryInfo;
+    }
+
+    public boolean isUsePacketInfo() {
+        return usePacketInfo;
+    }
+    public void setUsePacketInfo(boolean usePacketInfo) {
+        this.usePacketInfo = usePacketInfo;
+    }
+
+    public double getBatteryDepletion() {
+        return batteryDepletion;
+    }
+    public void setBatteryDepletion(double batteryDepletion) {
+        this.batteryDepletion = batteryDepletion;
+    }
+
+    public double getPacketSize() {
+        return packetSize;
+    }
+    public void setPacketSize(double packetSize) {
+        this.packetSize = packetSize;
+    }
 }

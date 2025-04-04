@@ -94,15 +94,18 @@ public class OsmosisOrchestrator extends SimEntity {
 	@Override
 	public void processEvent(SimEvent ev) {
 		int tag = ev.getTag();
-		
+
+		Connection conn = null;
+		DSLContext context = null;
+
 		switch(tag){		
 		case OsmoticTags.START_TRANSMISSION:
 			Flow flow = (Flow) ev.getData();			
-			transmitFlow(flow);
+			transmitFlow(flow, conn, context);
 			break;
 
 		case OsmoticTags.SDN_INTERNAL_EVENT:
-			internalFlowProcess(); 
+			internalFlowProcess(conn, context);
 			break;
 
 		default:
@@ -118,11 +121,11 @@ public class OsmosisOrchestrator extends SimEntity {
 		switch(tag){
 			case OsmoticTags.START_TRANSMISSION:
 				Flow flow = (Flow) ev.getData();
-				transmitFlow(flow);
+				transmitFlow(flow, conn, context);
 				break;
 
 			case OsmoticTags.SDN_INTERNAL_EVENT:
-				internalFlowProcess();
+				internalFlowProcess(conn, context);
 				break;
 
 			default:
@@ -131,28 +134,28 @@ public class OsmosisOrchestrator extends SimEntity {
 		}
 	}
 
-	private void transmitFlow(Flow flow) {		
-		createChannel(flow);
+	private void transmitFlow(Flow flow, Connection conn, DSLContext context) {
+		createChannel(flow, conn, context);
 	}
 	
-	protected void createChannel(Flow flow) {
+	protected void createChannel(Flow flow, Connection conn, DSLContext context) {
 		df.setRoundingMode(RoundingMode.HALF_UP);
 		flowList.add(flow);
 		flow.setStartTime(Double.parseDouble(df.format(MainEventManager.clock())));
 		int flowId = flow.getFlowId();			
-		updateFlowProcessing();
+		updateFlowProcessing(conn, context);
 		Channel channel = flow.getChannel(); 
 		int src = flow.getOrigin(); 
 		int dst = flow.getDestination();
 
 		if(channel == null) {	
-			List<NetworkNIC> nodes = flow.getNodeOnRouteList();			
+			//List<NetworkNIC> nodes = flow.getNodeOnRouteList();
 			List<Link> links = flow.getLinkList();			
-			channel = new Channel(flowId, src, dst, nodes, links);
+			channel = new Channel(flowId, src, dst, links);
 		}
 				
 		this.channelTable.put(getKey(src, dst, flowId), channel);		
-		channel.initialize();
+		channel.initialize(conn, context);
 		adjustAllChannels(); // all channel get an equal among of BW   		
 		
 		this.channelsHistory.add(channel);
@@ -162,13 +165,13 @@ public class OsmosisOrchestrator extends SimEntity {
 		sendInternalEvent();	
 	}
 	
-	protected void internalFlowProcess() {
-		if(updateFlowProcessing()) {
+	protected void internalFlowProcess(Connection conn, DSLContext context) {
+		if(updateFlowProcessing(conn, context)) {
 			sendInternalEvent();
 		}
 	}
 	
-	public boolean updateFlowProcessing() {
+	public boolean updateFlowProcessing(Connection conn, DSLContext context) {
 		boolean needSendEvent = false;			
 		List<Channel> completeChannels = new ArrayList<>(channelTable.size());
 		for(Channel ch:channelTable.values()){
@@ -178,7 +181,7 @@ public class OsmosisOrchestrator extends SimEntity {
 		}
 		
 		if(!completeChannels.isEmpty()) {
-			updateChannel();
+			updateChannel(conn, context);
 			processCompleteFlows(completeChannels);		
 		}
 
@@ -220,10 +223,10 @@ public class OsmosisOrchestrator extends SimEntity {
 		}
 	}
 	
-	private Channel removeChannel(String key) {
+	private Channel removeChannel(String key, Connection conn, DSLContext context) {
 		Channel data = channelTable.get("232-8-24");
 		Channel ch = this.channelTable.remove(key);		
-		ch.terminate();
+		ch.terminate(conn, context);
 		adjustAllChannels();
 		return ch;
 	}
@@ -234,7 +237,7 @@ public class OsmosisOrchestrator extends SimEntity {
 		}
 	}
 		
-	private void updateChannel() {
+	private void updateChannel(Connection conn, DSLContext context) {
 		List<String> removeCh = new ArrayList<String>();  
 		for(String key:this.channelTable.keySet()) {
 			Channel ch = this.channelTable.get(key);
@@ -245,7 +248,7 @@ public class OsmosisOrchestrator extends SimEntity {
 		}
 		
 		for(String key:removeCh) {
-			removeChannel(key);
+			removeChannel(key, conn, context);
 		}
 	}
 	

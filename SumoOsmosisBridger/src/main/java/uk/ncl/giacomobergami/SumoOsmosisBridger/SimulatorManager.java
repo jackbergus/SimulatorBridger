@@ -13,6 +13,7 @@ import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
 import org.jooq.Result;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EnsembleConfigurations;
+import uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConfiguration;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter;
 import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
@@ -25,6 +26,7 @@ import uk.ncl.giacomobergami.traffic_converter.abstracted.TrafficConverter;
 import uk.ncl.giacomobergami.traffic_orchestrator.CentralAgentPlannerRunner;
 import uk.ncl.giacomobergami.traffic_orchestrator.PreSimulatorEstimator;
 import uk.ncl.giacomobergami.utils.data.YAML;
+import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Ambulanceinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.AmbulanceinformationRecord;
@@ -40,12 +42,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.DecimalFormat;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.jooq.codegen.GenerationTool;
 
 import javax.sql.DataSource;
 
 import static java.lang.Double.parseDouble;
+import static org.cloudbus.cloudsim.core.CloudSimTags.FALSE;
 import static org.cloudbus.cloudsim.core.CloudSimTags.MAPE_WAKEUP_FOR_COMMUNICATION;
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
@@ -96,6 +100,7 @@ public class SimulatorManager implements SimulatorBridger {
     static HashMap<String, TimedIoT> SecondSet = new HashMap<>();
     HashMap<String, String> patientAmbulance = new HashMap<>();
     GlobalConfigurationSettings globalConfigurationSettings = new GlobalConfigurationSettings();
+    SUMOConfiguration sumoYaml = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
 
     private boolean firstLoop = true;
     private boolean addNewCSVData = true;
@@ -280,6 +285,10 @@ public class SimulatorManager implements SimulatorBridger {
         TI.setSlope(Double.parseDouble(strings[8]));
         TI.setSimtime(Double.parseDouble(strings[9]));
         TI.setInjected(Boolean.parseBoolean(strings[10]));
+        TI.setBatteryDepletion(0.0);
+        TI.setUseBattery(false);
+        TI.setPacketSize(0.0);
+        TI.setUsePacket(false);
 
         IoTEntityGenerator.addNewWakeUpTimes(Double.parseDouble(strings[9]));
 
@@ -298,8 +307,8 @@ public class SimulatorManager implements SimulatorBridger {
         System.out.print("Organising new vehInformation Data...\n");
         long startTime = System.nanoTime();
         copyCSVDATA(conn, vehicleCSVFile, targetTABLE);
-        transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected)",
-                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected", targetTABLE);
+        transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected,batterydepletion,usebattery,packetsize,usepacketinfo)",
+                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected,batterydepletion,usebattery,packetsize,usepacketinfo", targetTABLE);
         emptyTABLE(conn, targetTABLE+"_import");
         long endTime = System.nanoTime();
         long executionTime = (endTime - startTime) / 1000000;
@@ -337,7 +346,11 @@ public class SimulatorManager implements SimulatorBridger {
                 idtc.battery_sensing_rate = conf.battery_sensing_rate;
                 idtc.battery_sending_rate = conf.battery_sending_rate;
                 idtc.ioTClassName = conf.ioTClassName;
-                idtc.setInjected(true);
+                idtc.setInjected(FirstSet.get(allVeh).injected);
+                idtc.setUseBatteryInfo(FirstSet.get(allVeh).useBattery);
+                idtc.setUsePacketInfo(FirstSet.get(allVeh).usePacket);
+                idtc.setBatteryDepletion(FirstSet.get(allVeh).batteryDepletion);
+                idtc.setPacketSize(FirstSet.get(allVeh).packetSize);
                 deviceList.add(idtc);
             }
         }
@@ -355,11 +368,14 @@ public class SimulatorManager implements SimulatorBridger {
 
         writer = new CSVWriter(new FileWriter(CSVFilePath));
 
-        String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime", "injected"};
+        String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime", "injected", "batterydepletion", "usebattery", "packetsize", "usepacketinfo"};
         writer.writeNext(headers);
 
         for (TimedIoT vehicle : timedIoTList) {
-            String[] data = {String.valueOf(vehicle.getId()), String.valueOf(vehicle.getX()), String.valueOf(vehicle.getY()), String.valueOf(vehicle.getAngle()), String.valueOf(vehicle.getType()), String.valueOf(vehicle.getSpeed()), String.valueOf(vehicle.getPos()), String.valueOf(vehicle.getLane()), String.valueOf(vehicle.getSlope()), String.valueOf(vehicle.getSimtime()), String.valueOf(vehicle.isInjected())};
+            String[] data = {String.valueOf(vehicle.getId()), String.valueOf(vehicle.getX()), String.valueOf(vehicle.getY()), String.valueOf(vehicle.getAngle()),
+                    String.valueOf(vehicle.getType()), String.valueOf(vehicle.getSpeed()), String.valueOf(vehicle.getPos()), String.valueOf(vehicle.getLane()),
+                    String.valueOf(vehicle.getSlope()), String.valueOf(vehicle.getSimtime()), String.valueOf(vehicle.isInjected()),
+                    String.valueOf(vehicle.getBatteryDepletion()), String.valueOf(vehicle.isUseBattery()), String.valueOf(vehicle.getPacketSize()), String.valueOf(vehicle.isUsePacket())};
             writer.writeNext(data);
         }
 
@@ -401,22 +417,23 @@ public class SimulatorManager implements SimulatorBridger {
                             String simTimeTag = reader.nextName();
                             double simTime = parseDouble(reader.nextString());
                             Result<AmbulanceinformationRecord> dataRange = context.select(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID, Ambulanceinformation.AMBULANCEINFORMATION.X, Ambulanceinformation.AMBULANCEINFORMATION.Y, Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME, Ambulanceinformation.AMBULANCEINFORMATION.INJECTED).from(Ambulanceinformation.AMBULANCEINFORMATION).where("simtime between " + (simTime - deltaTime / 2) + " and " + (simTime + deltaTime / 2)).orderBy(Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME).fetchInto(Ambulanceinformation.AMBULANCEINFORMATION);
-                            if (risk) {
-                                for (AmbulanceinformationRecord amb : dataRange) {
-                                    if (distance(amb.get(Ambulanceinformation.AMBULANCEINFORMATION.X), amb.get(Ambulanceinformation.AMBULANCEINFORMATION.Y), x, y) < dist) {
-                                        if (amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID).contains("from"))
-                                            patientAmbulance.putIfAbsent(id, amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID));
-                                        break;
+                            if(sumoYaml.getUse_ambulances()) {
+                                if (risk) {
+                                    for (AmbulanceinformationRecord amb : dataRange) {
+                                        if (distance(amb.get(Ambulanceinformation.AMBULANCEINFORMATION.X), amb.get(Ambulanceinformation.AMBULANCEINFORMATION.Y), x, y) < dist) {
+                                            if (amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID).contains("from"))
+                                                patientAmbulance.putIfAbsent(id, amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID));
+                                            break;
+                                        }
                                     }
                                 }
-                            }
 
-                            Result<AmbulanceinformationRecord> attachedVehicle = context.select(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID, Ambulanceinformation.AMBULANCEINFORMATION.X, Ambulanceinformation.AMBULANCEINFORMATION.Y, Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME, Ambulanceinformation.AMBULANCEINFORMATION.INJECTED).from(Ambulanceinformation.AMBULANCEINFORMATION).where("simtime between " + (simTime - deltaTime / 2) + " and " + (simTime + deltaTime / 2) + " AND vehicle_id ='" + patientAmbulance.get(id) + "'").orderBy(Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME).fetchInto(Ambulanceinformation.AMBULANCEINFORMATION);
-                            if (!attachedVehicle.isEmpty() && patientAmbulance.get(id) != null) {
-                                x = attachedVehicle.get(0).get(Ambulanceinformation.AMBULANCEINFORMATION.X);
-                                y = attachedVehicle.get(0).get(Ambulanceinformation.AMBULANCEINFORMATION.Y);
+                                Result<AmbulanceinformationRecord> attachedVehicle = context.select(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID, Ambulanceinformation.AMBULANCEINFORMATION.X, Ambulanceinformation.AMBULANCEINFORMATION.Y, Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME, Ambulanceinformation.AMBULANCEINFORMATION.INJECTED).from(Ambulanceinformation.AMBULANCEINFORMATION).where("simtime between " + (simTime - deltaTime / 2) + " and " + (simTime + deltaTime / 2) + " AND vehicle_id ='" + patientAmbulance.get(id) + "'").orderBy(Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME).fetchInto(Ambulanceinformation.AMBULANCEINFORMATION);
+                                if (!attachedVehicle.isEmpty() && patientAmbulance.get(id) != null) {
+                                    x = attachedVehicle.get(0).get(Ambulanceinformation.AMBULANCEINFORMATION.X);
+                                    y = attachedVehicle.get(0).get(Ambulanceinformation.AMBULANCEINFORMATION.Y);
+                                }
                             }
-
                             TimedIoT TIoT = new TimedIoT(id, x, y, 0, "patient", 0.0, 0.0, "", 0.0, simTime, true);
                             jsonTimedIoTList.add(TIoT);
                             reader.endObject();
@@ -471,7 +488,7 @@ public class SimulatorManager implements SimulatorBridger {
             step3 = true;
 
             if (generate) generateJooQ();
-
+            JavaPostGres.emptyTABLE(conn, "sourceToDestLinks");
             String finalOrchestrator = orchestrator;
             String finalSimulator_runner = simulator_runner;
 

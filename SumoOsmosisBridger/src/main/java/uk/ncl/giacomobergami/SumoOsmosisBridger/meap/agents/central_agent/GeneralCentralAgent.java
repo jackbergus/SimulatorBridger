@@ -1,8 +1,11 @@
 package uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.central_agent;
 
 import org.cloudbus.agent.CentralAgent;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.AbstractNetworkAgent;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.AbstractNetworkAgentPolicy;
+
+import java.sql.Connection;
 
 public class GeneralCentralAgent extends CentralAgent {
 
@@ -27,9 +30,9 @@ public class GeneralCentralAgent extends CentralAgent {
     }
 
     @Override
-    public void plan(String PowerModel) {
-        super.plan(PowerModel);
-        abstractNetworkAgent.plan(PowerModel);
+    public void plan(String PowerModel, Connection conn, DSLContext context) {
+        super.plan(PowerModel, conn, context);
+        abstractNetworkAgent.plan(PowerModel, conn, context);
     }
 
     @Override

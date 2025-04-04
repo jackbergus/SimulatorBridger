@@ -160,8 +160,8 @@ public abstract class TrafficConverter {
         System.out.print("Organising vehInformation Data...\n");
         long startTime = System.nanoTime();
         copyCSVDATA(conn, vehicleCSVFile, targetTABLE);
-        transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected)",
-                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected", targetTABLE);
+        transferDATABetweenTables(conn, "vehInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected,batterydepletion,usebattery,packetsize,usepacketinfo)",
+                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected,batterydepletion,usebattery,packetsize,usepacketinfo", targetTABLE);
         long endTime = System.nanoTime();
         long executionTime = (endTime - startTime) / 1000000;
         System.out.print("Sending vehInformation to SQL Database\n");
@@ -176,8 +176,8 @@ public abstract class TrafficConverter {
         System.out.print("Organising Ambulance Data...\n");
         long startTime = System.nanoTime();
         copyCSVDATA(conn, amubulanceCSVFile, targetTABLE);
-        transferDATABetweenTables(conn, "ambulanceInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected)",
-                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected", targetTABLE);
+        transferDATABetweenTables(conn, "ambulanceInformation (vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected,batterydepletion,usebattery,packetsize,usepacketinfo)",
+                "vehicle_ID,x,y,angle,vehicle_type,speed,pos,lane,slope,simtime,injected,batterydepletion,usebattery,packetsize,usepacketinfo", targetTABLE);
         long endTime = System.nanoTime();
         long executionTime = (endTime - startTime) / 1000000;
         System.out.print("Sending Ambulance to SQL Database\n");

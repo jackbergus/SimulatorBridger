@@ -1,6 +1,9 @@
 package org.cloudbus.agent;
 
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
+
+import java.sql.Connection;
 
 public class DeviceAgent extends AbstractAgent{
     private IoTDevice ioTDevice;
@@ -33,7 +36,7 @@ public class DeviceAgent extends AbstractAgent{
     }
 
     @Override
-    public void plan(String PowerModel) {
+    public void plan(String PowerModel, Connection conn, DSLContext context) {
         //Plan actions based on the locally collected informations and from the messages received from other agents.
 
     }

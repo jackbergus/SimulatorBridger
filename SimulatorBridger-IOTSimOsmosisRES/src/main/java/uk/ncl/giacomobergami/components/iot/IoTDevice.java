@@ -60,6 +60,10 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	int connectingEdgeDeviceId = -1;
 	private boolean enabled;
 	private boolean injected;
+	private boolean useBatteryInfo;
+	private boolean usePacketInfo;
+	private double batteryDepletion;
+	private double packetSize;
 	public abstract boolean updateBatteryBySensing(double deltaTime);
 	public abstract boolean updateBatteryByTransmission(double deltaTime);
 	private double bw;
@@ -114,6 +118,11 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 		this.bw = Objects.equals(this.netType, "custom") ? onta.getBw() : NetworkTypingGeneratorFactory.generateFacade(this.netType).getNTBW();
 		this.netLatency = Objects.equals(this.netType, "custom") ? onta.getLatency() : NetworkTypingGeneratorFactory.generateFacade(this.netType).getNTLat();
 		this.injected = onta.isInjected();
+		this.useBatteryInfo = onta.isUseBattery();
+		this.usePacketInfo = onta.isUsePacketInfo();
+		this.batteryDepletion = onta.getBatteryDepletion();
+		this.packetSize = onta.getPacketSize();
+
 		//Osmosis Agents
 		AgentBroker.getInstance().createDeviceAgent(onta.getName(), this);
 

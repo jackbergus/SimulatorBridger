@@ -24,7 +24,5 @@ public class Indexes {
     // -------------------------------------------------------------------------
 
     public static final Index AMBULANCEINDEX = Internal.createIndex(DSL.name("ambulanceindex"), Ambulanceinformation.AMBULANCEINFORMATION, new OrderField[] { Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME, Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID, Ambulanceinformation.AMBULANCEINFORMATION.X, Ambulanceinformation.AMBULANCEINFORMATION.Y }, false);
-    public static final Index IDX_VEHINFO_SIMTIME = Internal.createIndex(DSL.name("idx_vehinfo_simtime"), Vehinformation.VEHINFORMATION, new OrderField[] { Vehinformation.VEHINFORMATION.SIMTIME }, false);
-    public static final Index IDX_VEHINFO_VEHIDS = Internal.createIndex(DSL.name("idx_vehinfo_vehids"), Vehinformation.VEHINFORMATION, new OrderField[] { Vehinformation.VEHINFORMATION.VEHICLE_ID }, false);
     public static final Index MYSEARCHINDEX = Internal.createIndex(DSL.name("mysearchindex"), Vehinformation.VEHINFORMATION, new OrderField[] { Vehinformation.VEHINFORMATION.SIMTIME, Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y }, false);
 }

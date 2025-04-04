@@ -14,7 +14,9 @@ package org.cloudbus.cloudsim.osmesis.examples;
 
 import org.cloudbus.agent.AgentMessage;
 import org.cloudbus.agent.DeviceAgent;
+import org.jooq.DSLContext;
 
+import java.sql.Connection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -81,8 +83,8 @@ public class RES_example6_DeviceAgent extends DeviceAgent {
     }
 
     @Override
-    public void plan(String PowerModel) {
-        super.plan(PowerModel);
+    public void plan(String PowerModel, Connection conn, DSLContext context) {
+        super.plan(PowerModel, conn, context);
 
         //Get already received messages and analyze the data.
         //It clears the incoming buffer.

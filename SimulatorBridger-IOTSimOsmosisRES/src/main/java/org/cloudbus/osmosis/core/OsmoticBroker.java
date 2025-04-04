@@ -286,7 +286,7 @@ public class OsmoticBroker extends DatacenterBroker {
 				//Update simulation time in the AgentBroker
 				ab.updateTime(chron, vehsToUpdate);
 				//Execute MAPE loop at time interval
-				ab.executeMAPE(chron, time_conf.get().getPowerModel());
+				ab.executeMAPE(chron, time_conf.get().getPowerModel(), conn, context);
 				OsmoticDatacenter.updatePowerUtilization(time_conf.get().getPowerModel(), datacenters, chron);
 			}
 		}

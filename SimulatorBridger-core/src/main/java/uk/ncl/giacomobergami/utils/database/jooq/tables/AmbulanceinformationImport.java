@@ -102,6 +102,27 @@ public class AmbulanceinformationImport extends TableImpl<AmbulanceinformationIm
      */
     public final TableField<AmbulanceinformationImportRecord, String> INJECTED = createField(DSL.name("injected"), SQLDataType.VARCHAR(5).nullable(false), this, "");
 
+    /**
+     * The column
+     * <code>public.ambulanceinformation_import.batterydepletion</code>.
+     */
+    public final TableField<AmbulanceinformationImportRecord, Double> BATTERYDEPLETION = createField(DSL.name("batterydepletion"), SQLDataType.DOUBLE.nullable(false), this, "");
+
+    /**
+     * The column <code>public.ambulanceinformation_import.usebattery</code>.
+     */
+    public final TableField<AmbulanceinformationImportRecord, String> USEBATTERY = createField(DSL.name("usebattery"), SQLDataType.VARCHAR(5).nullable(false), this, "");
+
+    /**
+     * The column <code>public.ambulanceinformation_import.packetsize</code>.
+     */
+    public final TableField<AmbulanceinformationImportRecord, Double> PACKETSIZE = createField(DSL.name("packetsize"), SQLDataType.DOUBLE.nullable(false), this, "");
+
+    /**
+     * The column <code>public.ambulanceinformation_import.usepacketinfo</code>.
+     */
+    public final TableField<AmbulanceinformationImportRecord, String> USEPACKETINFO = createField(DSL.name("usepacketinfo"), SQLDataType.VARCHAR(5).nullable(false), this, "");
+
     private AmbulanceinformationImport(Name alias, Table<AmbulanceinformationImportRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }

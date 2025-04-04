@@ -36,6 +36,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.Powerutilisationhistory;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.PowerutilisationhistoryImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Rsuinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.RsuinformationImport;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Sourcetodestlinks;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Switchpowerconsumption;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.SwitchpowerconsumptionImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
@@ -182,6 +183,11 @@ public class Public extends SchemaImpl {
     public final RsuinformationImport RSUINFORMATION_IMPORT = RsuinformationImport.RSUINFORMATION_IMPORT;
 
     /**
+     * The table <code>public.sourcetodestlinks</code>.
+     */
+    public final Sourcetodestlinks SOURCETODESTLINKS = Sourcetodestlinks.SOURCETODESTLINKS;
+
+    /**
      * The table <code>public.switchpowerconsumption</code>.
      */
     public final Switchpowerconsumption SWITCHPOWERCONSUMPTION = Switchpowerconsumption.SWITCHPOWERCONSUMPTION;
@@ -247,6 +253,7 @@ public class Public extends SchemaImpl {
             PowerutilisationhistoryImport.POWERUTILISATIONHISTORY_IMPORT,
             Rsuinformation.RSUINFORMATION,
             RsuinformationImport.RSUINFORMATION_IMPORT,
+            Sourcetodestlinks.SOURCETODESTLINKS,
             Switchpowerconsumption.SWITCHPOWERCONSUMPTION,
             SwitchpowerconsumptionImport.SWITCHPOWERCONSUMPTION_IMPORT,
             TimedScc.TIMED_SCC,

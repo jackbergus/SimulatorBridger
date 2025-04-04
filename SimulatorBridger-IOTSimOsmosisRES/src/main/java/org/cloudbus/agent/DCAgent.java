@@ -2,6 +2,9 @@ package org.cloudbus.agent;
 
 import org.cloudbus.osmosis.core.OsmoticDatacenter;
 import org.cloudbus.res.EnergyController;
+import org.jooq.DSLContext;
+
+import java.sql.Connection;
 
 public class DCAgent extends AbstractAgent {
     protected OsmoticDatacenter osmesisDatacenter;
@@ -30,7 +33,7 @@ public class DCAgent extends AbstractAgent {
     @Override
     public void analyze() { }
     @Override
-    public void plan(String PowerModel)    { }
+    public void plan(String PowerModel, Connection conn, DSLContext context)    { }
     @Override
     public void execute() { }
 }

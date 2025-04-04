@@ -13,7 +13,9 @@
 package org.cloudbus.cloudsim.osmesis.examples;
 
 import org.cloudbus.agent.DCAgent;
+import org.jooq.DSLContext;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -74,8 +76,8 @@ public class RES_example6_DCAgent extends DCAgent {
     }
 
     @Override
-    public void plan(String PowerModel) {
-        super.plan(PowerModel);
+    public void plan(String PowerModel, Connection conn, DSLContext context) {
+        super.plan(PowerModel, conn, context);
 
         //There should not be any message in input queue.
 

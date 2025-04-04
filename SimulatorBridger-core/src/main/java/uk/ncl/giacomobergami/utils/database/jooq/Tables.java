@@ -29,6 +29,7 @@ import uk.ncl.giacomobergami.utils.database.jooq.tables.Powerutilisationhistory;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.PowerutilisationhistoryImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Rsuinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.RsuinformationImport;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.Sourcetodestlinks;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Switchpowerconsumption;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.SwitchpowerconsumptionImport;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.TimedScc;
@@ -166,6 +167,11 @@ public class Tables {
      * The table <code>public.rsuinformation_import</code>.
      */
     public static final RsuinformationImport RSUINFORMATION_IMPORT = RsuinformationImport.RSUINFORMATION_IMPORT;
+
+    /**
+     * The table <code>public.sourcetodestlinks</code>.
+     */
+    public static final Sourcetodestlinks SOURCETODESTLINKS = Sourcetodestlinks.SOURCETODESTLINKS;
 
     /**
      * The table <code>public.switchpowerconsumption</code>.

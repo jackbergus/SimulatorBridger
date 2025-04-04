@@ -42,6 +42,23 @@ class SimulatorBridger:
 
    def init(self, start=0, deltaTime=None, loopDuration=10):
        ## TODO: EdgeList
+        #583.69,854.5,           09
+        #323.63,227.57,          12
+        #977.75,829.69,          52
+        #768.63,816.34,          53
+        #1425.56,1082.94,        78
+        #1470.88,1073.94,        44
+        #778.0,613.44,           82
+        #1504.51,825.41,         1c
+        #1573.69,569.0,          27
+        #798.63,778.69,          15
+        #1489.07,825.69,         03
+        #1579.38,473.19,         34
+        #874.28,625.54,          63
+        #1485.04,841.29,         1b
+        #1498.87,847.16,         01
+        #1457.38,1043.5,       204c
+
        self.this.init(start, jpype.java.util.ArrayList())
        if deltaTime is None:
            self.deltaTime = self.this.getDeltaTime()
@@ -80,7 +97,8 @@ class SimulatorBridger:
           jar3 = os.path.join(path, "SimulatorBridger-IOTSimOsmosisRES","target","SimulatorBridger-IOTSimOsmosisRES-1.0-SNAPSHOT-jar-with-dependencies.jar")
           jar4 = os.path.join(path, "SimulatorBridger-traffic_information_collector","target","SimulatorBridger-traffic_information_collector-1.0-SNAPSHOT-jar-with-dependencies.jar")
           jar5 = os.path.join(path, "SumoOsmosisBridger","target","SumoOsmosisBridger-1.0-SNAPSHOT-jar-with-dependencies.jar")
-          jpype.startJVM(classpath=[jar1, jar2, jar3, jar4, jar5])
+          jar = "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\out\\artifacts\\SimulatorBridger_jar\\SimulatorBridger.jar"
+          jpype.startJVM(classpath=[jar])
           from uk.ncl.giacomobergami.SumoOsmosisBridger import SimulatorManager
           self.this = SimulatorManager()
           SimulatorBridger.__instance = self

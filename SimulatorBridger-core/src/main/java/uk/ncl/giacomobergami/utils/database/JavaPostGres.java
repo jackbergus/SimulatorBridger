@@ -139,7 +139,7 @@ public class JavaPostGres {
     }
 
     public static void indexAMBULANCEINFORMATION(Connection conn) {
-        System.out.print("Starting indexing of vehInformation SQL table...\n");
+        System.out.print("Starting indexing of ambulanceInformation SQL table...\n");
         PreparedStatement stmt;
         try {
             stmt = conn.prepareStatement("DROP INDEX CONCURRENTLY IF EXISTS ambulanceIndex; CREATE INDEX ambulanceIndex ON ambulanceInformation(simtime, vehicle_id, x, y);");
@@ -147,8 +147,22 @@ public class JavaPostGres {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        System.out.print("vehInformation SQL table indexing complete\n");
+        System.out.print("ambulanceInformation SQL table indexing complete\n");
     }
+
+    public static void indexLINKSDATA(Connection conn) {
+        System.out.print("Starting indexing of Links Data Information SQL table...\n");
+        PreparedStatement stmt;
+        try {
+            stmt = conn.prepareStatement("DROP INDEX CONCURRENTLY IF EXISTS linksINDEX; CREATE INDEX linksINDEX ON sourceToDestLinks (topology_id, link_id, from_id, to_id);");
+            int rs = stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        System.out.print("Links Data Information SQL table indexing complete\n");
+    }
+
+
 
     public static DSLContext getDSLContext (Connection conn) {
         return DSL.using(conn, SQLDialect.POSTGRES);
@@ -184,6 +198,37 @@ public class JavaPostGres {
         origin = origin + "_import";
         try {
             stmt = conn.prepareStatement("INSERT INTO " + dest + " SELECT " + params+ " FROM " + origin + ";");
+            int rs = stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void INSERTLinkData(Connection conn, String dest, String values) {
+        PreparedStatement stmt;
+        try {
+            stmt = conn.prepareStatement("INSERT INTO " + dest + " VALUES " + values);
+            int rs = stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void updateLinkBW(Connection conn, double newBW, double from, double to) {
+        PreparedStatement stmt;
+        try {
+            stmt = conn.prepareStatement("UPDATE sourceToDestLinks SET bw =" + newBW + " WHERE from_id =" + from + " AND to_id =" + to);
+            int rs = stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static void updateLinkChannels(Connection conn, int change, int from, int to, int linkID, int topologyID) {
+        PreparedStatement stmt;
+        try {
+            stmt = conn.prepareStatement("UPDATE sourceToDestLinks SET nochannels = nochannels + " + change + " WHERE from_id = "
+                    + from + " AND to_id = " + to + " AND link_id = " + linkID + " AND topology_id = " + topologyID);
             int rs = stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException(e);

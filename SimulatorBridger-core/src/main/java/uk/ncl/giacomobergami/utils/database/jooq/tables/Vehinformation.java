@@ -114,6 +114,26 @@ public class Vehinformation extends TableImpl<VehinformationRecord> {
      */
     public final TableField<VehinformationRecord, String> INJECTED = createField(DSL.name("injected"), SQLDataType.VARCHAR(5).nullable(false), this, "");
 
+    /**
+     * The column <code>public.vehinformation.batterydepletion</code>.
+     */
+    public final TableField<VehinformationRecord, Double> BATTERYDEPLETION = createField(DSL.name("batterydepletion"), SQLDataType.DOUBLE.nullable(false), this, "");
+
+    /**
+     * The column <code>public.vehinformation.usebattery</code>.
+     */
+    public final TableField<VehinformationRecord, String> USEBATTERY = createField(DSL.name("usebattery"), SQLDataType.VARCHAR(5).nullable(false), this, "");
+
+    /**
+     * The column <code>public.vehinformation.packetsize</code>.
+     */
+    public final TableField<VehinformationRecord, Double> PACKETSIZE = createField(DSL.name("packetsize"), SQLDataType.DOUBLE.nullable(false), this, "");
+
+    /**
+     * The column <code>public.vehinformation.usepacketinfo</code>.
+     */
+    public final TableField<VehinformationRecord, String> USEPACKETINFO = createField(DSL.name("usepacketinfo"), SQLDataType.VARCHAR(5).nullable(false), this, "");
+
     private Vehinformation(Name alias, Table<VehinformationRecord> aliased) {
         this(alias, aliased, (Field<?>[]) null, null);
     }
@@ -150,7 +170,7 @@ public class Vehinformation extends TableImpl<VehinformationRecord> {
 
     @Override
     public List<Index> getIndexes() {
-        return Arrays.asList(Indexes.IDX_VEHINFO_SIMTIME, Indexes.IDX_VEHINFO_VEHIDS, Indexes.MYSEARCHINDEX);
+        return Arrays.asList(Indexes.MYSEARCHINDEX);
     }
 
     @Override

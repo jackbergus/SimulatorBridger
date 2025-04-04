@@ -28,15 +28,17 @@ import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.components.simulator.OsmoticConfiguration;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.utils.data.JSON;
+import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 
 import java.io.File;
 import java.sql.Connection;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class OsmoticRunner {
 
+    public static AtomicInteger linkID = new AtomicInteger(0);
     static OsmoticWrapper conv;
-
     static {
         File file = new File("log4j2.xml");
         LoggerContext context = (LoggerContext) LogManager.getContext(false);
@@ -80,6 +82,7 @@ public class OsmoticRunner {
     public static void runFromConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         conv = new OsmoticWrapper(conf.asPreviousOsmoticConfiguration());
         conv.runConfiguration(conf, conn, context, loopEnd, deltaTime);
+        JavaPostGres.indexLINKSDATA(conn);
         //conv.stop(conn, context);
         //conv.log(conf, conn, context);
     }

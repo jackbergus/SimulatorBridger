@@ -186,6 +186,62 @@ public class VehinformationRecord extends UpdatableRecordImpl<VehinformationReco
         return (String) get(11);
     }
 
+    /**
+     * Setter for <code>public.vehinformation.batterydepletion</code>.
+     */
+    public void setBatterydepletion(Double value) {
+        set(12, value);
+    }
+
+    /**
+     * Getter for <code>public.vehinformation.batterydepletion</code>.
+     */
+    public Double getBatterydepletion() {
+        return (Double) get(12);
+    }
+
+    /**
+     * Setter for <code>public.vehinformation.usebattery</code>.
+     */
+    public void setUsebattery(String value) {
+        set(13, value);
+    }
+
+    /**
+     * Getter for <code>public.vehinformation.usebattery</code>.
+     */
+    public String getUsebattery() {
+        return (String) get(13);
+    }
+
+    /**
+     * Setter for <code>public.vehinformation.packetsize</code>.
+     */
+    public void setPacketsize(Double value) {
+        set(14, value);
+    }
+
+    /**
+     * Getter for <code>public.vehinformation.packetsize</code>.
+     */
+    public Double getPacketsize() {
+        return (Double) get(14);
+    }
+
+    /**
+     * Setter for <code>public.vehinformation.usepacketinfo</code>.
+     */
+    public void setUsepacketinfo(String value) {
+        set(15, value);
+    }
+
+    /**
+     * Getter for <code>public.vehinformation.usepacketinfo</code>.
+     */
+    public String getUsepacketinfo() {
+        return (String) get(15);
+    }
+
     // -------------------------------------------------------------------------
     // Primary key information
     // -------------------------------------------------------------------------
@@ -209,7 +265,7 @@ public class VehinformationRecord extends UpdatableRecordImpl<VehinformationReco
     /**
      * Create a detached, initialised VehinformationRecord
      */
-    public VehinformationRecord(Integer diEntryId, String vehicleId, Double x, Double y, Double angle, String vehicleType, Double speed, Double pos, String lane, Double slope, Double simtime, String injected) {
+    public VehinformationRecord(Integer diEntryId, String vehicleId, Double x, Double y, Double angle, String vehicleType, Double speed, Double pos, String lane, Double slope, Double simtime, String injected, Double batterydepletion, String usebattery, Double packetsize, String usepacketinfo) {
         super(Vehinformation.VEHINFORMATION);
 
         setDiEntryId(diEntryId);
@@ -224,6 +280,10 @@ public class VehinformationRecord extends UpdatableRecordImpl<VehinformationReco
         setSlope(slope);
         setSimtime(simtime);
         setInjected(injected);
+        setBatterydepletion(batterydepletion);
+        setUsebattery(usebattery);
+        setPacketsize(packetsize);
+        setUsepacketinfo(usepacketinfo);
         resetChangedOnNotNull();
     }
 }

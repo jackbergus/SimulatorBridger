@@ -171,6 +171,62 @@ public class VehinformationImportRecord extends TableRecordImpl<VehinformationIm
         return (String) get(10);
     }
 
+    /**
+     * Setter for <code>public.vehinformation_import.batterydepletion</code>.
+     */
+    public void setBatterydepletion(Double value) {
+        set(11, value);
+    }
+
+    /**
+     * Getter for <code>public.vehinformation_import.batterydepletion</code>.
+     */
+    public Double getBatterydepletion() {
+        return (Double) get(11);
+    }
+
+    /**
+     * Setter for <code>public.vehinformation_import.usebattery</code>.
+     */
+    public void setUsebattery(String value) {
+        set(12, value);
+    }
+
+    /**
+     * Getter for <code>public.vehinformation_import.usebattery</code>.
+     */
+    public String getUsebattery() {
+        return (String) get(12);
+    }
+
+    /**
+     * Setter for <code>public.vehinformation_import.packetsize</code>.
+     */
+    public void setPacketsize(Double value) {
+        set(13, value);
+    }
+
+    /**
+     * Getter for <code>public.vehinformation_import.packetsize</code>.
+     */
+    public Double getPacketsize() {
+        return (Double) get(13);
+    }
+
+    /**
+     * Setter for <code>public.vehinformation_import.usepacketinfo</code>.
+     */
+    public void setUsepacketinfo(String value) {
+        set(14, value);
+    }
+
+    /**
+     * Getter for <code>public.vehinformation_import.usepacketinfo</code>.
+     */
+    public String getUsepacketinfo() {
+        return (String) get(14);
+    }
+
     // -------------------------------------------------------------------------
     // Constructors
     // -------------------------------------------------------------------------
@@ -185,7 +241,7 @@ public class VehinformationImportRecord extends TableRecordImpl<VehinformationIm
     /**
      * Create a detached, initialised VehinformationImportRecord
      */
-    public VehinformationImportRecord(String vehicleId, Double x, Double y, Double angle, String vehicleType, Double speed, Double pos, String lane, Double slope, Double simtime, String injected) {
+    public VehinformationImportRecord(String vehicleId, Double x, Double y, Double angle, String vehicleType, Double speed, Double pos, String lane, Double slope, Double simtime, String injected, Double batterydepletion, String usebattery, Double packetsize, String usepacketinfo) {
         super(VehinformationImport.VEHINFORMATION_IMPORT);
 
         setVehicleId(vehicleId);
@@ -199,6 +255,10 @@ public class VehinformationImportRecord extends TableRecordImpl<VehinformationIm
         setSlope(slope);
         setSimtime(simtime);
         setInjected(injected);
+        setBatterydepletion(batterydepletion);
+        setUsebattery(usebattery);
+        setPacketsize(packetsize);
+        setUsepacketinfo(usepacketinfo);
         resetChangedOnNotNull();
     }
 }

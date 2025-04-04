@@ -11,6 +11,7 @@
 
 package org.cloudbus.osmosis.core;
 
+import java.sql.Connection;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Stream;
@@ -47,7 +48,8 @@ public class CloudDatacenter extends OsmoticDatacenter {
 						   double schedulingInterval,
 						   SDNController sdnController,
 						   AtomicInteger hostId,
-						   String PowerModel) {
+						   String PowerModel,
+						   Connection conn) {
 			super(dataCenterEntity.getName(), characteristics, vmAllocationPolicy, storageList, schedulingInterval);
 			this.sdnController = sdnController;
 			this.sdnController.setDatacenter(this);
@@ -55,7 +57,8 @@ public class CloudDatacenter extends OsmoticDatacenter {
 					dataCenterEntity.getSwitches(),
 					dataCenterEntity.getLinks(),
 					hostId,
-					PowerModel);
+					PowerModel,
+					conn);
 			feedSDNWithTopology();
 			setGateway(getSdnController().getGateway());
 			setDcType(dataCenterEntity.getType());
@@ -69,7 +72,6 @@ public class CloudDatacenter extends OsmoticDatacenter {
 		this.sdnController = sdnController;
 		this.sdnController.setDatacenter(this);
 	}
-
 	public void addVm(Vm vm){
 			getVmList().add(vm);
 			if (vm.isBeingInstantiated()) vm.setBeingInstantiated(false);
@@ -103,7 +105,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 								  Stream<SwitchEntity> switchEntites,
 								  Collection<LinkEntity> linkEntites,
 								  AtomicInteger hostId,
-								  String PowerModel) {
+								  String PowerModel, Connection conn) {
 		topology  = new Topology();
 		sdnhosts = new ArrayList<>();
 		switches= new ArrayList<>();
@@ -123,13 +125,14 @@ public class CloudDatacenter extends OsmoticDatacenter {
 			this.sdnhosts.add(sdnHost);
 		});
 		switchEntites.forEach(x -> x.initializeSwitch(nameIdTable, topology, switches));
-		linkEntites.forEach(x -> x.initializeLink(nameIdTable, topology));
+		linkEntites.forEach(x -> x.initializeLink(nameIdTable, topology, conn, false));
 	}
 	public void initCloudTopology(List<HostEntity> hostEntites,
 								  List<SwitchEntity> switchEntites,
 								  List<LinkEntity> linkEntites,
 								  AtomicInteger hostId,
-								  String PowerModel) {
+								  String PowerModel,
+								  Connection conn) {
 		 topology  = new Topology();		 
 		 sdnhosts = new ArrayList<>();
 		 switches= new ArrayList<>();
@@ -151,7 +154,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 		}
 
 		switchEntites.forEach(x -> x.initializeSwitch(nameIdTable, topology, switches));
-		linkEntites.forEach(x -> x.initializeLink(nameIdTable, topology));
+		linkEntites.forEach(x -> x.initializeLink(nameIdTable, topology, conn, false));
 	}
 
 	@Override
@@ -161,7 +164,7 @@ public class CloudDatacenter extends OsmoticDatacenter {
 
 	@Override
 	public void initEdgeTopology(List<EdgeDevice> devices, List<SwitchEntity> switchEntites,
-			List<LinkEntity> linkEntites, String powerModel) {
+			List<LinkEntity> linkEntites, String powerModel, Connection conn) {
 	}
 
 

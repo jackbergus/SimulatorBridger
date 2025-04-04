@@ -14,6 +14,7 @@ package org.cloudbus.cloudsim.edge.core.edge;
 
 import java.io.File;
 import java.io.FileReader;
+import java.sql.Connection;
 import java.util.List;
 import java.util.Map;
 
@@ -177,7 +178,7 @@ public class LegacyConfiguration {
 	    private double bw;
 
 		public void initializeLink(Map<String, Integer> nameIdTable,
-								   Topology topology) {
+								   Topology topology, Connection conn, boolean updateLinks) {
 			String src = getSource();
 			String dst = getDestination();
 			double bw = getBw();
@@ -188,7 +189,7 @@ public class LegacyConfiguration {
 			if (!nameIdTable.containsKey(dst))
 				throw new RuntimeException("ERROR!");
 			int dstAddress = nameIdTable.get(dst);
-			topology.addLink(srcAddress, dstAddress, bw);
+			topology.addLink(srcAddress, dstAddress, bw, conn, updateLinks);
 		}
 	}
 	
@@ -242,6 +243,10 @@ public class LegacyConfiguration {
 		double bw;
 		double latency;
 		boolean injected = false;
+		boolean useBattery = false;
+		boolean usePacketInfo = false;
+		double batteryDepletion = 0.0;
+		double packetSize = 0.0;
 	}
 	
 	@Data

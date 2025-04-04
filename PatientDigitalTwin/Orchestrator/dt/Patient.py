@@ -130,9 +130,9 @@ class PatientDataGenerator:
             gr = x.getRisk(t)
             if gr["risk"]:
                 L.append(gr)
-                self.patients_next_time[idx] = self.patients_next_time[idx]+1
+                self.patients_next_time[idx] = self.patients_next_time[idx] + 1
             elif gr["timestamp"] == self.patients_next_time[idx]:
-                self.patients_next_time[idx] = self.patients_next_time[idx]+self.p.granularity
+                self.patients_next_time[idx] = self.patients_next_time[idx] + self.p.granularity
                 L.append(gr)
         return L
 

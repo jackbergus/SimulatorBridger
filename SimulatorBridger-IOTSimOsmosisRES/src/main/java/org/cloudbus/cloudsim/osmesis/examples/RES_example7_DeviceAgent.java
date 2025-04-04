@@ -13,6 +13,9 @@
 package org.cloudbus.cloudsim.osmesis.examples;
 
 import org.cloudbus.agent.DeviceAgent;
+import org.jooq.DSLContext;
+
+import java.sql.Connection;
 
 public class RES_example7_DeviceAgent extends DeviceAgent {
 
@@ -42,8 +45,8 @@ public class RES_example7_DeviceAgent extends DeviceAgent {
     }
 
     @Override
-    public void plan(String PowerModel) {
-        super.plan(PowerModel);
+    public void plan(String PowerModel, Connection conn, DSLContext context) {
+        super.plan(PowerModel, conn, context);
 
         //Do nothing.
     }

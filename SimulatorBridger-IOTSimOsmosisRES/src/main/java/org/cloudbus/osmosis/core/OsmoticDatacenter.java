@@ -11,6 +11,7 @@
 
 package org.cloudbus.osmosis.core;
 
+import java.sql.Connection;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -67,7 +68,7 @@ public abstract class OsmoticDatacenter extends Datacenter{
 
 	public abstract void initCloudTopology(List<HostEntity> hostEntites, List<SwitchEntity> switchEntites, List<LinkEntity> linkEntites);
 
-	public abstract void initEdgeTopology(List<EdgeDevice> devices, List<SwitchEntity> switchEntites, List<LinkEntity> linkEntites, String PowerModel);
+	public abstract void initEdgeTopology(List<EdgeDevice> devices, List<SwitchEntity> switchEntites, List<LinkEntity> linkEntites, String PowerModel, Connection conn);
 		
 	public OsmoticDatacenter(String name, DatacenterCharacteristics characteristics,
 							 VmAllocationPolicy vmAllocationPolicy, List<Storage> storageList, double schedulingInterval)

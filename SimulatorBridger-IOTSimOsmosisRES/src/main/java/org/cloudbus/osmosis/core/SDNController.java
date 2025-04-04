@@ -72,10 +72,12 @@ public class SDNController extends NetworkOperatingSystem {
 		int tag = ev.getTag();
 		Flow flow;
 		switch(tag){
-		
+
 		case OsmoticTags.BUILD_ROUTE:
+			Connection conn = null;
+			DSLContext context = null;
 			 flow = (Flow) ev.getData();			
-			scheduleFlow(flow);
+			scheduleFlow(flow, conn, context);
 			break;
 					
 		case OsmoticTags.BUILD_ROUTE_GREEN:
@@ -96,7 +98,7 @@ public class SDNController extends NetworkOperatingSystem {
 
 			case OsmoticTags.BUILD_ROUTE:
 				flow = (Flow) ev.getData();
-				scheduleFlow(flow);
+				scheduleFlow(flow, conn, context);
 				break;
 
 			case OsmoticTags.BUILD_ROUTE_GREEN:
@@ -113,11 +115,11 @@ public class SDNController extends NetworkOperatingSystem {
 
 	}
 
-	private void scheduleFlow(Flow flow){				 					
-		startTransmitting(flow);	
+	private void scheduleFlow(Flow flow, Connection conn, DSLContext context){
+		startTransmitting(flow, conn, context);
 	}
 	
-	public void startTransmitting(Flow flow) {
+	public void startTransmitting(Flow flow, Connection conn, DSLContext context) {
 		int srcVm = flow.getOrigin();
 		int dstVm = flow.getDestination();
 
@@ -141,7 +143,7 @@ public class SDNController extends NetworkOperatingSystem {
 		List<NetworkNIC> route;
 		route = sdnRoutingPolicy.getRoute(flow.getOrigin(), flow.getDestination());
 		if(route == null){			
-			buildSDNForwardingTableVmBased(srcVm, dstVm, flowId, flow);
+			buildSDNForwardingTableVmBased(srcVm, dstVm, flowId, flow, conn, context);
 			List<NetworkNIC> endToEndRoute = sdnRoutingPolicy.getRoute(flow.getOrigin(), flow.getDestination());
 			if (route != null) {
 				if (!endToEndRoute.equals(route))
@@ -166,7 +168,7 @@ public class SDNController extends NetworkOperatingSystem {
 
 	}
 		 
-	protected boolean buildSDNForwardingTableVmBased(int srcVm, int dstVm, int flowId, Flow flow) {
+	protected boolean buildSDNForwardingTableVmBased(int srcVm, int dstVm, int flowId, Flow flow, Connection conn, DSLContext context) {
 		NetworkNIC desthost = findSDNHost(dstVm);		
 		if(desthost == null){
 			/*
@@ -180,7 +182,7 @@ public class SDNController extends NetworkOperatingSystem {
 		if (srcHost == null) {
 			srcHost = this.getGateway(); // packets coming from outside the datacenter			
 		}
-		sdnRoutingPolicy.buildRoute(srcHost, desthost, flow);
+		sdnRoutingPolicy.buildRoute(srcHost, desthost, flow, conn, context);
 		return true;			
 	}
 	 	

@@ -2,8 +2,11 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.data_center;
 
 import org.cloudbus.agent.DCAgent;
 import org.cloudbus.osmosis.core.OsmoticDatacenter;
+import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.AbstractNetworkAgent;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.AbstractNetworkAgentPolicy;
+
+import java.sql.Connection;
 
 public class GeneralDataCenterAgent extends DCAgent {
 
@@ -34,9 +37,9 @@ public class GeneralDataCenterAgent extends DCAgent {
     }
 
     @Override
-    public void plan(String PowerModel) {
-        super.plan(PowerModel);
-        abstractNetworkAgent.plan("None");
+    public void plan(String PowerModel, Connection conn, DSLContext context) {
+        super.plan(PowerModel, conn, context);
+        abstractNetworkAgent.plan("None", conn, context);
     }
 
     @Override

@@ -10,6 +10,7 @@ package org.cloudbus.cloudsim.sdn;
 
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
+import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 
@@ -102,6 +103,8 @@ public class Link implements Serializable {
 
 	public boolean addChannel(Channel ch, Connection conn, DSLContext context) {
 		allChannels.add(ch);
+		OsmoticRunner.toUpdate = true;
+		OsmoticRunner.updatedLinks.add(this.src().getAddress());
 		OsmoticWrapper.linkChannels.put(this.src().getAddress(), this.dst().getAddress(),(OsmoticWrapper.linkChannels.get(this.src().getAddress(), this.dst().getAddress())+1));
 		OsmoticWrapper.linkChannels.put(this.dst().getAddress(), this.src().getAddress(),(OsmoticWrapper.linkChannels.get(this.dst().getAddress(), this.src().getAddress())+1));
 		JavaPostGres.updateLinkChannels(conn, 1, this.src().getAddress(), this.dst().getAddress(), this.getLinkID(), this.getToplogyID());
@@ -110,6 +113,7 @@ public class Link implements Serializable {
 	}
 
 	public boolean removeChannel(Channel ch, Connection conn, DSLContext context) {
+		OsmoticRunner.toUpdate = true;
 		boolean ret = this.allChannels.remove(ch);
 		OsmoticWrapper.linkChannels.put(this.src().getAddress(), this.dst().getAddress(),(OsmoticWrapper.linkChannels.get(this.src().getAddress(), this.dst().getAddress())-1));
 		OsmoticWrapper.linkChannels.put(this.dst().getAddress(), this.src().getAddress(),(OsmoticWrapper.linkChannels.get(this.dst().getAddress(), this.src().getAddress())-1));

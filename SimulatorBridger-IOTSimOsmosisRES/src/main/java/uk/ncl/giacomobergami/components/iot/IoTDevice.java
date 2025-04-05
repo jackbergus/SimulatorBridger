@@ -420,4 +420,36 @@ public abstract class IoTDevice extends SimEntity implements CartesianPoint {
 	public HashSet<Integer> getAppIDs() {
 		return AppIDs;
 	}
+
+	public boolean isUsePacketInfo() {
+		return usePacketInfo;
+	}
+
+	public void setUsePacketInfo(boolean usePacketInfo) {
+		this.usePacketInfo = usePacketInfo;
+	}
+
+	public boolean isUseBatteryInfo() {
+		return useBatteryInfo;
+	}
+
+	public void setUseBatteryInfo(boolean useBatteryInfo) {
+		this.useBatteryInfo = useBatteryInfo;
+	}
+
+	public double getPacketSize() {
+		return packetSize;
+	}
+
+	public void setPacketSize(double packetSize) {
+		this.packetSize = packetSize;
+	}
+
+	public double getBatteryDepletion() {
+		return batteryDepletion;
+	}
+
+	public void setBatteryDepletion(double batteryDepletion) {
+		this.batteryDepletion = batteryDepletion;
+	}
 }

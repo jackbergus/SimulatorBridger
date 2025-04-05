@@ -177,7 +177,8 @@ public class SDWANController extends SDNController {
 				}
 			}	
 		}
-			
+
+		System.out.println("Adding link data for Topology " + topology.getTopology_ID());
 		for(LinkEntity linkEntity : linkEntites){									
 				String src = linkEntity.getSource();  
 				String dst = linkEntity.getDestination();				

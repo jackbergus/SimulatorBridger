@@ -32,13 +32,19 @@ import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 
 import java.io.File;
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class OsmoticRunner {
 
     public static AtomicInteger linkID = new AtomicInteger(0);
+    public static double deltaTime;
+    public static boolean toUpdate = true;
+    public static HashSet<Integer> updatedLinks = new HashSet<>();
     static OsmoticWrapper conv;
+
     static {
         File file = new File("log4j2.xml");
         LoggerContext context = (LoggerContext) LogManager.getContext(false);

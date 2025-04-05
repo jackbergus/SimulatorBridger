@@ -13,21 +13,13 @@ package uk.ncl.giacomobergami.components.sdn_routing;
 
 import java.io.Serializable;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.Collection;
-
-import java.util.LinkedList;
-import java.util.List;
+import java.util.*;
 
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
-import org.cloudbus.cloudsim.sdn.SDNHost;
 import org.cloudbus.osmosis.core.Flow;
-import org.cloudbus.osmosis.core.SDNRoutingTable;
 import org.cloudbus.osmosis.core.Topology;
 
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
 import org.jooq.DSLContext;
 
 /**
@@ -54,7 +46,7 @@ public abstract class SDNRoutingPolicy implements Serializable {
 		return null;
 	}
 //	public abstract NetworkNIC getNode(SDNHost srcHost, NetworkNIC node, SDNHost desthost, String destApp);
-	public abstract void updateSDNNetworkGraph(Connection conn, DSLContext context);
+	public abstract void updateSDNNetworkGraph(Connection conn, DSLContext context, NetworkNIC src, NetworkNIC dest);
 	public abstract List<NetworkNIC> buildRoute(NetworkNIC srcHost, NetworkNIC destHost, Flow pkt, Connection conn, DSLContext context);
 	public abstract List<NetworkNIC> getRoute(int source, int dest);
 	public abstract List<Link> getLinks(int source, int dest);

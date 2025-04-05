@@ -12,10 +12,7 @@
 
 package uk.ncl.giacomobergami.components.sdn_routing;
 import java.sql.Connection;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.cloudbus.cloudsim.sdn.Link;
 import org.cloudbus.cloudsim.sdn.NetworkNIC;
@@ -125,7 +122,7 @@ public class SDNRoutingTraditionalShortestPath extends SDNRoutingPolicy {
 	}
 	
 	@Override
-	public void updateSDNNetworkGraph(Connection conn, DSLContext context) {
+	public void updateSDNNetworkGraph(Connection conn, DSLContext context, NetworkNIC src, NetworkNIC dest) {
 		int nodeSize = getNodeList().size();
 		nodeGraphDistance = new int[nodeSize][nodeSize];
 		for(int i = 0; i< getNodeList().size();i++){
@@ -150,7 +147,7 @@ public class SDNRoutingTraditionalShortestPath extends SDNRoutingPolicy {
 
 	@Override
 	public List<NetworkNIC> buildRoute(NetworkNIC srcHost, NetworkNIC destHost, Flow pkt, Connection conn, DSLContext context) {
-		updateSDNNetworkGraph(conn, context);
+		updateSDNNetworkGraph(conn, context, srcHost, destHost);
 
 		int graphSize  = nodeGraphDistance.length; // u
 		

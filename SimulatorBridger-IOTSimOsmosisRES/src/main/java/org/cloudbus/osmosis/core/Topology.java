@@ -47,7 +47,7 @@ public class Topology implements Serializable {
 	public HashBasedTable<Integer, Integer, Integer> numLinks = HashBasedTable.create();
     private  List<CloudDatacenter> datacentres = null;
     private  SDNController wanController  = null;
-	int Topology_ID;
+	private int Topology_ID;
 
 	
 	public Topology() {
@@ -122,12 +122,10 @@ public class Topology implements Serializable {
 			temLink_1.add(l);
 			nTnlinks.put(from, to, temLink_1);
 			numLinks.put(from, to, temLink_1.size());
-			//if(update) {
+			if(OsmoticRunner.deltaTime <= 1) {
 				String entry = "(" + OsmoticRunner.linkID.getAndIncrement() + ", " + l.getToplogyID() + ", " + l.getLinkID() + ", " + from + ", " + to + ", " + bw + ", " + 0 + ")";
 				JavaPostGres.INSERTLinkData(conn, "sourceToDestLinks (unique_entry_id, topology_id, link_id, from_id, to_id, bw, nochannels)", entry);
-			//}
-			//JavaPostGres.updateLinkData(conn, bw, from, to);
-
+			}
 		}
 		
 		List<Link> temLink_2 = nTnlinks.get(to, from);
@@ -135,10 +133,10 @@ public class Topology implements Serializable {
 			temLink_2.add(l);
 			nTnlinks.put(to, from, temLink_1);
 			numLinks.put(to, from, temLink_1.size());
-			//if(update) {
+			if(OsmoticRunner.deltaTime <= 1) {
 				String entry = "(" + OsmoticRunner.linkID.getAndIncrement() + ", " + l.getToplogyID() + ", " + l.getLinkID() + ", " + to + ", " + from + ", " + bw + ", " + 0 + ")";
 				JavaPostGres.INSERTLinkData(conn, "sourceToDestLinks (unique_entry_id, topology_id, link_id, from_id, to_id, bw, nochannels)", entry);
-			//}
+			}
 		}
 
 	}
@@ -174,6 +172,10 @@ public class Topology implements Serializable {
     public SDNController getWanController() { 
     	return wanController;  
     }
+
+	public int getTopology_ID() {
+		return this.Topology_ID;
+	}
 
     public void removeLink(int srcAddress, int dstAddress) {
 		NetworkNIC fromNode = nodesTable.get(srcAddress);

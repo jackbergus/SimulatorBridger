@@ -28,8 +28,8 @@ import com.google.common.collect.Table;
 import org.cloudbus.osmosis.core.Flow;
 import org.jooq.DSLContext;
 import org.jooq.Result;
+import uk.ncl.giacomobergami.components.OsmoticRunner;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
-import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Sourcetodestlinks;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.SourcetodestlinksRecord;
 
@@ -48,7 +48,7 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 	Table<NetworkNIC, NetworkNIC, Link> selectedLink = HashBasedTable.create();
 	protected Table<Integer, Integer, List<NetworkNIC>> path =  HashBasedTable.create(); // src, and dest
 	protected Table<Integer, Integer, List<Link>> links =  HashBasedTable.create(); // srcvm and destvm
-
+	private boolean started = true;
 	public SDNRoutingLoadBalancing() {
 		setPolicyName("ShortestPathMaxBw");
 		nodeToInt = new HashMap<>();
@@ -126,35 +126,56 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 		
 		path.put(pkt.getOrigin(), pkt.getDestination(), nodeLists);
 		links.put(pkt.getOrigin(), pkt.getDestination(), linkList);
+		routes.put("source"+src.getAddress(), "dest"+dest.getAddress(), nodeLists);
+		oldLinks.put("source"+src.getAddress(), "dest"+dest.getAddress(), linkList);
 //		System.out.println(nodeLists);
 		return nodeLists;
 	}
-	
+
+	private HashMap<Integer, Result<SourcetodestlinksRecord>> bestLinkData = new HashMap<>();
 	@Override
-	public void updateSDNNetworkGraph(Connection conn, DSLContext context) {
+	public void updateSDNNetworkGraph(Connection conn, DSLContext context, NetworkNIC src, NetworkNIC dest) {
 		int nodeSize = getNodeList().size();
 		nodeGraphDistance = new int[nodeSize][nodeSize];
 		nodeGraphBandwidth = new double[nodeSize][nodeSize];
 
-		//JavaPostGres.indexLINKSDATA(conn);
-
-		for(int i = 0; i< getNodeList().size();i++){
-			NetworkNIC srcNode = getNodeList().get(i); 
-			nodeToInt.put(srcNode, i);
-			intToNode.put(i,srcNode);
-//			Result<SourcetodestlinksRecord> bestData = context.select().from(Sourcetodestlinks.SOURCETODESTLINKS)
-//					.where("from_ID in ( " + srcNode.getAddress() + ")" + " OR to_ID in ("  + srcNode.getAddress() + ")")
-//					.fetchInto(Sourcetodestlinks.SOURCETODESTLINKS);
-			for(int k = 0; k < getNodeList().size(); k++){
-					NetworkNIC destNode = getNodeList().get(k);
-					//List<SourcetodestlinksRecord> list = bestData.stream().filter(x -> x.getValue(Sourcetodestlinks.SOURCETODESTLINKS.FROM_ID) == destNode.getAddress() ||  x.getValue(Sourcetodestlinks.SOURCETODESTLINKS.TO_ID) == destNode.getAddress()).toList();
-					//Link bestLink = this.getTopology().getLinkfromMap((int) bestData[0]);
-					var temp = OsmoticWrapper.linkChannels.get(srcNode.getAddress(), destNode.getAddress());
-					nodeGraphDistance[i][k] = getDistanceWeight(srcNode, destNode, temp);	// this can be used for link failure
-					nodeGraphBandwidth[i][k] = getBwWeight(srcNode, destNode, temp, conn, context);;
-			}
+		if(OsmoticRunner.updatedLinks.isEmpty() && routes.contains("source"+src.getName(), "dest"+dest.getName())){
+			return;
 		}
+
+		for (int i = 0; i < getNodeList().size(); i++) {
+			NetworkNIC srcNode = getNodeList().get(i);
+			nodeToInt.put(srcNode, i);
+			intToNode.put(i, srcNode);
+			if (OsmoticRunner.updatedLinks.contains(srcNode.getAddress()) || !routes.contains("source"+src.getName(), "dest"+dest.getName())) {
+				Result<SourcetodestlinksRecord> bestData = null;
+				List<SourcetodestlinksRecord> list = null;
+				int topID = this.getTopology().getTopology_ID();
+				if (topID == 0 && srcNode.equals(src) && OsmoticRunner.deltaTime <= 1) {
+					bestData = context.select().from(Sourcetodestlinks.SOURCETODESTLINKS)
+							.where("from_ID in ( " + srcNode.getAddress() + ")")
+							.fetchInto(Sourcetodestlinks.SOURCETODESTLINKS).sortAsc(Sourcetodestlinks.SOURCETODESTLINKS.LINK_ID);
+					bestLinkData.put(srcNode.getAddress(), bestData);
+				}
+
+				for (int k = 0; k < getNodeList().size(); k++) {
+					NetworkNIC destNode = getNodeList().get(k);
+					if(OsmoticRunner.updatedLinks.contains(destNode.getAddress()) || !routes.contains("source"+src.getName(), "dest"+dest.getName())) {
+						var temp = OsmoticWrapper.linkChannels.get(srcNode.getAddress(), destNode.getAddress());
+						if (temp != null && bestData != null) {
+							list = bestLinkData.get(srcNode.getAddress()).stream().filter(x -> x.getValue(Sourcetodestlinks.SOURCETODESTLINKS.FROM_ID) == destNode.getAddress() || x.getValue(Sourcetodestlinks.SOURCETODESTLINKS.TO_ID) == destNode.getAddress()).toList();
+						}
+						nodeGraphDistance[i][k] = getDistanceWeight(srcNode, destNode, temp);    // this can be used for link failure
+						nodeGraphBandwidth[i][k] = getBwWeight(srcNode, destNode, temp, list, topID);
+					} else
+						System.out.println("done2");
+				}
+			} else
+				System.out.println("done");
+		}
+		OsmoticRunner.updatedLinks.clear();
 	}
+
 	private int getDistanceWeight(NetworkNIC srcNode, NetworkNIC destNode, Object Channels){
 		//List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
 		if(Channels == null)
@@ -163,7 +184,7 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 		return 1;
 	}
 	
-	private double getBwWeight(NetworkNIC srcNode, NetworkNIC destNode, Object Channels, Connection conn, DSLContext context) {
+	private double getBwWeight(NetworkNIC srcNode, NetworkNIC destNode, Object Channels, List<SourcetodestlinksRecord> bestData, int topologyID) {
 
 		// links == null, then nodes are not adjacent! 
 		if (Channels == null)
@@ -171,66 +192,67 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 
 		double bw = 0;
 		Link linkWithHighestBW = null;
-		if (topology.numLinks.get(srcNode.getAddress(), destNode.getAddress()) == 1) {
-			int numberChannel = (int) Channels;
-			if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
-				numberChannel = 1; // we cannot divide by 0
-			} else {
-				numberChannel++; // 1 for exisiting one , and one for this one
-			}
-			linkWithHighestBW = topology.getLink(srcNode.getAddress(), destNode.getAddress());
-			bw = linkWithHighestBW.getBw() / numberChannel;
-		} else {
-
-			List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
-			/*
-			 * Sometimes two nodes are connected via two links; therefore, find the max BW among the links!
-			 *
-			 */
-			int ch = (int) Channels;
-			int numberChannel;
-			for (Link l : links) {
-				numberChannel = l.getChannelCount();
+		if (topologyID != 0 || OsmoticRunner.deltaTime > 1 || bestData == null) {
+			if (topology.numLinks.get(srcNode.getAddress(), destNode.getAddress()) == 1) {
+				int numberChannel = (int) Channels;
 				if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
 					numberChannel = 1; // we cannot divide by 0
 				} else {
 					numberChannel++; // 1 for exisiting one , and one for this one
 				}
-				double currentBw = l.getBw() / numberChannel;
-				if (currentBw > bw) {
-					// link bw does not change, instead you need to get the bw and number of channel on the link
-					bw = currentBw;
-					linkWithHighestBW = l;
+				linkWithHighestBW = topology.getLink(srcNode.getAddress(), destNode.getAddress());
+				bw = linkWithHighestBW.getBw() / numberChannel;
+			} else {
+
+				List<Link> links = topology.getNodeToNodeLinks(srcNode, destNode);
+				/*
+				 * Sometimes two nodes are connected via two links; therefore, find the max BW among the links!
+				 *
+				 */
+				int ch = (int) Channels;
+				int numberChannel;
+				for (Link l : links) {
+					numberChannel = l.getChannelCount();
+					if (numberChannel == 0 || srcNode instanceof SDNHost || destNode instanceof SDNHost) { // i think you may need to look the logic again!
+						numberChannel = 1; // we cannot divide by 0
+					} else {
+						numberChannel++; // 1 for exisiting one , and one for this one
+					}
+					double currentBw = l.getBw() / numberChannel;
+					if (currentBw > bw) {
+						// link bw does not change, instead you need to get the bw and number of channel on the link
+						bw = currentBw;
+						linkWithHighestBW = l;
+					}
 				}
 			}
+		} else {
+			double[] best = linkWithHighestBW(bestData);
+			linkWithHighestBW = this.getTopology().getLinkfromMap((int) best[0]);
+			bw = best[1];
 		}
-//		double[] bestData = linkWithHighestBW(context.select().from(Sourcetodestlinks.SOURCETODESTLINKS)
-//				.where("from_ID in ( " + srcNode.getAddress() + "," + destNode.getAddress() + ")"
-//						+ " AND to_ID in (" + destNode.getAddress() + "," + srcNode.getAddress() + ")")
-//				.fetchInto(Sourcetodestlinks.SOURCETODESTLINKS).sortAsc(Sourcetodestlinks.SOURCETODESTLINKS.LINK_ID));
-//		Link bestLink = this.getTopology().getLinkfromMap((int) bestData[0]);
-//		boolean check = bestLink == linkWithHighestBW && bestData[1] == bw;
-//		if (!check) {
-//			System.out.println("This was different from the best link " + srcNode.getAddress() + ", " + destNode.getAddress());
-//		}
 		selectedLink.put(srcNode, destNode, linkWithHighestBW);
 		return bw;
 	}
 
-	private double [] linkWithHighestBW(Result<SourcetodestlinksRecord> linksData) {
+	private double [] linkWithHighestBW(List<SourcetodestlinksRecord> linksData) {
 		if(linksData == null || linksData.isEmpty())
 			return new double[0];
 
 		double bestLink = 0;
 		int j = 0;
-		for (int i = 0; i < linksData.size(); i++) {
-			SourcetodestlinksRecord link = linksData.get(i);
-			int noChannels = link.get(Sourcetodestlinks.SOURCETODESTLINKS.NOCHANNELS)+1;// == 0 ? 1 : link.get(Sourcetodestlinks.SOURCETODESTLINKS.NOCHANNELS);
-			double bwPerChannel = link.get(Sourcetodestlinks.SOURCETODESTLINKS.BW) / noChannels;
-			if (bwPerChannel > bestLink) {
-				bestLink = bwPerChannel;
-				j = i;
+		if(linksData.size() > 1) {
+			for (int i = 0; i < linksData.size(); i++) {
+				var  link = linksData.get(i);
+				int noChannels = link.get(Sourcetodestlinks.SOURCETODESTLINKS.NOCHANNELS) + 1;
+				double bwPerChannel = link.get(Sourcetodestlinks.SOURCETODESTLINKS.BW) / noChannels;
+				if (bwPerChannel > bestLink) {
+					bestLink = bwPerChannel;
+					j = i;
+				}
 			}
+		} else {
+			bestLink = linksData.get(j).get(Sourcetodestlinks.SOURCETODESTLINKS.BW);
 		}
 		double[] bestData = new double[2];
 		bestData[0] = (double)linksData.get(j).get(Sourcetodestlinks.SOURCETODESTLINKS.LINK_ID);
@@ -243,73 +265,86 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 //		return null;
 //	}
 //
-
+	HashBasedTable<String, String, List<NetworkNIC>> routes = HashBasedTable.create();
+	HashBasedTable<String, String, List<Link>> oldLinks = HashBasedTable.create();
 	@Override
 	public List<NetworkNIC> buildRoute(NetworkNIC srcHost,
 									   NetworkNIC destHost,
 									   Flow pkt, Connection conn, DSLContext context) {
 //		System.out.println("Packet: " + pkt.getFlowId() + " - Find Shortest Path and Max BW between " + pkt.getAppNameSrc() +" and " + pkt.getAppNameDest() );
-		updateSDNNetworkGraph(conn, context);
+		List<NetworkNIC> routeBuilt;
+		List<Link> linksBuilt;
+		if(OsmoticRunner.updatedLinks.isEmpty() && routes.contains("source"+srcHost.getAddress(), "dest"+destHost.getAddress())) {
+			routeBuilt = routes.get("source"+srcHost.getAddress(), "dest"+destHost.getAddress());
+			path.put(pkt.getOrigin(), pkt.getDestination(), routeBuilt);
+			linksBuilt = oldLinks.get("source"+srcHost.getAddress(), "dest"+destHost.getAddress());
+			links.put(pkt.getOrigin(), pkt.getDestination(), linksBuilt);
+		} else {
 
-		int graphSize  = nodeGraphDistance.length; // u
-		
-		int distance[] = new int[graphSize]; 
-		double bandwidth[] = new double[graphSize]; 
-		Boolean visited[] = new Boolean[graphSize];
-		int previousNode[] = new int[graphSize]; 
-		Map<Integer, List<NetworkNIC>> parent = new HashMap<>();
-		List<NetworkNIC> listParent;
-		for(int i =0; i < graphSize; i++){
-		    distance[i] = Integer.MAX_VALUE; // to find min distance
-			bandwidth[i] = Double.MIN_VALUE; // to find max bw 
-			visited[i] = false;
-		}
-		
-		int nodeIndex = nodeToInt.get(srcHost); // to map nodes to their integer indexes 
-		
-		distance[nodeIndex] = 0; // Distance of a source node from itself is always 0
-		bandwidth[nodeIndex] = -1; // Bandwidth of a source node from itself is always -1
-		previousNode[nodeIndex] = -1;
-		// Find shortest path for all vertices
-		for (int count = 0; count < graphSize-1; count++)
-		{
-			int currentSelectedNode = minDistanceMaxBw(distance, bandwidth, visited, graphSize);			
-			visited[currentSelectedNode] = true; // Mark the picked node as processed			
+			if (OsmoticRunner.toUpdate) {
+				//this.nodeGraphDistance = null;
+				//this.nodeGraphBandwidth = null;
+				updateSDNNetworkGraph(conn, context, srcHost, destHost);
+			}
 
-			for (int adjacentNode = 0; adjacentNode < graphSize; adjacentNode++){ // Update the distance and bw values of the adjacent vertices of the picked vertex						
-				if(visited[adjacentNode] == false){ // has been visited and we check its distance to all other nodes whenever possible  
-					if(nodeGraphDistance[currentSelectedNode][adjacentNode] != 0){ // u and i must be adjucent 
-						if(distance[currentSelectedNode] != Integer.MAX_VALUE){ // if it is infinte, it means we selected the wrong node to biuld our routing from!
-							if(distance[currentSelectedNode] + nodeGraphDistance[currentSelectedNode][adjacentNode] <= distance[adjacentNode]
-									&& nodeGraphBandwidth[currentSelectedNode][adjacentNode] > bandwidth[adjacentNode]
-									){ // distance i will infinte if it has not been reached by any other nodes
-								distance[adjacentNode] = distance[currentSelectedNode] + nodeGraphDistance[currentSelectedNode][adjacentNode];
-							    previousNode[adjacentNode] = currentSelectedNode; 	
-								NetworkNIC parentNode = intToNode.get(currentSelectedNode);
-								listParent  = parent.get(adjacentNode);
-							    if(listParent == null){
-							    	listParent = new ArrayList<>();
-								    listParent.add(parentNode);
-								    parent.put(adjacentNode, listParent);								    
-							    }else{
-								    listParent.add(parentNode);
-								    parent.put(adjacentNode, listParent);
-							    }					
+			int graphSize = nodeGraphDistance.length; // u
+
+			int distance[] = new int[graphSize];
+			double bandwidth[] = new double[graphSize];
+			Boolean visited[] = new Boolean[graphSize];
+			int previousNode[] = new int[graphSize];
+			Map<Integer, List<NetworkNIC>> parent = new HashMap<>();
+			List<NetworkNIC> listParent;
+			for (int i = 0; i < graphSize; i++) {
+				distance[i] = Integer.MAX_VALUE; // to find min distance
+				bandwidth[i] = Double.MIN_VALUE; // to find max bw
+				visited[i] = false;
+			}
+
+			int nodeIndex = nodeToInt.get(srcHost); // to map nodes to their integer indexes
+
+			distance[nodeIndex] = 0; // Distance of a source node from itself is always 0
+			bandwidth[nodeIndex] = -1; // Bandwidth of a source node from itself is always -1
+			previousNode[nodeIndex] = -1;
+			// Find shortest path for all vertices
+			for (int count = 0; count < graphSize - 1; count++) {
+				int currentSelectedNode = minDistanceMaxBw(distance, bandwidth, visited, graphSize);
+				visited[currentSelectedNode] = true; // Mark the picked node as processed
+
+				for (int adjacentNode = 0; adjacentNode < graphSize; adjacentNode++) { // Update the distance and bw values of the adjacent vertices of the picked vertex
+					if (visited[adjacentNode] == false) { // has been visited and we check its distance to all other nodes whenever possible
+						if (nodeGraphDistance[currentSelectedNode][adjacentNode] != 0) { // u and i must be adjucent
+							if (distance[currentSelectedNode] != Integer.MAX_VALUE) { // if it is infinte, it means we selected the wrong node to biuld our routing from!
+								if (distance[currentSelectedNode] + nodeGraphDistance[currentSelectedNode][adjacentNode] <= distance[adjacentNode]
+										&& nodeGraphBandwidth[currentSelectedNode][adjacentNode] > bandwidth[adjacentNode]
+								) { // distance i will infinte if it has not been reached by any other nodes
 									distance[adjacentNode] = distance[currentSelectedNode] + nodeGraphDistance[currentSelectedNode][adjacentNode];
-									previousNode[adjacentNode] = currentSelectedNode; 								
+									previousNode[adjacentNode] = currentSelectedNode;
+									NetworkNIC parentNode = intToNode.get(currentSelectedNode);
+									listParent = parent.get(adjacentNode);
+									if (listParent == null) {
+										listParent = new ArrayList<>();
+										listParent.add(parentNode);
+										parent.put(adjacentNode, listParent);
+									} else {
+										listParent.add(parentNode);
+										parent.put(adjacentNode, listParent);
+									}
+									distance[adjacentNode] = distance[currentSelectedNode] + nodeGraphDistance[currentSelectedNode][adjacentNode];
+									previousNode[adjacentNode] = currentSelectedNode;
 									// you must select the least bw along the route to avoid congestion and packet loss
-									bandwidth[adjacentNode] = nodeGraphBandwidth[currentSelectedNode][adjacentNode]; 
-							} 
+									bandwidth[adjacentNode] = nodeGraphBandwidth[currentSelectedNode][adjacentNode];
+								}
+							}
 						}
 					}
-				}		
+				}
 			}
-		}
 
-		List<NetworkNIC> routeBuilt = buildRoute(previousNode, srcHost, destHost, pkt, conn, context);
-		this.nodeGraphDistance = null;
-		this.nodeGraphBandwidth = null;
-		return routeBuilt;		
+			routeBuilt = buildRoute(previousNode, srcHost, destHost, pkt, conn, context);
+
+		}
+		return routeBuilt;
 	}
 
 

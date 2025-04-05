@@ -510,6 +510,7 @@ public class SimulatorManager implements SimulatorBridger {
                         System.out.print("Starting Running from Configuration\n");
                         double simulationStart = start == simBegin ? deltaTime : start;
                         updateCurrentLatency(normalLatency);
+                        OsmoticRunner.deltaTime = deltaTime;
                         OsmoticRunner.runFromConfiguration(globalConfigurationSettings, conn, context, simBegin, simulationStart);
                     }
                 });

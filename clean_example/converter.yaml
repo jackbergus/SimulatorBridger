@@ -1,7 +1,7 @@
-clazzPath: uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter # Simulator Class
+clazzPath: uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.BaseInformationConverter # Simulator Class
 YAMLConverterConfiguration: clean_example/sumo.yaml # Simulator Configuration for the Class
 begin: 0    # Start simulator time
-end: 300   # End simulator time
+end: 120   # End simulator time
 step: 5.0  # needs to be changed to match network latency if match is "true"  in "clean_example/3_extIOTSim_configuration/iot_generators.yaml"                                                                                           # Simulation granularity
 
 #PowerModel
@@ -12,7 +12,7 @@ routingAlgorithm: uk.ncl.giacomobergami.components.routing_algorithm.MCFR #choos
 
 #MEL processing policy
 melProcessing: Quietest #choose either "Nearest" to process incoming communications on the nearest MEL or "Quietest" to process incoming communications in the quietest MEL
-policyNumber: 2 #choose 1 to choose for MCFR Quietest1 or choose 2 for MCFR Quietest2; when using SPMB this value has no impact
+policyNumber: 1 #choose 1 to choose for MCFR Quietest1 or choose 2 for MCFR Quietest2; when using SPMB this value has no impact
 
 ## Injected data
 isInjectCSVData: false

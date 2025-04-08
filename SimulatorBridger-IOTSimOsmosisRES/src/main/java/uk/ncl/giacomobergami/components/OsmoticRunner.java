@@ -73,6 +73,10 @@ public class OsmoticRunner {
         conv.numberOfDevicesPerEdge();
     }
 
+    public static void currentEnergyConsumption() {
+        conv.currentEnergyConsumption();
+    }
+
     @Deprecated
     public static void legacyOrchestrate(String configuration, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         List<OsmoticConfiguration> ls = JSON.stringToArray(new File(configuration), OsmoticConfiguration[].class);

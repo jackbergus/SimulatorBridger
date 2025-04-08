@@ -154,6 +154,10 @@ public class OsmoticWrapper {
         }
     }
 
+    public double currentEnergyConsumption() {
+        return 0.0;
+    }
+
     public int numCommsIoTtoMELs(OsmoticDatacenter vm) {
         int sum = 0;
 

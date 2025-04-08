@@ -93,8 +93,12 @@ public class Switch extends SimEntity implements NetworkNIC{
 		public double startTime;
 		public int numActivePorts;
 		HistoryEntry(double t, int n) { startTime=t; numActivePorts=n;}
+		public double getStartTime() {
+			return startTime;
+		}
 	}
-	public List<HistoryEntry> getUtilizationHisotry() {
+
+	public List<HistoryEntry> getUtilizationHistory() {
 		return utilizationHistories;
 	}
 	

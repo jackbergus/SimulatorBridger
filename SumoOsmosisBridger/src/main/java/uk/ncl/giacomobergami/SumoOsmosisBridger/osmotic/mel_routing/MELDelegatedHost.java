@@ -3,6 +3,7 @@ package uk.ncl.giacomobergami.SumoOsmosisBridger.osmotic.mel_routing;
 import com.eatthepath.jvptree.DistanceFunction;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.osmosis.core.OsmoticBroker;
+import uk.ncl.giacomobergami.components.allocation_policy.VmSchedulerTimeSharedEnergy;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.components.mel_routing.RoundRobinMELSwitchPolicy;
 import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
@@ -47,6 +48,7 @@ public class MELDelegatedHost extends MELNearestDistanceSwitch {
                 logger.warn("Warning: the MELs are likely not to be associated to a host: stopping the communication");
                 return null;
             }
+            ((VmSchedulerTimeSharedEnergy) minimumHost.getVmScheduler()).addUtilizationEntry();
             var instances = minimumHost.getVmList();
             if (!roundRobinMelMap.containsKey(ioTDevice.getName())){
                 roundRobinMelMap.put(ioTDevice.getName(),0);

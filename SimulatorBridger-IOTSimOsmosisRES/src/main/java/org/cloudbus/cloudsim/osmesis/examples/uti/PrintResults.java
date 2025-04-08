@@ -13,8 +13,6 @@ package org.cloudbus.cloudsim.osmesis.examples.uti;
 
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -24,7 +22,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
-import com.opencsv.CSVWriter;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.cloudsim.sdn.SDNHost;
@@ -34,15 +31,9 @@ import org.cloudbus.cloudsim.sdn.power.PowerUtilizationInterface;
 import org.cloudbus.osmosis.core.OsmoticAppDescription;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.cloudbus.osmosis.core.WorkflowInfo;
-import org.xml.sax.Attributes;
-import org.xml.sax.SAXException;
+import uk.ncl.giacomobergami.components.allocation_policy.VmSchedulerTimeSharedEnergy;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 import uk.ncl.giacomobergami.utils.data.CSVMediator;
-import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
 
 import static uk.ncl.giacomobergami.utils.database.JavaPostGres.*;
 
@@ -340,8 +331,8 @@ public class PrintResults {
 		System.out.print("Organising ConnectionPerSimTime Data...\n");
 		long startTime = System.nanoTime();
 		copyCSVDATA(conn, CPSCSV, targetTABLE);
-		transferDATABetweenTables(conn, "ConnectionPerSimTime(iotdevices, edgehost, cps_time)",
-				"iotdevices, edgehost, cps_time"
+		transferDATABetweenTables(conn, "ConnectionPerSimTime(edgehost, iotdevices, cps_time)",
+				"edgehost, iotdevices, cps_time"
 				, targetTABLE);
 		long endTime = System.nanoTime();
 		long executionTime = (endTime - startTime) / 1000000;
@@ -409,12 +400,12 @@ public class PrintResults {
 
 	@JsonIgnoreProperties(ignoreUnknown = true)
 	public static class EdgeConnectionsPerSimulationTime {
-		@JsonProperty("time")
+		//@JsonProperty("time")
 		public double time;
-		@JsonProperty("edge_host")
+		//@JsonProperty("edge_host")
 		public String edge_host;
-		@JsonProperty("IoTDevices")
-		public int ioTDevices;
+		//@JsonProperty("ioTDevices")
+		public double ioTDevices;
 
 		public EdgeConnectionsPerSimulationTime() {
 
@@ -436,15 +427,15 @@ public class PrintResults {
 			this.edge_host = edge_host;
 		}
 
-		public int getIoTDevices() {
+		public double getIoTDevices() {
 			return ioTDevices;
 		}
 
-		public void setIoTDevices(int ioTDevices) {
+		public void setIoTDevices(double ioTDevices) {
 			this.ioTDevices = ioTDevices;
 		}
 
-		public EdgeConnectionsPerSimulationTime(double time, String edge_host, int ioTDevices) {
+		public EdgeConnectionsPerSimulationTime(double time, String edge_host, double ioTDevices) {
 			this.time = time;
 			this.edge_host = edge_host;
 			this.ioTDevices = ioTDevices;
@@ -525,20 +516,17 @@ public class PrintResults {
 			for (SDNHost sdnHost : hostList) {
 				Host host = sdnHost.getHost();
 				PowerUtilizationInterface scheduler = (PowerUtilizationInterface) host.getVmScheduler();
-				scheduler.addUtilizationEntryTermination(finishTime);
 				double energy = scheduler.getUtilizationEnergyConsumption();
 				ec.addHostPowerConsumption(energy);
 				addHostPowerConsumption(dcName, sdnHost.getName(), energy);
 				writeUtilHistory(dcName, sdnHost.getName() , scheduler.getUtilizationHistory());
-				//addHostUtilizationHistory(dcName, sdnHost.getName(), scheduler.getUtilizationHistory());
 			}
 		}
 		for (Switch sw : switchList) {
-			sw.addUtilizationEntryTermination(finishTime);
 			double energy = sw.getUtilizationEnergyConsumption();
 			ec.addSwitchPowerConsumption(energy);
 			addSwitchPowerConsumption(dcName, sw.getName(), energy);
-			addSwitchUtilizationHistory(dcName, sw.getName(), sw.getUtilizationHisotry());
+			addSwitchUtilizationHistory(dcName, sw.getName(), sw.getUtilizationHistory());
 		}
 
 		ec.finalise();

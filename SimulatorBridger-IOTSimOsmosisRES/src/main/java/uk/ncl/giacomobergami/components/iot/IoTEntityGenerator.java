@@ -475,6 +475,10 @@ public class IoTEntityGenerator implements Serializable{
     }
 
     public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,double[] currentPosition, double[] expectedPosition) {
+        if(toUpdateWithTime == null) {
+            return;
+        }
+
         if (toUpdateWithTime.mobility.range != null) {
             toUpdateWithTime.transmit = true;
             toUpdateWithTime.mobility.range.beginX = (int) currentPosition[0];

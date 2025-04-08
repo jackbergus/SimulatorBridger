@@ -96,7 +96,6 @@ public class BaseInformationConverter extends TrafficConverter {
                 if (!timedEdgeMap.containsKey(x.id)) {
                     timedEdgeMap.put(x.id, new TimedEdge(x.id, x.x, x.y, 0, 0, 0));
                 }
-                times.add(x.simtime);
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -114,15 +113,18 @@ public class BaseInformationConverter extends TrafficConverter {
             var x = iter2.next();
             var edge = timedEdgeMap.get(x.edge_host);
             for (int i = 0; i<x.ioTDevices; i++) {
-                TimedIoT TI = new TimedIoT();
-                double thisTime = BigDecimal.valueOf(x.time).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
-                TI.setId("id_" + (int)(thisTime*1000)+ '_' + edge.id + '_' + i);
-                TI.setX(edge.x);
-                TI.setY(edge.y);
-                TI.setSimtime(thisTime);
-                TI.setType("no_type_info");
-                TI.setLane("no_lane_info");
-                multiIots.put(thisTime, TI);
+                if(x.time <= TrafficConverter.getSimEndTime()) {
+                    TimedIoT TI = new TimedIoT();
+                    double thisTime = BigDecimal.valueOf(x.time).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
+                    TI.setId("id_" + thisTime + '_' + edge.id + '_' + i);
+                    TI.setX(edge.x);
+                    TI.setY(edge.y);
+                    TI.setSimtime(thisTime);
+                    TI.setType("no_type_info");
+                    TI.setLane("no_lane_info");
+                    times.add(thisTime);
+                    multiIots.put(thisTime, TI);
+                }
             }
         }
 

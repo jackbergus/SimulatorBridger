@@ -44,6 +44,7 @@ public abstract class TrafficConverter {
     protected CSVMediator<TimedIoT>.CSVWriter vehwrite;
     private static Logger logger = LogManager.getRootLogger();
     private static Gson gson;
+    private static double simEndTime;
 
     public TrafficConfiguration getConf() {
         return conf;
@@ -146,10 +147,10 @@ public abstract class TrafficConverter {
         if (deleteEdgeSQLData) emptyTABLE(conn, "rsuInformation");
         INSERTTimedEdgeData(conn);
         emptyTABLE(conn, "rsuInformation_import");
-        if (deleteTimed_SCCData) emptyTABLE(conn, "timed_scc");
-        INSERTTimed_SCCData(conn, context, Timed_SCCData);
-        if (deleteNeighbourData) emptyTABLE(conn, "neighboursChange");
-        INSERTNeighbourData(conn, context, NeighbourData);
+//        if (deleteTimed_SCCData) emptyTABLE(conn, "timed_scc");
+//        INSERTTimed_SCCData(conn, context, Timed_SCCData);
+//        if (deleteNeighbourData) emptyTABLE(conn, "neighboursChange");
+//        INSERTNeighbourData(conn, context, NeighbourData);
     }
 
     protected void INSERTTimedIoTData(Connection conn) {
@@ -331,6 +332,14 @@ public abstract class TrafficConverter {
             }
         }
         return true;
+    }
+
+    public void setSimEndTime(double simEndTime) {
+        this.simEndTime = simEndTime;
+    }
+
+    public static double getSimEndTime() {
+        return simEndTime;
     }
 
     public abstract boolean runSimulator(TrafficConfiguration conf);

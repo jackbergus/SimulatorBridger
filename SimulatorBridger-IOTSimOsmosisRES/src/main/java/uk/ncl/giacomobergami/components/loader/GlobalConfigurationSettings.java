@@ -427,7 +427,9 @@ public class GlobalConfigurationSettings {
         }
 
         // IoT Devices
-        var iot = getIoTDevices(broker, iotDevices);
+        System.out.println("Sorting IoT device data...");
+        getIoTDevices(broker, iotDevices);
+        System.out.println("IoT device data sorted");
 
         // Log Initialization
 //        initLog();

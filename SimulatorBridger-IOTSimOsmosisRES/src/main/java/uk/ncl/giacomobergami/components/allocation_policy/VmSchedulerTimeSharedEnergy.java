@@ -102,7 +102,7 @@ public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implement
 		}
 		if(utilizationHistories == null)
 			utilizationHistories = new HashMap<>();//new ArrayList<>();
-		double time = (double) (Math.round(MainEventManager.clock()) * 1000) /1000;
+		double time = MainEventManager.clock();//(double) (Math.round(MainEventManager.clock()) * 1000) /1000;
 		this.utilizationHistories.put(time, new PowerUtilizationHistoryEntry(time, usingMips));
 	}
 	

@@ -12,6 +12,7 @@
 
 package uk.ncl.giacomobergami.SumoOsmosisBridger.meap.agents.device_agent;
 
+import org.apache.commons.lang3.tuple.Pair;
 import org.cloudbus.agent.AgentBroker;
 import org.cloudbus.agent.DeviceAgent;
 import org.cloudbus.cloudsim.core.MainEventManager;
@@ -23,6 +24,7 @@ import org.cloudbus.osmosis.core.OsmoticTags;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.SimulatorManager;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.PayloadForIoTAgent;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.meap.messages.MessageWithPayload;
+import uk.ncl.giacomobergami.components.allocation_policy.VmSchedulerTimeSharedEnergy;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.gir.SquaredCartesianDistanceFunction;
@@ -103,6 +105,10 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                 .map(x -> new ImmutablePair<>(((EdgeDataCenter)x.getLeft()), ((EdgeDevice) x.getRight())))
                 .collect(Collectors.toList());
 
+        for (EdgeDevice edge : ls.stream().map(Pair::getValue).toList()) {
+            ((VmSchedulerTimeSharedEnergy)edge.getVmScheduler()).addUtilizationEntry();
+        }
+
         if (Objects.equals(time_conf.get().getMelProcessing(), "Quietest") && time_conf.get().getRoutingAlgorithm().contains("MCFR")) {
 
             List<String> initialMels = new ArrayList<>();
@@ -169,6 +175,10 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                     })
                     .map(x -> new ImmutablePair<>(((EdgeDataCenter) x.getLeft()), ((EdgeDevice) x.getRight())))
                     .collect(Collectors.toList());
+
+            for (EdgeDevice edge : ls.stream().map(Pair::getValue).toList()) {
+                ((VmSchedulerTimeSharedEnergy)edge.getVmScheduler()).addUtilizationEntry();
+            }
 
             if(policyNumber == 1) {
                 for (String mel : AgentBroker.timesPerMel.keySet()) {

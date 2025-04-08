@@ -246,5 +246,4 @@ public class VmSchedulerTimeShared extends VmScheduler {
 	protected void setMipsMapRequested(Map<String, List<Double>> mipsMapRequested) {
 		this.mipsMapRequested = mipsMapRequested;
 	}
-
 }

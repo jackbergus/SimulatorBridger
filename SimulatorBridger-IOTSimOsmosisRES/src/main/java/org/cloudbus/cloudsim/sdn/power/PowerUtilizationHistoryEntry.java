@@ -20,4 +20,8 @@ public class PowerUtilizationHistoryEntry implements Serializable {
 	public double startTime;
 	public double usedMips;
 	public PowerUtilizationHistoryEntry(double t, double m) { startTime=t; usedMips=m;}
+
+	public double getStartTime() {
+		return startTime;
+	}
 }

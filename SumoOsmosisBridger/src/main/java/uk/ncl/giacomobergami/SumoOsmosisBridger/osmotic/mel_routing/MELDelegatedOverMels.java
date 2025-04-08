@@ -1,6 +1,7 @@
 package uk.ncl.giacomobergami.SumoOsmosisBridger.osmotic.mel_routing;
 
 import org.cloudbus.osmosis.core.OsmoticBroker;
+import uk.ncl.giacomobergami.components.allocation_policy.VmSchedulerTimeSharedEnergy;
 import uk.ncl.giacomobergami.components.iot.IoTDevice;
 
 import java.util.ArrayList;
@@ -42,6 +43,7 @@ public class MELDelegatedOverMels extends MELNearestDistanceSwitch {
                 logger.warn("Warning: the MELs are likely not to be associated to a host: stopping the communication");
                 return null;
             }
+            ((VmSchedulerTimeSharedEnergy) minimumHost.getVmScheduler()).addUtilizationEntry();
             var instances = minimumHost.getVmList();
             if (!roundRobinMelMap.containsKey(host)){
                 roundRobinMelMap.put(host,0);

@@ -140,6 +140,7 @@ public class SimulatorManager implements SimulatorBridger {
         TrafficConverter conv1 = TrafficConverterRunner.generateFacade(y);
         if (step1) {
             try {
+                conv1.setSimEndTime(simEnd);
                 conv1.run(conn, context, latency);
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -565,6 +566,7 @@ public class SimulatorManager implements SimulatorBridger {
 
         OsmoticRunner.numberOfActiveCommsPerEdge();
         OsmoticRunner.numberOfDevicesPerEdge();
+        OsmoticRunner.currentEnergyConsumption();
 
         loopDuration = (double) Math.round(normalLatency * 1000) / 1000;
         scheduleNewWakeUpTime(IoTEntityGenerator.getNewWakeUpTimes(), Double.parseDouble(df.format(MainEventManager.clock())));

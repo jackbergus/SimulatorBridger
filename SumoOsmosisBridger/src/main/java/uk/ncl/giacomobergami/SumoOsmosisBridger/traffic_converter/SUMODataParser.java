@@ -11,6 +11,7 @@ import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
+import uk.ncl.giacomobergami.utils.shared_data.iot.Ambulance;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 
 import java.io.File;
@@ -85,20 +86,8 @@ public class SUMODataParser extends DefaultHandler {
                 break;
             case VEHICLE:
                 TimedIoT TI = new TimedIoT();
-                TimedIoT ambulance = new TimedIoT();
-
                 if (attr.getValue(0).contains("ambulance")) {
-                    ambulance.setId(attr.getValue(0));
-                    ambulance.setX(Double.parseDouble(attr.getValue(1)));
-                    ambulance.setY(Double.parseDouble(attr.getValue(2)));
-                    ambulance.setAngle(Double.parseDouble(attr.getValue(3)));
-                    ambulance.setType(attr.getValue(4));
-                    ambulance.setSpeed(Double.parseDouble(attr.getValue(5)));
-                    ambulance.setPos(Double.parseDouble(attr.getValue(6)));
-                    ambulance.setLane(attr.getValue(7));
-                    ambulance.setSlope(Double.parseDouble(attr.getValue(8)));
-                    ambulance.setSimtime(timestep);
-                    ambulance.setInjected(false);
+                    Ambulance ambulance = Ambulance.addNewAmbulance(attr, timestep);
                     AD.sdAddTo(ambulance);
                     toTimedIoTCSV(ambulance, ambulanceWriter);
                 }

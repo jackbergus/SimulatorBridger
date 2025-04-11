@@ -189,7 +189,6 @@ public class LegacyConfiguration {
 			if (!nameIdTable.containsKey(dst))
 				throw new RuntimeException("ERROR!");
 			int dstAddress = nameIdTable.get(dst);
-			System.out.println("Adding link data for Topology " + topology.getTopology_ID());
 			topology.addLink(srcAddress, dstAddress, bw, conn, updateLinks);
 		}
 	}

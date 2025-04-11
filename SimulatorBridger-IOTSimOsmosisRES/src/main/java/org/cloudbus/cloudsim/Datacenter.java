@@ -11,6 +11,8 @@ import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.CloudSimTags;
 import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicy;
@@ -850,6 +852,7 @@ public class Datacenter extends SimEntity {
 	 * @post $none
 	 */
 
+
 	protected void processCloudletSubmit(SimEvent ev, boolean ack, double deltaTime) {
 
 		Cloudlet cl = (Cloudlet) ev.getData();
@@ -914,7 +917,14 @@ public class Datacenter extends SimEntity {
 			if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
 				estimatedFinishTime += fileTransferTime;
 				send(getId(), estimatedFinishTime, CloudSimTags.VM_DATACENTER_EVENT);
+				double finishTime =  MainEventManager.clock() + estimatedFinishTime;
+				if(this.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter")) {
+					((EdgeDataCenter) this).melsTotalProcessingWorkload.putIfAbsent(this.getId(), 0.0);
+					((EdgeDataCenter) this).melsTotalTimeProcessingWorkload.putIfAbsent(this.getId(), 0.0);
 
+					((EdgeDataCenter) this).melsTotalProcessingWorkload.put(this.getId(), ((EdgeDataCenter) this).melsTotalProcessingWorkload.get(this.getId()) + ((Cloudlet) ev.getData()).getCloudletLength());
+					((EdgeDataCenter) this).melsTotalTimeProcessingWorkload.put(this.getId(), Math.max(((EdgeDataCenter) this).melsTotalTimeProcessingWorkload.get(this.getId()), finishTime));
+				}
 			}
 
 			if (ack) {
@@ -1107,6 +1117,14 @@ public class Datacenter extends SimEntity {
 					Cloudlet cl = vm.getCloudletScheduler().getNextFinishedCloudlet();
 					if (cl != null) {
 						sendNow(cl.getUserId(), CloudSimTags.CLOUDLET_RETURN, cl);
+						if (this.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter")) {
+							for (Cloudlet.Resource res : cl.getResList()) {
+								((EdgeDataCenter) this).melsTotalProcessingWorkload.put(this.getId(), ((EdgeDataCenter) this).melsTotalProcessingWorkload.get(this.getId()) - res.finishedSoFar);
+								if(((EdgeDataCenter) this).melsTotalProcessingWorkload.get(this.getId()) == 0) {
+									((EdgeDataCenter) this).melsTotalTimeProcessingWorkload.put(this.getId(), 0.0);
+								}
+							}
+						}
 					}
 				}
 			}

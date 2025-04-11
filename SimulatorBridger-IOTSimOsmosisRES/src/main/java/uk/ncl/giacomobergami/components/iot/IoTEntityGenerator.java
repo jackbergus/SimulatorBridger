@@ -1,16 +1,22 @@
 package uk.ncl.giacomobergami.components.iot;
 
 import me.tongfei.progressbar.ProgressBar;
+import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.edge.core.edge.Mobility;
+import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
+import org.jooq.Result;
+import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
 import uk.ncl.giacomobergami.utils.annotations.Input;
 import uk.ncl.giacomobergami.utils.annotations.Output;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.asthmatic.WorkloadFromVehicularProgram;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
+import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.iot.IoT;
+import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -97,12 +103,15 @@ public class IoTEntityGenerator implements Serializable{
         }*/
     }
 
+    String path = "clean_example/3_extIOTSim_configuration/iot_generators.yaml";
     public IoTEntityGenerator(File iotFiles,
                               File configuration, Connection conn, DSLContext context) {
         if (configuration != null)
             conf = YAML.parse(IoTGlobalConfiguration.class, configuration).orElseThrow();
         else
-            conf = null;
+
+            conf = YAML.parse(IoTEntityGenerator.IoTGlobalConfiguration .class, new File(path)).orElseThrow();
+
         wakeupTimes = deserializeWakeupTimes(
                 Path.of("clean_example", "1_traffic_information_collector_output", "WakeupTimes.ser").toString());
 
@@ -474,9 +483,14 @@ public class IoTEntityGenerator implements Serializable{
         setWUT.add(newWakeUpTime);
     }
 
-    public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,double[] currentPosition, double[] expectedPosition) {
+    List<IoTDeviceTabularConfiguration> deviceList = new ArrayList<>();
+    static HashMap<String, TimedIoT> FirstSet = new HashMap<>();
+    static HashMap<String, TimedIoT> SecondSet = new HashMap<>();
+    public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime, double[] currentPosition, double[] expectedPosition, OsmoticBroker broker, Result<VehinformationRecord> vehRecord) {
         if(toUpdateWithTime == null) {
-            return;
+            TimedIoT TI = toTimedIoT(vehRecord);
+            IoTDeviceTabularConfiguration idtc =  addToDevicesToList(TI);
+            toUpdateWithTime = GlobalConfigurationSettings.getIoTDevice(broker, idtc);
         }
 
         if (toUpdateWithTime.mobility.range != null) {
@@ -496,6 +510,81 @@ public class IoTEntityGenerator implements Serializable{
             toUpdateWithTime.mobility.range.beginY = (int) currentPosition[1];
         }
     }
+
+    private TimedIoT toTimedIoT(Result<VehinformationRecord> result) {
+        TimedIoT TI = new TimedIoT();
+        TI.setId(result.get(0).getValue(Vehinformation.VEHINFORMATION.VEHICLE_ID));
+        TI.setX(result.get(0).getValue(Vehinformation.VEHINFORMATION.X));
+        TI.setY(result.get(0).getValue(Vehinformation.VEHINFORMATION.Y));
+        TI.setAngle(result.get(0).getValue(Vehinformation.VEHINFORMATION.ANGLE));
+        TI.setType(result.get(0).getValue(Vehinformation.VEHINFORMATION.VEHICLE_TYPE));
+        TI.setSpeed(result.get(0).getValue(Vehinformation.VEHINFORMATION.SPEED));
+        TI.setPos(result.get(0).getValue(Vehinformation.VEHINFORMATION.POS));
+        TI.setLane(result.get(0).getValue(Vehinformation.VEHINFORMATION.LANE));
+        TI.setSlope(result.get(0).getValue(Vehinformation.VEHINFORMATION.SLOPE));
+        TI.setSimtime(result.get(0).getValue(Vehinformation.VEHINFORMATION.SIMTIME));
+        TI.setInjected(Boolean.parseBoolean(result.get(0).getValue(Vehinformation.VEHINFORMATION.INJECTED)));
+        TI.setBatteryDepletion(result.get(0).getValue(Vehinformation.VEHINFORMATION.BATTERYDEPLETION));
+        TI.setUseBattery(Boolean.parseBoolean(result.get(0).getValue(Vehinformation.VEHINFORMATION.USEBATTERY)));
+        TI.setPacketSize(result.get(0).getValue(Vehinformation.VEHINFORMATION.PACKETSIZE));
+        TI.setUsePacket(Boolean.parseBoolean(result.get(0).getValue(Vehinformation.VEHINFORMATION.USEPACKETINFO)));
+
+        IoTEntityGenerator.addNewWakeUpTimes(result.get(0).getValue(Vehinformation.VEHINFORMATION.SIMTIME));
+
+        if (SecondSet.containsKey(TI.getId())) {
+            return TI;
+        }
+        if (FirstSet.containsKey(TI.getId())) {
+            SecondSet.putIfAbsent(TI.getId(), TI);
+            return TI;
+        }
+        FirstSet.putIfAbsent(TI.getId(), TI);
+        return TI;
+    }
+
+    private IoTDeviceTabularConfiguration addToDevicesToList(TimedIoT timedIoT) {
+        Set<String> allVehs = FirstSet.keySet();
+
+        for (String allVeh : allVehs) {
+            if(!MainEventManager.IoTDeviceList.contains(allVeh)) {
+                IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
+                idtc.beginX = (int) FirstSet.get(allVeh).getX();
+                idtc.beginY = (int) FirstSet.get(allVeh).getY();
+                idtc.movable = SecondSet.containsKey(allVeh);
+                if (idtc.movable) {
+                    idtc.hasMovingRange = true;
+                    idtc.endX = (int) SecondSet.get(allVeh).getX();
+                    idtc.endY = (int) SecondSet.get(allVeh).getY();
+                }
+                idtc.latency = conf.latency;
+                idtc.match = conf.match;
+                idtc.signalRange = conf.signalRange;
+                idtc.associatedEdge = null;
+                idtc.networkType = conf.networkType;
+                idtc.stepSizeEditorPath = conf.stepSizeEditorPath;
+                idtc.velocity = FirstSet.get(allVeh).getSpeed();
+                idtc.name = allVeh;
+                idtc.communicationProtocol = conf.communicationProtocol;
+                idtc.bw = conf.bw;
+                idtc.max_battery_capacity = conf.max_battery_capacity;
+                idtc.battery_sensing_rate = conf.battery_sensing_rate;
+                idtc.battery_sending_rate = conf.battery_sending_rate;
+                idtc.ioTClassName = conf.ioTClassName;
+                idtc.setInjected(FirstSet.get(allVeh).injected);
+                idtc.setUseBatteryInfo(FirstSet.get(allVeh).useBattery);
+                idtc.setUsePacketInfo(FirstSet.get(allVeh).usePacket);
+                idtc.setBatteryDepletion(FirstSet.get(allVeh).batteryDepletion);
+                idtc.setPacketSize(FirstSet.get(allVeh).packetSize);
+                deviceList.add(idtc);
+                if(Objects.equals(idtc.name, timedIoT.getId())) {
+                    return idtc;
+                }
+            }
+        }
+        System.out.print("IoT Device Info Configuration Completed\n");
+        return new IoTDeviceTabularConfiguration();
+    }
+
     /*public void updateIoTDevice(@Input @Output IoTDevice toUpdateWithTime,
                                 @Input double simTimeLow, @Input double simTimeUp,
                                 @Input DSLContext context, double[] currentPosition, double[] expectedPosition) {

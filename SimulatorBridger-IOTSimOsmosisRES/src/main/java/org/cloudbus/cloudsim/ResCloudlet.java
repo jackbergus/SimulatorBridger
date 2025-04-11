@@ -9,8 +9,10 @@
 package org.cloudbus.cloudsim;
 
 import org.cloudbus.cloudsim.core.MainEventManager;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 
 import java.io.Serializable;
+import java.util.HashMap;
 
 /**
  * CloudSim ResCloudlet represents a Cloudlet submitted to CloudResource for processing. This class
@@ -284,6 +286,8 @@ public class ResCloudlet implements Serializable {
 	 * @pre status >= 0
 	 * @post $none
 	 */
+
+	public HashMap<String, Double> melsTotalTimeProcessingWorkload = new HashMap<>();
 	public boolean setCloudletStatus(int status) {
 		// gets Cloudlet's previous status
  		int prevStatus = cloudlet.getCloudletStatus();
@@ -322,7 +326,6 @@ public class ResCloudlet implements Serializable {
 				
 				startExecTime = clock;
 				cloudlet.setExecStartTime(startExecTime);
-				
 			}
 
 		} catch (Exception e) {

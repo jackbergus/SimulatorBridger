@@ -49,6 +49,8 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 	
 	private List<Flow> flowList = new ArrayList<>(); 
 	private List<Flow> flowListHis = new ArrayList<>();
+	public HashMap<Integer, Double> melsTotalProcessingWorkload = new HashMap<>();
+	public HashMap<Integer, Double> melsTotalTimeProcessingWorkload = new HashMap<>();
 
 	DecimalFormat df = new DecimalFormat("#.###");
 
@@ -92,7 +94,6 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 		// TODO Auto-generated method stub
 
 		super.processEvent(ev);
-
 	}
 
 	@Override

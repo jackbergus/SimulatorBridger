@@ -402,7 +402,7 @@ public class Cloudlet implements Serializable {
 	/**
 	 * Internal class that keeps track Cloudlet's movement in different CloudResources.
 	 */
-	private static class Resource implements Serializable{
+	public static class Resource implements Serializable{
 
 		/** Cloudlet's submission time to a CloudResource. */
 		public double submissionTime = 0.0;
@@ -611,6 +611,10 @@ public class Cloudlet implements Serializable {
 		}
 
 		return msg;
+	}
+
+	public List<Resource> getResList() {
+		return resList;
 	}
 
 	/**

@@ -73,8 +73,8 @@ public class OsmoticRunner {
         conv.numberOfDevicesPerEdge();
     }
 
-    public static void currentEnergyConsumption() {
-        conv.currentEnergyConsumption();
+    public static HashMap<String, Double>  currentEnergyConsumption() {
+        return conv.currentEnergyConsumption();
     }
 
     @Deprecated

@@ -34,6 +34,7 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.OrchestratorConfiguration;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import uk.ncl.giacomobergami.utils.shared_data.edge.Edge;
 import uk.ncl.giacomobergami.utils.shared_data.iot.TimedIoT;
+import uk.ncl.giacomobergami.utils.shared_data.iot.Ambulance;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -417,19 +418,20 @@ public class SimulatorManager implements SimulatorBridger {
                             boolean risk = reader.nextBoolean();
                             String simTimeTag = reader.nextName();
                             double simTime = parseDouble(reader.nextString());
-                            Result<AmbulanceinformationRecord> dataRange = context.select(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID, Ambulanceinformation.AMBULANCEINFORMATION.X, Ambulanceinformation.AMBULANCEINFORMATION.Y, Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME, Ambulanceinformation.AMBULANCEINFORMATION.INJECTED).from(Ambulanceinformation.AMBULANCEINFORMATION).where("simtime between " + (simTime - deltaTime / 2) + " and " + (simTime + deltaTime / 2)).orderBy(Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME).fetchInto(Ambulanceinformation.AMBULANCEINFORMATION);
+                            var dataRange = Ambulance.collectAmbulanceData(context, simTime, deltaTime);
                             if(sumoYaml.getUse_ambulances()) {
                                 if (risk) {
-                                    for (AmbulanceinformationRecord amb : dataRange) {
-                                        if (distance(amb.get(Ambulanceinformation.AMBULANCEINFORMATION.X), amb.get(Ambulanceinformation.AMBULANCEINFORMATION.Y), x, y) < dist) {
-                                            if (amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID).contains("from"))
-                                                patientAmbulance.putIfAbsent(id, amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID));
-                                            break;
-                                        }
-                                    }
+                                    patientAmbulance = Ambulance.ambulancesToCollectPatients(dataRange, x, y, dist, id);
+//                                    for (AmbulanceinformationRecord amb : dataRange) {
+//                                        if (distance(amb.get(Ambulanceinformation.AMBULANCEINFORMATION.X), amb.get(Ambulanceinformation.AMBULANCEINFORMATION.Y), x, y) < dist) {
+//                                            if (amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID).contains("from"))
+//                                                patientAmbulance.putIfAbsent(id, amb.get(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID));
+//                                            break;
+//                                        }
+//                                    }
                                 }
 
-                                Result<AmbulanceinformationRecord> attachedVehicle = context.select(Ambulanceinformation.AMBULANCEINFORMATION.VEHICLE_ID, Ambulanceinformation.AMBULANCEINFORMATION.X, Ambulanceinformation.AMBULANCEINFORMATION.Y, Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME, Ambulanceinformation.AMBULANCEINFORMATION.INJECTED).from(Ambulanceinformation.AMBULANCEINFORMATION).where("simtime between " + (simTime - deltaTime / 2) + " and " + (simTime + deltaTime / 2) + " AND vehicle_id ='" + patientAmbulance.get(id) + "'").orderBy(Ambulanceinformation.AMBULANCEINFORMATION.SIMTIME).fetchInto(Ambulanceinformation.AMBULANCEINFORMATION);
+                                Result<AmbulanceinformationRecord> attachedVehicle = Ambulance.retrieveAmbulancesWithPatients(context, id, simTime, deltaTime, patientAmbulance);
                                 if (!attachedVehicle.isEmpty() && patientAmbulance.get(id) != null) {
                                     x = attachedVehicle.get(0).get(Ambulanceinformation.AMBULANCEINFORMATION.X);
                                     y = attachedVehicle.get(0).get(Ambulanceinformation.AMBULANCEINFORMATION.Y);
@@ -566,7 +568,7 @@ public class SimulatorManager implements SimulatorBridger {
 
         OsmoticRunner.numberOfActiveCommsPerEdge();
         OsmoticRunner.numberOfDevicesPerEdge();
-        OsmoticRunner.currentEnergyConsumption();
+        var energies = OsmoticRunner.currentEnergyConsumption();
 
         loopDuration = (double) Math.round(normalLatency * 1000) / 1000;
         scheduleNewWakeUpTime(IoTEntityGenerator.getNewWakeUpTimes(), Double.parseDouble(df.format(MainEventManager.clock())));

@@ -110,7 +110,7 @@ public class GlobalConfigurationSettings {
     public volatile File absolute;
 
     @JsonIgnore
-    public volatile SimulatorSettings conf;
+    public static volatile SimulatorSettings conf;
 
     @JsonIgnore
     public volatile SDWANController sdWanController;
@@ -366,7 +366,7 @@ public class GlobalConfigurationSettings {
 
 
     @JsonIgnore
-    public List<IoTDevice> getIoTDevices(OsmoticBroker broker,
+    public static  List<IoTDevice> getIoTDevices(OsmoticBroker broker,
                                          List<IoTDeviceTabularConfiguration> input) {
         return input.stream()
                 .map(curr -> {
@@ -377,6 +377,17 @@ public class GlobalConfigurationSettings {
                     broker.addIoTDevice(newInstance);
                     return newInstance;
                 }).collect(Collectors.toList());
+    }
+
+    public static IoTDevice getIoTDevice(OsmoticBroker broker,
+                                         IoTDeviceTabularConfiguration curr) {
+
+        IoTDevice newInstance = IoTGeneratorFactory.generateFacade(curr.asLegacyConfiguration(), conf.flowId);
+        MainEventManager.IoTDeviceList.add(newInstance.getName());
+        if ((curr.associatedEdge != null) && (!curr.associatedEdge.isEmpty()))
+            newInstance.setAssociatedEdge(curr.associatedEdge);
+        broker.addIoTDevice(newInstance);
+        return newInstance;
     }
 
     public List<uk.ncl.giacomobergami.components.networking.Switch> asSDWANSwitches() {
@@ -399,7 +410,7 @@ public class GlobalConfigurationSettings {
         return TopologyLink.asNetworkedLinks(new File(topologyLinksFile));
     }
 
-    public GlobalConfigurationSettings buildTopologyForSimulator(OsmoticBroker broker, String RoutingAlgo, String PowerModel, Connection conn){
+    public GlobalConfigurationSettings buildTopologyForSimulator(OsmoticBroker broker, String RoutingAlgo, String PowerModel, String TrafficConfiguration, Connection conn){
         if (actualEdgeDataCenters == null || actualCloudDataCenters == null || iotDevices == null ||global_network_links == null||sdwan == null || sdwan.switches == null || apps == null ||
                 (actualEdgeDataCenters.isEmpty()) ||
                 actualCloudDataCenters.isEmpty() ||
@@ -428,7 +439,9 @@ public class GlobalConfigurationSettings {
 
         // IoT Devices
         System.out.println("Sorting IoT device data...");
-        getIoTDevices(broker, iotDevices);
+        if(Objects.equals(TrafficConfiguration, "uk.ncl.giacomobergami.SumoOsmosisBridger.traffic_converter.SUMOConverter")) {
+            getIoTDevices(broker, iotDevices);
+        }
         System.out.println("IoT device data sorted");
 
         // Log Initialization

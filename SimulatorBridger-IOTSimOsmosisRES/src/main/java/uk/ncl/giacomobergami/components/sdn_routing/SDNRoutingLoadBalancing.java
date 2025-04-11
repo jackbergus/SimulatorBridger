@@ -167,11 +167,9 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 						}
 						nodeGraphDistance[i][k] = getDistanceWeight(srcNode, destNode, temp);    // this can be used for link failure
 						nodeGraphBandwidth[i][k] = getBwWeight(srcNode, destNode, temp, list, topID);
-					} else
-						System.out.println("done2");
+					}
 				}
-			} else
-				System.out.println("done");
+			}
 		}
 		OsmoticRunner.updatedLinks.clear();
 	}
@@ -282,8 +280,6 @@ public class SDNRoutingLoadBalancing extends SDNRoutingPolicy {
 		} else {
 
 			if (OsmoticRunner.toUpdate) {
-				//this.nodeGraphDistance = null;
-				//this.nodeGraphBandwidth = null;
 				updateSDNNetworkGraph(conn, context, srcHost, destHost);
 			}
 

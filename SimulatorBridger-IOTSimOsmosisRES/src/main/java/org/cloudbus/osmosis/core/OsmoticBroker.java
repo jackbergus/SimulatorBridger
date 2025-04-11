@@ -209,7 +209,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			logger.trace("WakeUp Call @"+ chron);
 		}
 
-		if(chron <= endTime && chron > lastTime && chron >= startTime) {
+		if(chron <= endTime && chron > lastTime && chron >= startTime || chron == 0.0) {
 			var ab = AgentBroker.getInstance();
 			//info used to update IoT devices' positions
 			double now = (double) Math.round((chron / deltaVehUpdate) * deltaVehUpdate * 1000) / 1000;
@@ -263,7 +263,12 @@ public class OsmoticBroker extends DatacenterBroker {
 						IoTDevice obj = iotDeviceNameToObject.get(id);
 						double[] nowDouble = nowData.get(id);
 						double[] futureDouble = futureData.getOrDefault(id, notUpdated);
-						ioTEntityGenerator.updateIoTDevice(obj, nowDouble, futureDouble);
+						if (obj != null) {
+							ioTEntityGenerator.updateIoTDevice(obj, nowDouble, futureDouble, null, null);
+						} else {
+							Result<VehinformationRecord> veh = context.select().from(Vehinformation.VEHINFORMATION).where("vehicle_id = '" + id + "' AND simtime = " + now).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
+							ioTEntityGenerator.updateIoTDevice(obj, nowDouble, futureDouble, this, veh);
+						}
 					}
 				}
 

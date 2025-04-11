@@ -105,11 +105,8 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                 .map(x -> new ImmutablePair<>(((EdgeDataCenter)x.getLeft()), ((EdgeDevice) x.getRight())))
                 .collect(Collectors.toList());
 
-        for (EdgeDevice edge : ls.stream().map(Pair::getValue).toList()) {
-            ((VmSchedulerTimeSharedEnergy)edge.getVmScheduler()).addUtilizationEntry();
-        }
 
-        if (Objects.equals(time_conf.get().getMelProcessing(), "Quietest") && time_conf.get().getRoutingAlgorithm().contains("MCFR")) {
+        if (Objects.equals(time_conf.get().getMelProcessing(), "Quietest") && time_conf.get().getRoutingAlgorithm().contains("MCFR") && !ls.isEmpty()) {
 
             List<String> initialMels = new ArrayList<>();
             for (ImmutablePair<EdgeDataCenter, EdgeDevice> l : ls) {
@@ -190,6 +187,10 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                 }
             }
             mels.clear();
+        } else {
+            for (EdgeDevice edge : ls.stream().map(Pair::getValue).toList()) {
+                ((VmSchedulerTimeSharedEnergy)edge.getVmScheduler()).addUtilizationEntry();
+            }
         }
     }
 
@@ -228,7 +229,7 @@ public class DeviceAgentAbstractScanner extends DeviceAgent {
                 long osmesisEdgeletSize = 250L; //250;
                 long MELOutput = messageSize; //70;
                 String vmName = "VM_"+((appID % 10)+1);
-                long osmesisCloudletSize = 200L; //200;
+                long osmesisCloudletSize = 250L; //200;
                 OsmoticAppDescription app = new OsmoticAppDescription(appName, appID, DataRate, StopDataGenerationTime, ioTDeviceName, ioTDeviceOutput, MELName, osmesisEdgeletSize, MELOutput, vmName, osmesisCloudletSize, StartDataGenerationTime);
                 int iotDeviceID = getIoTDevice().getId();
                 app.setIoTDeviceId(iotDeviceID);

@@ -15,7 +15,7 @@ public class MainExample {
         boolean running = true;
         double start = (args.length >= 1) ? parseDouble(args[0]) : 0;
         sb.init(start, new ArrayList<>());
-        double deltaTime = (args.length >= 2) ? parseDouble(args[1]) : 5.0;
+        double deltaTime = (args.length >= 2) ? parseDouble(args[1]) : 60.0;
         sb.loopDuration = (args.length >= 3) ? parseDouble(args[2]) : sb.getCurrentLatency();
 
         List<TimedIoT> timedIoTList = sb.parseJSONHealthData("PatientDigitalTwin/patient.json");

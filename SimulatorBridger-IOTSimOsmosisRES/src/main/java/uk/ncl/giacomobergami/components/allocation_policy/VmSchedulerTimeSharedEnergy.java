@@ -47,7 +47,7 @@ public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implement
 		addUtilizationEntry();
 	}
 	
-	private HashMap<Double, PowerUtilizationHistoryEntry> utilizationHistories = null;
+	private TreeMap<Double, PowerUtilizationHistoryEntry> utilizationHistories = null;
 	private static double powerOffDuration = 3600; //if host is idle for 1 hours, it's turned off.
 	
 	public void addUtilizationEntryTermination(double terminatedTime) {
@@ -101,7 +101,7 @@ public class VmSchedulerTimeSharedEnergy extends VmSchedulerTimeShared implement
 			logger.error("addUtilizationEntry : using mips is negative, No way!");
 		}
 		if(utilizationHistories == null)
-			utilizationHistories = new HashMap<>();//new ArrayList<>();
+			utilizationHistories = new TreeMap<>();//new ArrayList<>();
 		double time = MainEventManager.clock();//(double) (Math.round(MainEventManager.clock()) * 1000) /1000;
 		this.utilizationHistories.put(time, new PowerUtilizationHistoryEntry(time, usingMips));
 	}

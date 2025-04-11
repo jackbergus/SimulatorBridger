@@ -26,10 +26,12 @@ import org.cloudbus.agent.config.AgentConfigLoader;
 import org.cloudbus.agent.config.AgentConfigProvider;
 import org.cloudbus.agent.config.TopologyLink;
 import org.cloudbus.cloudsim.Cloudlet;
+import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.ResCloudlet;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.core.SimEntity;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
 import org.cloudbus.cloudsim.edge.utils.LogUtil;
@@ -40,6 +42,7 @@ import org.cloudbus.res.EnergyController;
 import org.cloudbus.res.config.AppConfig;
 import org.cloudbus.res.dataproviders.res.RESResponse;
 import org.jooq.DSLContext;
+import uk.ncl.giacomobergami.components.allocation_policy.VmSchedulerTimeSharedEnergy;
 import uk.ncl.giacomobergami.components.iot.IoTDeviceTabularConfiguration;
 import uk.ncl.giacomobergami.components.iot.IoTEntityGenerator;
 import uk.ncl.giacomobergami.components.loader.GlobalConfigurationSettings;
@@ -154,8 +157,17 @@ public class OsmoticWrapper {
         }
     }
 
-    public double currentEnergyConsumption() {
-        return 0.0;
+
+    public HashMap<String, Double>  currentEnergyConsumption() {
+        HashMap<String, Double> edgeDeviceEnergyConsumption = new HashMap<>();
+        for (OsmoticDatacenter datacenter : osmoticBroker.datacenters) {
+            if (!datacenter.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter"))
+                continue;
+
+            for (Host e : datacenter.getHosts())
+                edgeDeviceEnergyConsumption.put(((EdgeDevice) e).getDeviceName(), ((VmSchedulerTimeSharedEnergy) e.getVmScheduler()).getUtilizationEnergyConsumption());
+        }
+        return edgeDeviceEnergyConsumption;
     }
 
     public int numCommsIoTtoMELs(OsmoticDatacenter vm) {
@@ -425,7 +437,7 @@ public class OsmoticWrapper {
             osmoticBroker.setFullInterval(time_conf.get().getBegin(), time_conf.get().getEnd());
         MELSwitchPolicy melSwitchPolicy = MELRoutingPolicyGeneratorFacade.generateFacade(conf.mel_switch_policy);
         osmoticBroker.setMelRouting(melSwitchPolicy);
-        conf.buildTopologyForSimulator(osmoticBroker, RA, time_conf.get().getPowerModel(), conn);
+        conf.buildTopologyForSimulator(osmoticBroker, RA, time_conf.get().getPowerModel(), time_conf.get().getClazzPath(), conn);
 
         OsmosisOrchestrator conductor = new OsmosisOrchestrator();
         List<SDNController> controllers = new ArrayList<>();

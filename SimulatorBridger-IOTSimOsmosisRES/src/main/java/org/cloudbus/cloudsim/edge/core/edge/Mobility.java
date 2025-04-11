@@ -19,13 +19,13 @@ public class Mobility implements Serializable {
 
     public Mobility(LegacyConfiguration.MobilityEntity moto) {
 		this(moto.getLocation());
+		signalRange = moto.getSignalRange();
 		movable = moto.isMovable();
 		if (moto.isMovable()) {
 			range = new MovingRange(moto.getRange().beginX,
 									moto.getRange().endX,
 					moto.getRange().beginY,
 					moto.getRange().endY);
-			signalRange = moto.getSignalRange();
 			velocity = moto.getVelocity();
 		}
     }

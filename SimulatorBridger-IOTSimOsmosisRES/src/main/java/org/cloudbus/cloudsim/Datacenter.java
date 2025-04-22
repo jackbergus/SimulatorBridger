@@ -13,6 +13,7 @@ import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.core.SimEvent;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
+import org.cloudbus.cloudsim.edge.core.edge.MEL;
 import org.cloudbus.osmosis.core.OsmoticBroker;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicy;
@@ -912,7 +913,9 @@ public class Datacenter extends SimEntity {
 			Vm vm = host.getVm(vmId, userId);
 			CloudletScheduler scheduler = vm.getCloudletScheduler();
 			double estimatedFinishTime = scheduler.cloudletSubmit(cl, fileTransferTime);
-
+			if(vm.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.MEL")) {
+				((MEL)vm).setRemainingProcessingTime(Math.max(((MEL) vm).getRemainingProcessingTime(), (MainEventManager.clock() + estimatedFinishTime)));
+			}
 			// if this cloudlet is in the exec queue
 			if (estimatedFinishTime > 0.0 && !Double.isInfinite(estimatedFinishTime)) {
 				estimatedFinishTime += fileTransferTime;

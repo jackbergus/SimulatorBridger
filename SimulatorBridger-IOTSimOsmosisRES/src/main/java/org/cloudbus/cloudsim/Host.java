@@ -18,6 +18,8 @@ import org.cloudbus.cloudsim.core.MainEventManager;
 import org.cloudbus.cloudsim.lists.PeList;
 import org.cloudbus.cloudsim.provisioners.BwProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
+import org.jooq.meta.duckdb.system.main.Main;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 /**
  * Host executes actions related to management of virtual machines (e.g.,
@@ -282,6 +284,9 @@ public class Host implements Comparable<Host>, Serializable {
 		setStorage(getStorage() - vm.getSize());
 		getVmList().add(vm);
 		vm.setHost(this);
+		if(vm.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.MEL")) {
+			OsmoticWrapper.noMELHosts++;
+		}
 		return true;
 	}
 

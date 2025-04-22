@@ -130,6 +130,7 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 			boolean isCompleted = flow.updateTransmission();						
 			if(isCompleted){
 				finshedFlows.add(flow);
+				flow.setFinishTime(MainEventManager.clock());
 			}			
 		}
 		
@@ -209,6 +210,7 @@ public class EdgeDataCenter extends OsmoticDatacenter {
 		if(vm != null){
 			MEL mel = (MEL) vm;
 			mel.addFlow(flow);
+			mel.addStartedFlow(flow);
 		}
 
 		updateAllFlowsBw();

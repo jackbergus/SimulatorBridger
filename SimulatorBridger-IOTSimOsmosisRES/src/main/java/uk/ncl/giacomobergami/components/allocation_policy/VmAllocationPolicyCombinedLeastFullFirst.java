@@ -10,6 +10,7 @@ package uk.ncl.giacomobergami.components.allocation_policy;
 
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
+import org.cloudbus.cloudsim.core.MainEventManager;
 import uk.ncl.giacomobergami.components.allocation_policy.VmAllocationPolicyCombinedMostFullFirst;
 
 /**

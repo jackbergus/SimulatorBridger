@@ -15,9 +15,12 @@ import org.apache.logging.log4j.Logger;
 import org.cloudbus.cloudsim.NetworkTopology;
 import org.cloudbus.cloudsim.core.predicates.Predicate;
 import org.jooq.DSLContext;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 import java.io.Serializable;
 import java.sql.Connection;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 /**
@@ -424,13 +427,27 @@ public abstract class SimEntity implements Cloneable, Serializable {
 		return nl;
 	}
 
+	HashSet<SimEvent> waitingForHostAllocation = new HashSet<>();
 	public void run(Connection conn, DSLContext context, double deltaTime) {
 		SimEvent ev = evbuf != null ? evbuf : getNextEvent();
 
 		while (ev != null) {
-			processEvent(ev, conn, context, deltaTime);
-			if (state != RUNNABLE) {
-				break;
+			if(OsmoticWrapper.noMELs == OsmoticWrapper.noMELHosts) {
+				for (SimEvent e : waitingForHostAllocation) {
+					processEvent(e, conn, context, deltaTime);
+					if (state != RUNNABLE) {
+						break;
+					}
+				}
+				waitingForHostAllocation.clear();
+			}
+			if (OsmoticWrapper.noMELs != OsmoticWrapper.noMELHosts && ev.getTag() == 80000028) {
+				waitingForHostAllocation.add(ev);
+			} else {
+				processEvent(ev, conn, context, deltaTime);
+				if (state != RUNNABLE) {
+					break;
+				}
 			}
 
 			ev = getNextEvent();

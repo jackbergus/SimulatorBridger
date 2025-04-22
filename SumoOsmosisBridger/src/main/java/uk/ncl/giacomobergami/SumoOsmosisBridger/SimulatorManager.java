@@ -566,13 +566,13 @@ public class SimulatorManager implements SimulatorBridger {
             addNewCSVData = false;
         }
 
-        OsmoticRunner.numberOfActiveCommsPerEdge();
-        OsmoticRunner.numberOfDevicesPerEdge();
-        var energies = OsmoticRunner.currentEnergyConsumption();
-
         loopDuration = (double) Math.round(normalLatency * 1000) / 1000;
         scheduleNewWakeUpTime(IoTEntityGenerator.getNewWakeUpTimes(), Double.parseDouble(df.format(MainEventManager.clock())));
         loopEndTime = MainEventManager.legacy_run(conn, context, loopEndTime, currentLatency);
+        OsmoticRunner.numberOfActiveCommsPerEdge();
+        OsmoticRunner.numberOfDevicesPerEdge();
+        var energies = OsmoticRunner.currentEnergyConsumption();
+        var tele = OsmoticRunner.edgeNodeTelemetry();
         return loopEndTime;// < simEnd;
     }
 

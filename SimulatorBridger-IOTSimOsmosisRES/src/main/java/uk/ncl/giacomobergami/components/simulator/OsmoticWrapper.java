@@ -34,6 +34,7 @@ import org.cloudbus.cloudsim.core.SimEntity;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.cloudsim.edge.core.edge.EdgeLet;
 import org.cloudbus.cloudsim.edge.core.edge.LegacyConfiguration;
+import org.cloudbus.cloudsim.edge.core.edge.MEL;
 import org.cloudbus.cloudsim.edge.utils.LogUtil;
 import org.cloudbus.cloudsim.osmesis.examples.uti.PrintResults;
 import org.cloudbus.cloudsim.osmesis.examples.uti.RESPrinter;
@@ -55,6 +56,8 @@ import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
@@ -77,7 +80,7 @@ public class OsmoticWrapper {
     private double runTime;
     List<OsmoticAppDescription> appList;
     List<PrintResults.BandwidthInfo> bandwidthInfoList;
-    public static HashMap<String, Double> melList = new HashMap<>();
+    public static TreeMap<String, Double> melList = new TreeMap<>();
     public static HashMap<String, Integer> packetsPerDevice = new HashMap<>();
     public static HashMap<String, TreeMap<Double, Double>> injctedConsumptionInTime = new HashMap<>();
     public static HashMap<String,TreeMap<Double, Integer>> injectedPacketsInTime = new HashMap<>();
@@ -88,6 +91,10 @@ public class OsmoticWrapper {
     public static AtomicInteger TopologyEntryID = new AtomicInteger(0);
     public static AtomicInteger TopologyID = new AtomicInteger(0);
     public static HashBasedTable<Integer, Integer, Integer> linkChannels = HashBasedTable.create();
+    public static int resolutionPlaces = 3;
+    public static int timeUnit = 1;	// 1: sec, 1000: msec
+    public static int noMELs = 0;
+    public static int noMELHosts = 0;
 
     public OsmoticWrapper() {
         this(null);
@@ -110,6 +117,55 @@ public class OsmoticWrapper {
             }
         }
         return null;
+    }
+
+    public double FinishingTime(double bandwidth, double amountToSent) {
+        double lat = (double) 1/bandwidth;
+        return round(lat * amountToSent);
+    }
+
+    public static double round(double value) {
+        if(value == 0) return value;
+        int places = resolutionPlaces;
+        if (places < 0) throw new IllegalArgumentException();
+
+        if(timeUnit >= 1000) value = Math.floor(value * timeUnit);
+
+        BigDecimal bd = new BigDecimal(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
+    }
+
+    public HashMap<String, Double[]> edgeNodeTelemetry() {
+        HashMap<String, Double[]> edgeDeviceTele = new HashMap<>();
+        for (OsmoticDatacenter datacenter : osmoticBroker.datacenters) {
+            if (!datacenter.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter"))
+                continue;
+            for (Host e : datacenter.getHosts()) {
+                for (var mel : e.getVmList()) {
+                    Double[] teleData = new Double[4];
+                    edgeDeviceTele.putIfAbsent(((EdgeDevice) e).getDeviceName(), teleData);
+                    int numTransportingFlow = 0;
+                    int totalFlowsSize = 0;
+                    for (Flow flow : ((MEL) mel).getFlowListHis()) {
+                        if (flow.getFinishTime() > MainEventManager.clock()) {
+                            numTransportingFlow++;
+                            totalFlowsSize = Math.toIntExact(totalFlowsSize + flow.getSize());
+                        }
+                    }
+                    double denominator = (numTransportingFlow + ((MEL) mel).getNumOfFlows()) == 0 ? 1 : (numTransportingFlow + ((MEL) mel).getNumOfFlows());
+                    double currBW = mel.getBw() / denominator;
+                    double endTransmissionTime = FinishingTime(currBW, totalFlowsSize) + MainEventManager.clock();
+                    double endProcessingTime = ((MEL) mel).getRemainingProcessingTime();
+                    teleData[0] = 1 / currBW;
+                    teleData[1] = currBW;
+                    teleData[2] = endTransmissionTime;
+                    teleData[3] = endProcessingTime;
+                    edgeDeviceTele.put(((EdgeDevice) e).getDeviceName(), teleData);
+                }
+            }
+        }
+        return edgeDeviceTele;
     }
 
     public void addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList) {
@@ -164,8 +220,9 @@ public class OsmoticWrapper {
             if (!datacenter.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter"))
                 continue;
 
-            for (Host e : datacenter.getHosts())
+            for (Host e : datacenter.getHosts()) {
                 edgeDeviceEnergyConsumption.put(((EdgeDevice) e).getDeviceName(), ((VmSchedulerTimeSharedEnergy) e.getVmScheduler()).getUtilizationEnergyConsumption());
+            }
         }
         return edgeDeviceEnergyConsumption;
     }

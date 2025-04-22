@@ -86,7 +86,7 @@ public class MainEventManager {
 	/** The minimal time between events. Events within shorter periods after the last event are discarded. */
 	private static double minTimeBetweenEvents = Double.MIN_NORMAL*2;
 	private static boolean swap = true;
-	
+
 	/**
 	 * Initialises all the common attributes.
 	 * 
@@ -1233,7 +1233,7 @@ public class MainEventManager {
 
 		double curr = Math.floor(clock());
 		while (true) {
-			if (runClockTick(conn, context, loopEnd, deltaTime) || abruptTerminate) {
+ 			if (runClockTick(conn, context, loopEnd, deltaTime) || abruptTerminate) {
 				break;
 			}
 

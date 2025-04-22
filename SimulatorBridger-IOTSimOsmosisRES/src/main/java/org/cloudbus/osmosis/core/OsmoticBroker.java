@@ -147,7 +147,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	private final float maxEdgeBW = 100;
 	public transient Collection<Double> wakeUpTimes;
 	DecimalFormat df = new DecimalFormat("#.###");
-	static HashMap<String, Double> melProcessing = OsmoticWrapper.melList;
+	static TreeMap<String, Double> melProcessing = OsmoticWrapper.melList;
 
 	private static final File converter_file = new File("clean_example/converter.yaml");
 	private static Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);

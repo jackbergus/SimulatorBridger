@@ -65,7 +65,7 @@ public class Flow implements Serializable{
 	private WorkflowInfo workflowTag;
 	private String datacenterName;
 
-	public static int resolutionPlaces = 3;
+	public static int resolutionPlaces = 5;
 	public static int timeUnit = 1;	// 1: sec, 1000: msec
 	private double previousTime;
 	private Channel channel;
@@ -456,7 +456,7 @@ public class Flow implements Serializable{
 		if(timeUnit >= 1000) value = Math.floor(value * timeUnit);
 		
 	    BigDecimal bd = new BigDecimal(value);
-	    bd = bd.setScale(places, RoundingMode.HALF_UP);
+	    bd = bd.setScale(places, RoundingMode.CEILING);
 	    return bd.doubleValue();
 	}
 

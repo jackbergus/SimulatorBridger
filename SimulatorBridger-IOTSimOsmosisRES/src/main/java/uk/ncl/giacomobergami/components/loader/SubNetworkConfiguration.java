@@ -16,6 +16,7 @@ import uk.ncl.giacomobergami.components.networking.Host;
 import uk.ncl.giacomobergami.components.networking.Switch;
 import uk.ncl.giacomobergami.components.networking.VM;
 import uk.ncl.giacomobergami.components.routing_algorithm.RoutingAlgorithmGeneratorFactory;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.utils.data.YAML;
 
 import java.io.File;
@@ -150,6 +151,8 @@ public class SubNetworkConfiguration implements Serializable {
                 })
                 .collect(Collectors.toList());
         datacenter.setVmList(MELList);
+
+        OsmoticWrapper.noMELs += MELList.size();
 
         broker.mapVmNameToId(datacenter.getVmNameToIdList());
         datacenter.getVmAllocationPolicy().setUpVmTopology(hostList);

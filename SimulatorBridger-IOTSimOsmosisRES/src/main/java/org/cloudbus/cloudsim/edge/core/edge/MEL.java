@@ -36,6 +36,7 @@ public class MEL extends Vm {
 	private int edgeDatacenterId;	
 	private double currentBw;
 	private static final int SIZE = 2048;
+	private double remainingProcessingTime;
 
 	public MEL(int edgeDatacenterId, int id, int userId, double mips, int numberOfPes, int ram, double bw, String vmm,
 			   CloudletScheduler cloudletScheduler) {
@@ -72,8 +73,13 @@ public class MEL extends Vm {
 		return edgeDatacenterId;
 	}
 
+	public int getNumOfFlows() {
+		return numOfFlows;
+	}
+
+	public int numOfFlows = 0;
 	public void updateAssociatedIoTDevices() {		
-		int numOfFlows = flowList.size();
+		 numOfFlows = flowList.size();
 		if(numOfFlows == 0){
 			numOfFlows = 1;
 		}
@@ -81,26 +87,47 @@ public class MEL extends Vm {
 	}
 
 	private List<Flow> flowList = new ArrayList<>(); 
-
+	private List<Flow> startedFlowList = new ArrayList<>();
 	List<Flow> flowListHis =  new ArrayList<>();
 
 	public List<Flow> getFlowList() {
 		return flowList;
 	}
+
+	public List<Flow> getStartedFlowList() {
+		return startedFlowList;
+	}
 	
 	public void addFlow(Flow flow) {
-		flowList.add(flow);	
+		flowList.add(flow);
 		flowListHis.add(flow);	
+	}
+
+	public void addStartedFlow(Flow flow) {
+		startedFlowList.add(flow);
+	}
+
+	public void removeStartedFlow(Flow flow) {
+		startedFlowList.remove(flow);
 	}
 
 	public void removeFlows(LinkedList<Flow> removedList) {
 		this.flowList.removeAll(removedList);
-		
 	}
 
+	public List<Flow> getFlowListHis() {
+		return flowListHis;
+	}
 
 	public double getCurrentBw() {
 		return currentBw;
 	}
 
+	public double getRemainingProcessingTime() {
+		return this.remainingProcessingTime;
+	}
+
+	public void setRemainingProcessingTime(double remainingProcessingTime) {
+		this.remainingProcessingTime = remainingProcessingTime;
+	}
 }

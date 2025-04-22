@@ -60,6 +60,10 @@ public class OsmoticRunner {
         return obj;
     }
 
+    public static HashMap<String, Double[]> edgeNodeTelemetry() {
+        return conv.edgeNodeTelemetry();
+    }
+
     public static void addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList) {
         conv.addIoTDevices(globalConfigurationSettings, deviceList);
         System.out.println("Global Device List Updated");

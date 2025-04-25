@@ -5,6 +5,7 @@ import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import org.jooq.DSLContext;
 import uk.ncl.giacomobergami.SumoOsmosisBridger.network_generators.EdgeInfrastructureGenerator;
+import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 import uk.ncl.giacomobergami.utils.algorithms.ClusterDifference;
 import uk.ncl.giacomobergami.utils.algorithms.ReconstructorIterator;
 import uk.ncl.giacomobergami.utils.algorithms.StringComparator;
@@ -147,9 +148,13 @@ public class EdgeNetworksGenerator {
                     RsuinformationRecord entry;
                     double currentTime = 0.0;
                     for (int i = 0; i < noRSU; i++) {
+                        Double[] rsuXY = new Double[2];
                         long k = (j * noRSU) + i;
                         entry = ((RsuinformationRecord) allRSUData.toArray()[(int) k]);
                         TimedEdge currentRSUInfo = new TimedEdge(entry.getRsuId(), entry.getX(), entry.getY(), entry.getCommunicationRadius(), entry.getMaxVehicleCommunication(), entry.getSimtime());
+                        rsuXY[0] = entry.getX();
+                        rsuXY[1] = entry.getY();
+                        OsmoticWrapper.rsuPositions.putIfAbsent("@"+entry.getRsuId(), rsuXY);
                         rbi_entry.put(entry.getRsuId(), currentRSUInfo);
                         currentTime = entry.getSimtime();
                     }

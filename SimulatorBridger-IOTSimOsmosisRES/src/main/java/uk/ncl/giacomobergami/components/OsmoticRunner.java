@@ -32,6 +32,7 @@ import uk.ncl.giacomobergami.utils.database.JavaPostGres;
 
 import java.io.File;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -96,12 +97,16 @@ public class OsmoticRunner {
     public static void runFromConfiguration(GlobalConfigurationSettings conf, Connection conn, DSLContext context, double loopEnd, double deltaTime) {
         conv = new OsmoticWrapper(conf.asPreviousOsmoticConfiguration());
         conv.runConfiguration(conf, conn, context, loopEnd, deltaTime);
-        JavaPostGres.indexLINKSDATA(conn);
+        try {
+            JavaPostGres.indexLINKSDATA(conn);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
         //conv.stop(conn, context);
         //conv.log(conf, conn, context);
     }
 
-    public static void LogOutput(GlobalConfigurationSettings conf, Connection conn, DSLContext context, Double endTime) {
+        public static void LogOutput(GlobalConfigurationSettings conf, Connection conn, DSLContext context, Double endTime) {
         conv.log(conf, conn, context, endTime);
     }
 

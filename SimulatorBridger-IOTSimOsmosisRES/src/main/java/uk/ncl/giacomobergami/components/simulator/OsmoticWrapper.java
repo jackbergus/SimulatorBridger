@@ -80,7 +80,8 @@ public class OsmoticWrapper {
     private double runTime;
     List<OsmoticAppDescription> appList;
     List<PrintResults.BandwidthInfo> bandwidthInfoList;
-    public static TreeMap<String, Double> melList = new TreeMap<>();
+    public static HashMap<String, Double> melList = new HashMap<>();
+    public static HashMap<String, Double[]> rsuPositions = new HashMap<>();
     public static HashMap<String, Integer> packetsPerDevice = new HashMap<>();
     public static HashMap<String, TreeMap<Double, Double>> injctedConsumptionInTime = new HashMap<>();
     public static HashMap<String,TreeMap<Double, Integer>> injectedPacketsInTime = new HashMap<>();

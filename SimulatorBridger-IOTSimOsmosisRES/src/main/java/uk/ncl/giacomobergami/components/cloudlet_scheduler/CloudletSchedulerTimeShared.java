@@ -62,6 +62,11 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	 * @post $none
 	 */
 	double getMipsShare;
+
+	public double getMipsShare() {
+		return getMipsShare;
+	}
+
 	@Override
 	public double updateVmProcessing(double currentTime, List<Double> mipsShare) {
 		setCurrentMipsShare(mipsShare);
@@ -71,9 +76,9 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 
 		for (ResCloudlet rcl : cloudletExecList) {
 			rcl.updateCloudletFinishedSoFar((long) (getMipsShare * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
-			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
-			if(processing)
-				OsmoticWrapper.melList.put(mel, getMipsShare);
+			//String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
+//			if(processing)
+//				OsmoticWrapper.melList.put(mel, getMipsShare);
 		}
 
 		if (cloudletExecList.isEmpty()) {
@@ -95,6 +100,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 
 		// estimate finish time of cloudlets
 		getMipsShare = (getCapacity(mipsShare));
+
 		for (ResCloudlet rcl : cloudletExecList) {
 			double estimatedFinishTime = currentTime
 					+ (rcl.getRemainingCloudletLength() /  getMipsShare * rcl.getNumberOfPes());
@@ -107,8 +113,8 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 			}
 
 			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
-			if(processing)
-				OsmoticWrapper.melList.put(mel, getMipsShare);
+//			if(processing)
+//				OsmoticWrapper.melList.put(mel, getMipsShare);
 		}
 
 		setPreviousTime(currentTime);
@@ -283,6 +289,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 	public void cloudletFinish(ResCloudlet rcl) {
 		rcl.setCloudletStatus(Cloudlet.SUCCESS);
 		rcl.finalizeCloudlet();
+		rcl.setFinishTime(rcl.getCloudlet().getFinishTime());
 		getCloudletFinishedList().add(rcl);
 	}
 
@@ -364,7 +371,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 		
 		cloudlet.setCloudletLength(bd.doubleValue());*/
 		
-		double length = (double) (cloudlet.getCloudletLength() + extraSize);
+		double length = (cloudlet.getCloudletLength() + extraSize);
 		
 		 	
 		cloudlet.setCloudletLength(length);

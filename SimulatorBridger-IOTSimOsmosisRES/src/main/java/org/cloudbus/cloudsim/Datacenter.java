@@ -913,6 +913,7 @@ public class Datacenter extends SimEntity {
 			Vm vm = host.getVm(vmId, userId);
 			CloudletScheduler scheduler = vm.getCloudletScheduler();
 			double estimatedFinishTime = scheduler.cloudletSubmit(cl, fileTransferTime);
+
 			if(vm.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.MEL")) {
 				((MEL)vm).setRemainingProcessingTime(Math.max(((MEL) vm).getRemainingProcessingTime(), (MainEventManager.clock() + estimatedFinishTime)));
 			}
@@ -1075,7 +1076,7 @@ public class Datacenter extends SimEntity {
 		// if some time passed since last processing
 		// R: for term is to allow loop at simulation start. Otherwise, one initial
 		// simulation step is skipped and schedulers are not properly initialized
-		if(this.getClass().getName().equals("org.cloudbus.osmosis.core.CloudDatacenter") && Math.abs(MainEventManager.clock() - lastProcessTime) < deltaTime) {
+		if(this.getClass().getName().equals("org.cloudbus.osmosis.core.CloudDatacenter") && Math.abs(MainEventManager.clock() - lastProcessTime) < (MainEventManager.getMinTimeBetweenEvents() + 0.1)) {
 			return;
 		}
 

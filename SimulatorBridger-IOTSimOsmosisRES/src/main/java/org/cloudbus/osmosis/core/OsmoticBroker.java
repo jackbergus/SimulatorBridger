@@ -41,6 +41,8 @@ import uk.ncl.giacomobergami.utils.asthmatic.WorkloadCSV;
 import uk.ncl.giacomobergami.utils.data.YAML;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.Vehinformation;
 import uk.ncl.giacomobergami.utils.database.jooq.tables.records.VehinformationRecord;
+import uk.ncl.giacomobergami.utils.gir.CartesianPoint;
+import uk.ncl.giacomobergami.utils.gir.SquaredCartesianDistanceFunction;
 import uk.ncl.giacomobergami.utils.pipeline_confs.TrafficConfiguration;
 
 import static org.cloudbus.cloudsim.core.CloudSimTags.MAPE_WAKEUP_FOR_COMMUNICATION;
@@ -147,7 +149,8 @@ public class OsmoticBroker extends DatacenterBroker {
 	private final float maxEdgeBW = 100;
 	public transient Collection<Double> wakeUpTimes;
 	DecimalFormat df = new DecimalFormat("#.###");
-	static TreeMap<String, Double> melProcessing = OsmoticWrapper.melList;
+	static HashMap<String, Double> melProcessing = OsmoticWrapper.melList;
+	static HashMap<String, Double[]> rsuPos = OsmoticWrapper.rsuPositions;
 
 	private static final File converter_file = new File("clean_example/converter.yaml");
 	private static Optional<TrafficConfiguration> time_conf = YAML.parse(TrafficConfiguration.class, converter_file);
@@ -378,14 +381,56 @@ public class OsmoticBroker extends DatacenterBroker {
 		double differentiator = 0.1;
 		double maxMips = Collections.max(melProcessing.values());
 		double buffer = Math.max(maxMips - (Collections.min(melProcessing.values()) * differentiator), maxMips - differentiator);
+		HashSet<String> closestRSUs = new HashSet<>();
 
-		for (String mel : melProcessing.keySet()) {
-			if (melProcessing.get(mel) == maxMips) {
-				melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
-				return mel;
+		for(String rsu: melProcessing.keySet()) {
+			if(melProcessing.get(rsu) == maxMips) {
+				closestRSUs.add(rsu);
 			}
 		}
-		return melName;
+		String bestRSU = getClosestRSU(melName, closestRSUs);
+		melProcessing.put(bestRSU, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
+		return bestRSU;
+
+//		//chnage melProcessing to a treemap to make this return the first RSU alphabetically
+//		for (String mel : melProcessing.keySet()) {
+//			if (melProcessing.get(mel) == maxMips) {
+//				melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
+//				return mel;
+//			}
+//		}
+//		return melName;
+	}
+
+	private static String getClosestRSU(String melName, HashSet<String> closestRSUs) {
+		if(closestRSUs.contains(melName)) {
+			return melName;
+		}
+		String bestMEL = "";
+		double destRSUX;
+		double destRSUY;
+		double distToRSU;
+		double rsuX = rsuPos.get(melName)[0];
+		double rsuY = rsuPos.get(melName)[1];
+		
+		double maxDist = Double.MAX_VALUE;
+		for(String rsu: closestRSUs) {
+			destRSUX = rsuPos.get(rsu)[0];
+			destRSUY = rsuPos.get(rsu)[1];
+			distToRSU = getDistance(rsuX, rsuY, destRSUX, destRSUY);
+			if(distToRSU < maxDist) {
+				bestMEL = rsu;
+				maxDist = distToRSU;
+			}
+		}
+		return bestMEL;
+	}
+
+	public static double getDistance(double X1, double Y1, double X2, double Y2) {
+		final double deltaX = X1 - X2;
+		final double deltaY = Y1 - Y2;
+
+		return ((deltaX * deltaX) + (deltaY * deltaY));
 	}
 
 	private void melResolution(SimEvent ev) {
@@ -398,6 +443,7 @@ public class OsmoticBroker extends DatacenterBroker {
 		}
 
 		String IoTDevice = flow.getAppNameSrc();
+		flow.getWorkflowTag().getIotDeviceFlow().setAppNameDest(melName);
 		var actualIoT = iotDeviceNameToObject.get(IoTDevice);
 		int mel_id = -1;
 		flow.setActualEdgeDevice(melName);
@@ -436,7 +482,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			transferEvents(ev);
 			return;
 		}
-		edgeLet.getWorkflowTag(). setFinishTime(MainEventManager.clock());
+		edgeLet.getWorkflowTag().setFinishTime(MainEventManager.clock());
 	}
 	public void transferEvents(SimEvent ev) {
 

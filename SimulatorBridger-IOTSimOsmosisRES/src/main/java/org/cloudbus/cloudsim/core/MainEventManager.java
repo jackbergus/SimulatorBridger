@@ -1237,9 +1237,9 @@ public class MainEventManager {
 				break;
 			}
 
-			if(tempEnd + deltaTime < loopEnd) {
-				tempEnd += 0.212;
-			}
+//			if(tempEnd + deltaTime < loopEnd) {
+//				tempEnd += 0.212;
+//			}
 
 			if (curr < Math.floor(clock())) {
 				curr = Math.floor(clock());

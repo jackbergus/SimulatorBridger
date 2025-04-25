@@ -15,10 +15,12 @@ import java.util.List;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.cloudbus.cloudsim.core.MainEventManager;
+import org.cloudbus.cloudsim.edge.core.edge.EdgeDevice;
 import org.cloudbus.cloudsim.lists.PeList;
 import org.cloudbus.cloudsim.provisioners.BwProvisioner;
 import org.cloudbus.cloudsim.provisioners.RamProvisioner;
 import org.jooq.meta.duckdb.system.main.Main;
+import uk.ncl.giacomobergami.components.cloudlet_scheduler.CloudletSchedulerTimeShared;
 import uk.ncl.giacomobergami.components.simulator.OsmoticWrapper;
 
 /**
@@ -144,14 +146,25 @@ public class Host implements Comparable<Host>, Serializable {
 	 * @pre currentTime >= 0.0
 	 * @post $none
 	 */
+	boolean updated = false;
 	public double updateVmsProcessing(double currentTime) {
 		double smallerTime = Double.MAX_VALUE;
-
+		double RSUcurrentMIPS = 0;
+		int numMels = 0;
 		for (Vm vm : getVmList()) {
 			double time = vm.updateVmProcessing(currentTime, getVmScheduler().getAllocatedMipsForVm(vm));
 			if (time > 0.0 && time < smallerTime) {
 				smallerTime = time;
 			}
+			//if(!vm.getCloudletScheduler().getCloudletFinishedList().isEmpty()) {
+				RSUcurrentMIPS = RSUcurrentMIPS + ((CloudletSchedulerTimeShared) vm.getCloudletScheduler()).getMipsShare();
+				numMels++;
+				updated = true;
+			//}
+		}
+		if(updated && getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDevice")) {
+			OsmoticWrapper.melList.put("@"+((EdgeDevice)this).getDeviceName(), RSUcurrentMIPS / numMels);
+			updated = false;
 		}
 
 		return smallerTime;

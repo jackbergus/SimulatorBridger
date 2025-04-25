@@ -150,15 +150,13 @@ public class JavaPostGres {
         System.out.print("ambulanceInformation SQL table indexing complete\n");
     }
 
-    public static void indexLINKSDATA(Connection conn) {
+    public static void indexLINKSDATA(Connection conn) throws SQLException {
         System.out.print("Starting indexing of Links Data Information SQL table...\n");
         PreparedStatement stmt;
-        try {
+
             stmt = conn.prepareStatement("DROP INDEX CONCURRENTLY IF EXISTS linksINDEX; CREATE INDEX linksINDEX ON sourceToDestLinks (topology_id, link_id, from_id, to_id);");
             int rs = stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+
         System.out.print("Links Data Information SQL table indexing complete\n");
     }
 

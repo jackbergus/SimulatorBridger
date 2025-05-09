@@ -569,11 +569,33 @@ public class SimulatorManager implements SimulatorBridger {
         loopDuration = (double) Math.round(normalLatency * 1000) / 1000;
         scheduleNewWakeUpTime(IoTEntityGenerator.getNewWakeUpTimes(), Double.parseDouble(df.format(MainEventManager.clock())));
         loopEndTime = MainEventManager.legacy_run(conn, context, loopEndTime, currentLatency);
-        OsmoticRunner.numberOfActiveCommsPerEdge();
-        OsmoticRunner.numberOfDevicesPerEdge();
-        var energies = OsmoticRunner.currentEnergyConsumption();
-        var tele = OsmoticRunner.edgeNodeTelemetry();
+        nacpe = OsmoticRunner.numberOfActiveCommsPerEdge();
+        cec = OsmoticRunner.numberOfDevicesPerEdge();
+        energies = OsmoticRunner.currentEnergyConsumption();
+        tele = OsmoticRunner.edgeNodeTelemetry();
         return loopEndTime;// < simEnd;
+    }
+    
+    private HashMap<String, Integer> nacpe, cec;
+    
+    private HashMap<String, Double> energies;
+    
+    private HashMap<String, Double[]> tele;
+
+    private HashMap<String, Integer> numberOfActiveCommsPerEdge() {
+    return nacpe;
+    }
+    
+    private HashMap<String, Integer> numberOfDevicesPerEdge() {
+    return cec;
+    }
+    
+    private HashMap<String, Double[]> getTelemetry() {
+    return tele;
+    }
+    
+    public HashMap<String, Double> getEnergies() {
+        return energies;
     }
 
     @Override

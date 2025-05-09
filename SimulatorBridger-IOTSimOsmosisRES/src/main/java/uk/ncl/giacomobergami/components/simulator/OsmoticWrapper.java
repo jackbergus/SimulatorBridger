@@ -177,7 +177,7 @@ public class OsmoticWrapper {
     private HashMap<String, Integer> edgeActiveComms = new HashMap<String, Integer>();
     private HashMap<String, Integer> edgeNumDevices = new HashMap<String, Integer>();
     private HashSet<String> activeDevices = new HashSet<>();
-    public void numberOfDevicesPerEdge(){
+    public HashMap<String, Integer> numberOfDevicesPerEdge(){
 
         for(OsmoticDatacenter datacenter: osmoticBroker.datacenters) {
             if(!datacenter.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter"))
@@ -190,9 +190,10 @@ public class OsmoticWrapper {
             edgeNumDevices.put(datacenter.getName(), activeDevices.size());
             activeDevices.clear();
         }
+        return edgeNumDevices;
     }
 
-    public void numberOfActiveCommsPerEdge(){
+    public HashMap<String, Integer> numberOfActiveCommsPerEdge(){
 
         for(OsmoticDatacenter datacenter: osmoticBroker.datacenters) {
             if(!datacenter.getClass().getName().equals("org.cloudbus.cloudsim.edge.core.edge.EdgeDataCenter"))
@@ -212,6 +213,7 @@ public class OsmoticWrapper {
 
             IoTActiveComms.put(datacenter.getName(),numCommsIoTtoMELs(datacenter));
         }
+        return edgeActiveComms;
     }
 
 

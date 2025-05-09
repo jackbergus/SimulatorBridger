@@ -70,12 +70,12 @@ public class OsmoticRunner {
         System.out.println("Global Device List Updated");
     }
 
-    public static void numberOfActiveCommsPerEdge(){
-        conv.numberOfActiveCommsPerEdge();
+    public static HashMap<String, Integer> numberOfActiveCommsPerEdge(){
+        return conv.numberOfActiveCommsPerEdge();
     }
 
-    public static void numberOfDevicesPerEdge() {
-        conv.numberOfDevicesPerEdge();
+    public static HashMap<String, Integer> numberOfDevicesPerEdge() {
+        return conv.numberOfDevicesPerEdge();
     }
 
     public static HashMap<String, Double>  currentEnergyConsumption() {

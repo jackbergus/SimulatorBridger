@@ -78,7 +78,7 @@ public class BaseInformationConverter extends TrafficConverter {
     }
 
     @Override
-    protected boolean initReadSimulatorOutput() {
+    protected boolean initReadSimulatorOutput(double latency) {
         connectionPath.clear();
         temporalOrdering.clear();
         timedIoTDevices.clear();
@@ -113,7 +113,7 @@ public class BaseInformationConverter extends TrafficConverter {
             var x = iter2.next();
             var edge = timedEdgeMap.get(x.edge_host);
             for (int i = 0; i<x.ioTDevices; i++) {
-                if(x.time <= TrafficConverter.getSimEndTime()) {
+                if(x.time <= TrafficConverter.getSimEndTime() && x.time % latency == 0) {
                     TimedIoT TI = new TimedIoT();
                     double thisTime = BigDecimal.valueOf(x.time).setScale(3, BigDecimal.ROUND_HALF_UP).doubleValue();
                     TI.setId("id_" + thisTime + '_' + edge.id + '_' + i);

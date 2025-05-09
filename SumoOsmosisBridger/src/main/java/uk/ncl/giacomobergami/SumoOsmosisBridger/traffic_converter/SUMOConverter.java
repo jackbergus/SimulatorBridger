@@ -175,7 +175,7 @@ public class SUMOConverter extends TrafficConverter {
     }
 
     @Override
-    protected boolean initReadSimulatorOutput() {
+    protected boolean initReadSimulatorOutput(double latency) {
         File trajectory_python;
         var conf2 = YAML.parse(SUMOConfiguration.class, new File("clean_example/sumo.yaml")).orElseThrow();
         if(concreteConf.presort) {

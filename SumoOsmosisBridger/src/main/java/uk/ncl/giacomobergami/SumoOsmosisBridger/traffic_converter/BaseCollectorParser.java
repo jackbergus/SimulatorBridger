@@ -46,6 +46,7 @@ public class BaseCollectorParser extends DefaultHandler {
         }
         String[] headers = {"id", "x", "y", "angle", "type", "speed", "pos", "lane", "slope", "simtime", "injected", "batterydepletion", "usebattery", "packetsize", "usepacketinfo"};
         writer.writeNext(headers);
+        wakeUpTimes.add(0.0);
     }
 
     void addTimestamp(double thisTimestamp) {

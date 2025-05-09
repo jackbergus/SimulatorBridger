@@ -79,7 +79,7 @@ public class DfTConverter2 extends TrafficConverter {
     }
 
     @Override
-    protected boolean initReadSimulatorOutput() {
+    protected boolean initReadSimulatorOutput(double latency) {
         connectionPath.clear();
         temporalOrdering.clear();
         timedIoTDevices.clear();

@@ -94,7 +94,7 @@ public class DfTConverter extends TrafficConverter {
     TreeMap<ImmutablePair<Integer,Integer>, Integer> deviceMapping = new TreeMap<>();
 
     @Override
-    protected boolean initReadSimulatorOutput() {
+    protected boolean initReadSimulatorOutput(double latency) {
         connectionPath.clear();
         temporalOrdering.clear();
         timedIoTDevices.clear();

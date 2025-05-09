@@ -63,6 +63,8 @@ public class Datacenter extends SimEntity {
 	/** The scheduling interval. */
 	private double schedulingInterval;
 
+	double delta = 0.0;
+	boolean firstloop = true;
 
 	/**
 	 * Allocates a new PowerDatacenter object.
@@ -1076,7 +1078,12 @@ public class Datacenter extends SimEntity {
 		// if some time passed since last processing
 		// R: for term is to allow loop at simulation start. Otherwise, one initial
 		// simulation step is skipped and schedulers are not properly initialized
-		if(this.getClass().getName().equals("org.cloudbus.osmosis.core.CloudDatacenter") && Math.abs(MainEventManager.clock() - lastProcessTime) < (MainEventManager.getMinTimeBetweenEvents() + 0.1)) {
+		if(firstloop){
+			delta = Math.min(deltaTime,1.0);
+			firstloop = false;
+		}
+
+		if(this.getClass().getName().equals("org.cloudbus.osmosis.core.CloudDatacenter") && Math.abs(MainEventManager.clock() - lastProcessTime) < delta) {
 			return;
 		}
 

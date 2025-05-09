@@ -101,7 +101,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	}
 	//private Map<String, Integer> roundRobinMelMap = new HashMap<>();
 	/////////////////////////////////////////////////////////////////////////////////////
-	protected static TreeSet<SimEvent> eventQueue = new TreeSet<>(Collections.reverseOrder());
+	protected static TreeSet<SimEvent> eventQueue = new TreeSet<>();
 	public static int getEventQueueSize() {
 		return eventQueue.size();
 	}
@@ -111,9 +111,9 @@ public class OsmoticBroker extends DatacenterBroker {
 	public static void setEventQueue(TreeSet<SimEvent> eQ) {
 		eventQueue = eQ;
 	}
-	protected static TreeMap<SimEvent, String> eventMap = new TreeMap<>(Collections.reverseOrder());
+	protected static TreeMap<SimEvent, String> eventMap = new TreeMap<>();
 	public static  int getEventMapSize(){return eventMap.size();}
-	public static TreeMap<SimEvent, String> getEventMap() {return eventMap; }
+	public static TreeMap<SimEvent, String> getEventMap() { return eventMap; }
 	private static final HashSet<SimEvent> toDelete = new HashSet<>();
 	public static HashMap<String, Integer> activePerSource = new HashMap<>();
 	private static final HashSet<SimEvent> waitQueue = new HashSet<>();
@@ -145,7 +145,7 @@ public class OsmoticBroker extends DatacenterBroker {
 	private double lastTime = 0;
 	private final double[] notUpdated = new double[]{-1.0, -1.0};
 	private List<String> vehsToUpdate = null;
-	private List<Double> timesToProcess = null;
+	private List<Double> timesToProcess = new ArrayList<>();
 	private final float maxEdgeBW = 100;
 	public transient Collection<Double> wakeUpTimes;
 	DecimalFormat df = new DecimalFormat("#.###");
@@ -197,7 +197,11 @@ public class OsmoticBroker extends DatacenterBroker {
 		if (!isWakeupStartSet) {
 			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes(startTime, endTime, deltaVehUpdate);
 			processTimes = context.select().distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
-			timesToProcess = processTimes.getValues(Vehinformation.VEHINFORMATION.SIMTIME);
+
+			for (int i = 0; i < endTime; i +=60) {
+				timesToProcess.add((double) i);
+			}
+			//timesToProcess = processTimes.getValues(Vehinformation.VEHINFORMATION.SIMTIME);
 			for (Double forcedWakeUpTime : wakeUpTimes) {
 				double time = Double.parseDouble(df.format(forcedWakeUpTime)) - chron;
 				if (time > 0.0 && chron + getDeltaVehUpdate() <= endTime) {
@@ -224,9 +228,11 @@ public class OsmoticBroker extends DatacenterBroker {
 			//System.out.print("Collecting new batch of vehicle information from SQL table...\n");
 			//dataNowRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + (double) intervalStart + "' AND '" + Math.min((double) intervalEnd, endSUMO) + "'").orderBy(field("simtime")).fetch();
 			//dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).where("simtime BETWEEN '" + ((double) intervalStart + (2 * deltaVehUpdate)) + "' AND '" + Math.min(((double) intervalEnd + (2 * deltaVehUpdate)), endSUMO) + "'").orderBy(field("simtime")).fetch();
-			dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME, Vehinformation.VEHINFORMATION.INJECTED).from(Vehinformation.VEHINFORMATION).where("simtime =" + now).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
-			dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME, Vehinformation.VEHINFORMATION.INJECTED).from(Vehinformation.VEHINFORMATION).where("simtime =" + future).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
-			vehsToUpdate = dataRange.getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
+			if(nowIndex != -1) {
+				dataRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME, Vehinformation.VEHINFORMATION.INJECTED).from(Vehinformation.VEHINFORMATION).where("simtime =" + now).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
+				dataFutureRange = context.select(Vehinformation.VEHINFORMATION.VEHICLE_ID, Vehinformation.VEHINFORMATION.X, Vehinformation.VEHINFORMATION.Y, Vehinformation.VEHINFORMATION.SIMTIME, Vehinformation.VEHINFORMATION.INJECTED).from(Vehinformation.VEHINFORMATION).where("simtime =" + future).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
+				vehsToUpdate = dataRange.getValues(Vehinformation.VEHINFORMATION.VEHICLE_ID);
+			}
 			//collectSQLInfo += collectionInterval;
 			//intervalStart += collectionInterval;
 			//intervalEnd += collectionInterval;
@@ -383,23 +389,23 @@ public class OsmoticBroker extends DatacenterBroker {
 		double buffer = Math.max(maxMips - (Collections.min(melProcessing.values()) * differentiator), maxMips - differentiator);
 		HashSet<String> closestRSUs = new HashSet<>();
 
-		for(String rsu: melProcessing.keySet()) {
-			if(melProcessing.get(rsu) == maxMips) {
-				closestRSUs.add(rsu);
-			}
-		}
-		String bestRSU = getClosestRSU(melName, closestRSUs);
-		melProcessing.put(bestRSU, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
-		return bestRSU;
-
-//		//chnage melProcessing to a treemap to make this return the first RSU alphabetically
-//		for (String mel : melProcessing.keySet()) {
-//			if (melProcessing.get(mel) == maxMips) {
-//				melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
-//				return mel;
+//		for(String rsu: melProcessing.keySet()) {
+//			if(melProcessing.get(rsu) == maxMips) {
+//				closestRSUs.add(rsu);
 //			}
 //		}
-//		return melName;
+//		String bestRSU = getClosestRSU(melName, closestRSUs);
+//		melProcessing.put(bestRSU, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
+//		return bestRSU;
+
+		//change melProcessing to a treemap to make this return the first RSU alphabetically
+		for (String mel : melProcessing.keySet()) {
+			if (melProcessing.get(mel) == maxMips) {
+				melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
+				return mel;
+			}
+		}
+		return melName;
 	}
 
 	private static String getClosestRSU(String melName, HashSet<String> closestRSUs) {
@@ -451,7 +457,8 @@ public class OsmoticBroker extends DatacenterBroker {
 		if (melRouting.test(melName)) {
 			// Using a policy for determining the next MEL
 			String melInstanceName = melRouting.apply(actualIoT, melName, this);
-			if (melInstanceName == null) return; // Ignoring the communication if no alternative is given
+			if (melInstanceName == null)
+				return; // Ignoring the communication if no alternative is given
 			flow.setAppNameDest(melInstanceName);
 			mel_id = getVmIdByName(melInstanceName); //name of VM
 			//dynamic mapping to datacenter

@@ -64,7 +64,7 @@ public abstract class TrafficConverter {
         gson = new GsonBuilder().setPrettyPrinting().create();
     }
 
-    protected abstract boolean initReadSimulatorOutput();
+    protected abstract boolean initReadSimulatorOutput(double latency);
     protected abstract List<Double> getSimulationTimeUnits();
     protected abstract Collection<TimedIoT> getTimedIoT(Double tick);
     protected abstract HashMap<Double, List<TimedIoT>> getAllTimedIoT();
@@ -75,7 +75,7 @@ public abstract class TrafficConverter {
     public boolean run(Connection conn, DSLContext context, double latency) throws SQLException {
         logger.trace("TRAFFIC CONVERTER: running the simulator as per configuration: " + conf.YAMLConverterConfiguration);
         runSimulator(conf);
-        if (!initReadSimulatorOutput()) {
+        if (!initReadSimulatorOutput(latency)) {
             logger.info("Not generating the already-provided results");
             return false;
         } else {

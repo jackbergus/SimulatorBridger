@@ -441,14 +441,14 @@ public abstract class SimEntity implements Cloneable, Serializable {
 				}
 				waitingForHostAllocation.clear();
 			}
-			if (OsmoticWrapper.noMELs != OsmoticWrapper.noMELHosts && ev.getTag() == 80000028) {
-				waitingForHostAllocation.add(ev);
-			} else {
+//			if (OsmoticWrapper.noMELs != OsmoticWrapper.noMELHosts && ev.getTag() == 80000028) {
+//				waitingForHostAllocation.add(ev);
+//			} else {
 				processEvent(ev, conn, context, deltaTime);
 				if (state != RUNNABLE) {
 					break;
 				}
-			}
+			//}
 
 			ev = getNextEvent();
 		}

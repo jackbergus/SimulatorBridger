@@ -1095,13 +1095,13 @@ public class MainEventManager {
 		if ((double)Math.round(e.eventTime() * 1000) / 1000 < (double)Math.round(clock * 1000) / 1000) {
 			throw new IllegalArgumentException("Past event detected.");
 		}
-		String name = null;
-		if(e.getData() != null) {
-			if (e.getData().getClass().getName().equals("org.cloudbus.osmosis.core.Flow")) {
-				name = ((Flow) e.getData()).getAppName();
-				var temp = 5;
-			}
-		}
+//		String name = null;
+//		if(e.getData() != null) {
+//			if (e.getData().getClass().getName().equals("org.cloudbus.osmosis.core.Flow")) {
+//				name = ((Flow) e.getData()).getAppName();
+//				var temp = 5;
+//			}
+//		}
 		clock = e.eventTime();
 								
 		handling_event_number++;

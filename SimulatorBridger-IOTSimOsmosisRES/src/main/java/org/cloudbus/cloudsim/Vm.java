@@ -179,7 +179,6 @@ public class Vm implements Serializable {
 
 		setInMigration(false);
 		setBeingInstantiated(true);
-
 		setCurrentAllocatedBw(0);
 		setCurrentAllocatedMips(null);
 		setCurrentAllocatedRam(0);

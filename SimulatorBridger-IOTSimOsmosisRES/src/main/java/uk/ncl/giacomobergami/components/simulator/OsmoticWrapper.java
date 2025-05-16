@@ -145,7 +145,7 @@ public class OsmoticWrapper {
             for (Host e : datacenter.getHosts()) {
                 for (var mel : e.getVmList()) {
                     Double[] teleData = new Double[4];
-                    edgeDeviceTele.putIfAbsent(((EdgeDevice) e).getDeviceName(), teleData);
+                    //edgeDeviceTele.putIfAbsent(((EdgeDevice) e).getDeviceName(), teleData);
                     int numTransportingFlow = 0;
                     int totalFlowsSize = 0;
                     for (Flow flow : ((MEL) mel).getFlowListHis()) {
@@ -156,12 +156,19 @@ public class OsmoticWrapper {
                     }
                     double denominator = (numTransportingFlow + ((MEL) mel).getNumOfFlows()) == 0 ? 1 : (numTransportingFlow + ((MEL) mel).getNumOfFlows());
                     double currBW = mel.getBw() / denominator;
-                    double endTransmissionTime = FinishingTime(currBW, totalFlowsSize) + MainEventManager.clock();
-                    double endProcessingTime = ((MEL) mel).getRemainingProcessingTime();
-                    teleData[0] = 1 / currBW;
-                    teleData[1] = currBW;
-                    teleData[2] = endTransmissionTime;
-                    teleData[3] = endProcessingTime;
+                    double endTransmissionTimeToCloud = FinishingTime(currBW, totalFlowsSize) + MainEventManager.clock();
+                    double endEdgeProcessingTime = ((MEL) mel).getRemainingProcessingTime();
+                    if (edgeDeviceTele.containsKey(((EdgeDevice) e).getDeviceName())) {
+                        teleData[0] = Math.max(1 / currBW, edgeDeviceTele.get(((EdgeDevice) e).getDeviceName())[0]);
+                        teleData[1] = Math.min(currBW, edgeDeviceTele.get(((EdgeDevice) e).getDeviceName())[1]);
+                        teleData[2] = Math.max(endTransmissionTimeToCloud,edgeDeviceTele.get(((EdgeDevice) e).getDeviceName())[2]);
+                        teleData[3] = Math.max(endEdgeProcessingTime, edgeDeviceTele.get(((EdgeDevice) e).getDeviceName())[3]);
+                    } else {
+                        teleData[0] = 1 / currBW;
+                        teleData[1] = currBW;
+                        teleData[2] = endTransmissionTimeToCloud;
+                        teleData[3] = endEdgeProcessingTime;
+                    }
                     edgeDeviceTele.put(((EdgeDevice) e).getDeviceName(), teleData);
                 }
             }

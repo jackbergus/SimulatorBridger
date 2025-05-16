@@ -582,15 +582,15 @@ public class SimulatorManager implements SimulatorBridger {
     
     private HashMap<String, Double[]> tele;
 
-    private HashMap<String, Integer> numberOfActiveCommsPerEdge() {
+    public HashMap<String, Integer> numberOfActiveCommsPerEdge() {
     return nacpe;
     }
     
-    private HashMap<String, Integer> numberOfDevicesPerEdge() {
+    public HashMap<String, Integer> numberOfDevicesPerEdge() {
     return cec;
     }
     
-    private HashMap<String, Double[]> getTelemetry() {
+    public HashMap<String, Double[]> getTelemetry() {
     return tele;
     }
     
@@ -604,5 +604,6 @@ public class SimulatorManager implements SimulatorBridger {
         MainEventManager.runStop();
         OsmoticRunner.LogOutput(globalConfigurationSettings, conn, context, endTime);
         DisconnectFromSource(conn);
+        System.out.println("Finished Simulation!");
     }
 }

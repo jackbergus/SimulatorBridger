@@ -76,7 +76,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 
 		for (ResCloudlet rcl : cloudletExecList) {
 			rcl.updateCloudletFinishedSoFar((long) (getMipsShare * timeSpam * rcl.getNumberOfPes() * Consts.MILLION));
-			//String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
+//			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
 //			if(processing)
 //				OsmoticWrapper.melList.put(mel, getMipsShare);
 		}
@@ -112,7 +112,7 @@ public class CloudletSchedulerTimeShared extends CloudletScheduler {
 				nextEvent = estimatedFinishTime;
 			}
 
-			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
+//			String mel = ((EdgeLet) rcl.getCloudlet()).getWorkflowTag().getIotDeviceFlow().getActualEdgeDevice();
 //			if(processing)
 //				OsmoticWrapper.melList.put(mel, getMipsShare);
 		}

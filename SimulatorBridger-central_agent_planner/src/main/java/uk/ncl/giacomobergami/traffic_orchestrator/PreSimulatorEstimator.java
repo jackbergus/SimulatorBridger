@@ -423,7 +423,7 @@ public class PreSimulatorEstimator {
         AtomicInteger ai = new AtomicInteger();
         CSVMediator<WorkloadCSV>.CSVWriter x = new WorkloadCSVMediator().beginCSVWrite(new File(statsFolder, "AsmathicWorkflow.csv"));
         reconstructVehicles.entrySet().stream()
-                        .flatMap((Map.Entry<String, IoT> k) ->{
+                        .flatMap((k) ->{
                             vehicularConverterToWorkflow.setNewVehicularProgram(k.getValue().getProgram());
                             return vehicularConverterToWorkflow.generateFirstMileSpecifications(conf2.step, ai, belongingMap).stream();
                         }).forEach(x::write);

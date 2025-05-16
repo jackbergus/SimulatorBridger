@@ -389,23 +389,23 @@ public class OsmoticBroker extends DatacenterBroker {
 		double buffer = Math.max(maxMips - (Collections.min(melProcessing.values()) * differentiator), maxMips - differentiator);
 		HashSet<String> closestRSUs = new HashSet<>();
 
-//		for(String rsu: melProcessing.keySet()) {
-//			if(melProcessing.get(rsu) == maxMips) {
-//				closestRSUs.add(rsu);
-//			}
-//		}
-//		String bestRSU = getClosestRSU(melName, closestRSUs);
-//		melProcessing.put(bestRSU, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
-//		return bestRSU;
-
-		//change melProcessing to a treemap to make this return the first RSU alphabetically
-		for (String mel : melProcessing.keySet()) {
-			if (melProcessing.get(mel) == maxMips) {
-				melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
-				return mel;
+		for(String rsu: melProcessing.keySet()) {
+			if(melProcessing.get(rsu) == maxMips) {
+				closestRSUs.add(rsu);
 			}
 		}
-		return melName;
+		String bestRSU = getClosestRSU(melName, closestRSUs);
+		melProcessing.put(bestRSU, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
+		return bestRSU;
+
+		//change melProcessing to a treemap to make this return the first RSU alphabetically
+//		for (String mel : melProcessing.keySet()) {
+//			if (melProcessing.get(mel) == maxMips) {
+//				melProcessing.put(mel, buffer); //buffer stops the same MEL being chosen each time if there are multiple best MELs at this stage
+//				return mel;
+//			}
+//		}
+//		return melName;
 	}
 
 	private static String getClosestRSU(String melName, HashSet<String> closestRSUs) {

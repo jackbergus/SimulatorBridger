@@ -366,6 +366,21 @@ public class GlobalConfigurationSettings {
 
 
     @JsonIgnore
+    public static  HashSet<String> getInjectedIoTDevices(OsmoticBroker broker,
+                                                         List<IoTDeviceTabularConfiguration> input, HashSet<String> injectedIoTDevices) {
+        input.stream()
+                .map(curr -> {
+                    IoTDevice newInstance = IoTGeneratorFactory.generateFacade(curr.asLegacyConfiguration(), conf.flowId);
+                    injectedIoTDevices.add(newInstance.getName());
+                    if ((curr.associatedEdge != null) && (!curr.associatedEdge.isEmpty()))
+                        newInstance.setAssociatedEdge(curr.associatedEdge);
+                    broker.addIoTDevice(newInstance);
+                    return newInstance;
+                }).toList();
+        return injectedIoTDevices;
+    }
+
+    @JsonIgnore
     public static  List<IoTDevice> getIoTDevices(OsmoticBroker broker,
                                          List<IoTDeviceTabularConfiguration> input) {
         return input.stream()

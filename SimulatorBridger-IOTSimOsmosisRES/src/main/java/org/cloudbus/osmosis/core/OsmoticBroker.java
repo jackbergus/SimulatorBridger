@@ -198,7 +198,7 @@ public class OsmoticBroker extends DatacenterBroker {
 			wakeUpTimes = ioTEntityGenerator.collectionOfWakeUpTimes(startTime, endTime, deltaVehUpdate);
 			processTimes = context.select().distinctOn(Vehinformation.VEHINFORMATION.SIMTIME).from(Vehinformation.VEHINFORMATION).orderBy(Vehinformation.VEHINFORMATION.SIMTIME).fetchInto(Vehinformation.VEHINFORMATION);
 
-			for (int i = 0; i < endTime; i +=60) {
+			for (int i = 0; i < endTime; i += deltaTime) {
 				timesToProcess.add((double) i);
 			}
 			//timesToProcess = processTimes.getValues(Vehinformation.VEHINFORMATION.SIMTIME);

@@ -65,9 +65,10 @@ public class OsmoticRunner {
         return conv.edgeNodeTelemetry();
     }
 
-    public static void addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList) {
-        conv.addIoTDevices(globalConfigurationSettings, deviceList);
+    public static HashSet<String> addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList, HashSet<String> injectedIoTDevices) {
+        HashSet<String> result = conv.addIoTDevices(globalConfigurationSettings, deviceList, injectedIoTDevices);
         System.out.println("Global Device List Updated");
+        return result;
     }
 
     public static HashMap<String, Integer> numberOfActiveCommsPerEdge(){

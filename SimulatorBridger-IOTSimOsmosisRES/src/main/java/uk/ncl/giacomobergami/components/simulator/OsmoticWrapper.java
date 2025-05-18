@@ -176,8 +176,8 @@ public class OsmoticWrapper {
         return edgeDeviceTele;
     }
 
-    public void addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList) {
-        globalConfigurationSettings.getIoTDevices(osmoticBroker, deviceList);
+    public HashSet<String> addIoTDevices(GlobalConfigurationSettings globalConfigurationSettings, List<IoTDeviceTabularConfiguration> deviceList, HashSet<String> injectedIoTDevices) {
+        return globalConfigurationSettings.getInjectedIoTDevices(osmoticBroker, deviceList, injectedIoTDevices);
     }
 
     private HashMap<String, Integer> IoTActiveComms = new HashMap<>();

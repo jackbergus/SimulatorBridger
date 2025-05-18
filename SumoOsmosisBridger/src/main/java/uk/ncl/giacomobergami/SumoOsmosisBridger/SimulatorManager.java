@@ -96,7 +96,7 @@ public class SimulatorManager implements SimulatorBridger {
     EnsembleConfigurations conv3;
     EnsembleConfigurations.Configuration conf3;
     List<GlobalConfigurationSettings> configuration_for_each_network_change;
-    List<IoTDeviceTabularConfiguration> deviceList;
+    List<IoTDeviceTabularConfiguration> deviceList = new LinkedList<>();
     static HashMap<String, TimedIoT> FirstSet = new HashMap<>();
     static HashMap<String, TimedIoT> SecondSet = new HashMap<>();
     HashMap<String, String> patientAmbulance = new HashMap<>();
@@ -224,10 +224,10 @@ public class SimulatorManager implements SimulatorBridger {
     }
 
     public void injectCSVData(String vehicleCSVFile, boolean updatedCSV, double newLatency) throws IOException, CsvException {
-        deviceList = ((GlobalConfigurationSettings) ((ArrayList) configuration_for_each_network_change).get(0)).iotDevices;
+        //deviceList = ((GlobalConfigurationSettings) ((ArrayList) configuration_for_each_network_change).get(0)).iotDevices;
         updateCSV(vehicleCSVFile, updatedCSV);
         addToDevicesToList();
-        OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList);
+        injectedIoTDevices = OsmoticRunner.addIoTDevices(globalConfigurationSettings, deviceList, injectedIoTDevices);
         uploadInjectedDataToSQL(vehicleCSVFile);
         System.out.println("You injected new events!");
         updateCurrentLatency(newLatency);
@@ -318,13 +318,15 @@ public class SimulatorManager implements SimulatorBridger {
         System.out.println("This takes " + executionTime + "ms");
     }
 
+    public static HashSet<String> injectedIoTDevices = new HashSet<>();
     private void addToDevicesToList(){
         System.out.print("Starting IoT Device Info Configuration...\n");
         Set<String> allVehs = FirstSet.keySet();
         IoTEntityGenerator.IoTGlobalConfiguration conf = conv3.ioTEntityGenerator.conf;
 
         for (String allVeh : allVehs) {
-            if(!MainEventManager.IoTDeviceList.contains(allVeh)) {
+            //if(!MainEventManager.IoTDeviceList.contains(allVeh)) {
+            if(!injectedIoTDevices.contains(allVeh)){
                 IoTDeviceTabularConfiguration idtc = new IoTDeviceTabularConfiguration();
                 idtc.beginX = (int) FirstSet.get(allVeh).getX();
                 idtc.beginY = (int) FirstSet.get(allVeh).getY();
@@ -414,8 +416,8 @@ public class SimulatorManager implements SimulatorBridger {
                             double x = parseDouble(reader.nextString());
                             String yTag = reader.nextName();
                             double y = parseDouble(reader.nextString());
-                            String riskTag = reader.nextName();
-                            boolean risk = reader.nextBoolean();
+                            //String riskTag = reader.nextName();
+                            boolean risk = false; //reader.nextBoolean();
                             String simTimeTag = reader.nextName();
                             double simTime = parseDouble(reader.nextString());
                             var dataRange = Ambulance.collectAmbulanceData(context, simTime, deltaTime);

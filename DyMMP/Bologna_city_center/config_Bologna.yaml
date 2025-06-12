@@ -1,0 +1,50 @@
+walking: ""
+vehicles: ""
+netconvert_binary: "/usr/bin/netconvert"
+place_name: "Bologna"
+velocity_unit: "m_per_s"
+distance_unit: "meter"
+aggregate_edges_to_nodes: no
+car_configuration: "ChevyVolt.yaml"
+gdal_translate: "/usr/local/bin/gdal_translate"
+desirability_distribution:
+  file_name: "/home/giacomo/PycharmProjects/pythonProject1/data/bolo/max_frail_distribution.csv"
+  scaling: 0.0001
+  aggregation: "max"
+  useScaled: yes
+  filter: #GolavFilter
+    window_size: 5
+    poly_oder: 5
+sumo:
+  binary: "/usr/bin/sumo"
+  config: "/home/giacomo/Scaricati/bolognaringway_1.0/bolognaringway.sumo.cfg"
+  net: "/home/giacomo/Scaricati/bolognaringway_1.0/bolognaringway.net.xml"
+  begin: 0
+  end: 18000
+  step: 1
+  default_rsu_communication_radius: 100
+  ignore_links:
+    - 'highway.bridleway'
+    - 'highway.cycleway'
+    - 'highway.footway'
+    - 'highway.pedestrian'
+    - 'highway.service'
+    - 'highway.path'
+  allowed:
+    - 'evehicle'
+vehicular_fields:
+  sensor_id: "Raw ID"
+  sensor_name: "Sensor Name"
+  lon: "Sensor Centroid Longitude"
+  lat: "Sensor Centroid Latitude"
+  time: "Timestamp"
+  count: "Value"
+#chargers:
+#  maxresults: 1000000
+#  countrycode: "IT"
+#  latitude: 44.49388889
+#  longitude: 11.34277778
+#  distance: 100
+#  distanceunit: "km"
+#  verbose: yes
+#  key: "4da63093-c085-4b7f-9b65-ce6f2229918b"

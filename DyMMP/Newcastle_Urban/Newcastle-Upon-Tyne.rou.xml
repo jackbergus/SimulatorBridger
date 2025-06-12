@@ -1,0 +1,12 @@
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+   <trip id="ambulance_1_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_2_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_3_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_4_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_5_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_6_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_7_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_8_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_9_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+   <trip id="ambulance_10_to_1308229988" depart="61.00" from="483908210" to="-1003932461" />
+</routes>

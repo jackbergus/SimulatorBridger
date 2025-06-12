@@ -1,0 +1,3 @@
+Experiments started at: 2025-05-04 15:09:26.334439
+Model size: 0.51 MB
+Parameters: 113999

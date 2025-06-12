@@ -1,0 +1,50 @@
+wheels: 4
+road_force: 0
+Cd: 0.22
+A: 1.84
+weight: 1425
+payload: 75
+overhead_pwr: 200
+init_soc: 200
+transmission:
+  cost_tx_J:  0.00012
+  cost_rx_J:  0.00009
+  idle_J:     0.00001
+  Bps:        32000
+charging_model:
+  ev_crate: 1.0
+  ev_setuptime: 30.0
+  ev_batterychemistry: "nmc"
+  ev_chargingprotocol: 'cc-cv'
+drive_train:
+    inverter_efficiency: 0.94
+    regen_torque: 0.9
+    gear_ratio: 12
+    gear_inertia: 0.05
+    gear_efficiency: 0.97
+    pack:
+      num_series: 12
+      overhead: 0.1
+      soc_full: 75
+      soc_empty: 25
+      efficiency: 0.96
+      module:
+        num_parallel: 3
+        num_series: 8
+        overhead: 0.8
+        cell:
+          capacity: 15
+          weight: 450
+          vmax: 4.2
+          vnom: 3.8
+          vmin: 3.0
+    motor:
+      Lmax: 275
+      RPMrated: 4000
+      RPMMax: 12000
+      efficiency: 0.95
+      inertia: 0.2
+    wheel:
+      radius: 0.35
+      inertia: 8
+      roll_coeff: 0.0111

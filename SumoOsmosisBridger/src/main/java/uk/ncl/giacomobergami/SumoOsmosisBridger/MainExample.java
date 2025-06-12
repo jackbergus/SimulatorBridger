@@ -15,17 +15,17 @@ public class MainExample {
         boolean running = true;
         double start = (args.length >= 1) ? parseDouble(args[0]) : 0;
         sb.init(start, new ArrayList<>());
-        double ioTSimDeltaTime = (args.length >= 2) ? parseDouble(args[1]) : 60.0;
+        double ioTSimDeltaTime = (args.length >= 2) ? parseDouble(args[1]) : 10.0;
         sb.loopDuration = (args.length >= 3) ? parseDouble(args[2]) : sb.getCurrentLatency();
 
-        List<TimedIoT> timedIoTList = sb.parseJSONHealthData("PatientDigitalTwin/patient.json");
+        List<TimedIoT> timedIoTList = sb.parseJSONHealthData("DyMMP/Bologna_city_center/test.json");//"PatientDigitalTwin/patient.json");
         while (running) {
             double loopStart = start;
             List<TimedIoT> currentDelta = timedIoTList.stream().filter(x -> (x.simtime >= loopStart) && (x.simtime < loopStart + sb.loopDuration)).collect(Collectors.toList());
             for (TimedIoT timedIoT : currentDelta) {
                 timedIoTList.remove(timedIoT);
             }
-            currentDelta.clear();
+            //currentDelta.clear();
             start = sb.run(loopStart, ioTSimDeltaTime, currentDelta); //providing the current time interval, as a starting time and a delta time
             running = start < sb.getSimEnd(); //explicitly incrementing the start time to the next slot
         }

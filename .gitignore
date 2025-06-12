@@ -24,7 +24,7 @@ log.txt
 /clean_example/2_central_agent_oracle_output/
 osmotic.log
 clean_example/sumo.yaml
-META-INF/MANIFEST.MF
+*.MF
 out/artifacts/SimulatorBridger_jar/SimulatorBridger.jar
 PatientDigitalTwin/high.json
 PatientDigitalTwin/hpatient.json
@@ -47,3 +47,6 @@ PatientDigitalTwin/Orchestrator/dt/Patient.py
 PatientDigitalTwin/Orchestrator/SimulatorBridger.py
 /PatientDigitalTwin
 clean_example/3_extIOTSim_configuration/times.txt
+*.png*
+*.jar
+*.7z

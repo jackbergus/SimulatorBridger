@@ -1,0 +1,11 @@
+Experiments started at: 2025-05-04 16:34:34.239520
+Model size: 0.51 MB
+Parameters: 113999
+Experiments finished at: 2025-05-04 16:37:02.575215
+Test Loss (L1/MAE): 4.9842
+Test Loss (L2/RMSE): 13.4757
+Model size: 0.51 MB
+Parameters: 113999
+DTW (parallel): 108944.79572646943 [https://www.sciencedirect.com/science/article/pii/S2352711023000602]
+WDDTW: 30456007.386366803 [https://www.sciencedirect.com/science/article/pii/S003132031000484X?via%3Dihub]
+Dumping finished at: 2025-05-04 16:37:26.283665

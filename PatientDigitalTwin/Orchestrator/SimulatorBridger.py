@@ -19,6 +19,7 @@ class SimulatorBridger:
    __instance = None
    @staticmethod
    def getInstance(path):
+      print("Path = " + path)
       """ Static access method. """
       if SimulatorBridger.__instance == None:
          SimulatorBridger(path)
@@ -68,8 +69,7 @@ class SimulatorBridger:
        self.running = True
 
    def run(self, time, patients=None):
-       if self.running:
-            self.running = self.this.run()
+       print(self.this.getEnergies())
        p = jpype.java.util.ArrayList()
        forDelta = time
        if patients is not None:
@@ -92,13 +92,16 @@ class SimulatorBridger:
       if SimulatorBridger.__instance != None:
          raise Exception("This class is a singleton!")
       else:
-          jar1 = os.path.join(path, "SimulatorBridger-central_agent_planner","target","SimulatorBridger-central_agent_planner-1.0-SNAPSHOT-jar-with-dependencies.jar")
-          jar2 = os.path.join(path, "SimulatorBridger-core","target","SimulatorBridger-core-1.0-SNAPSHOT-jar-with-dependencies.jar")
-          jar3 = os.path.join(path, "SimulatorBridger-IOTSimOsmosisRES","target","SimulatorBridger-IOTSimOsmosisRES-1.0-SNAPSHOT-jar-with-dependencies.jar")
-          jar4 = os.path.join(path, "SimulatorBridger-traffic_information_collector","target","SimulatorBridger-traffic_information_collector-1.0-SNAPSHOT-jar-with-dependencies.jar")
-          jar5 = os.path.join(path, "SumoOsmosisBridger","target","SumoOsmosisBridger-1.0-SNAPSHOT-jar-with-dependencies.jar")
+          jar1 = os.path.join(path, "SimulatorBridger-central_agent_planner-1.0-SNAPSHOT-jar-with-dependencies.jar")
+          jar2 = os.path.join(path, "SimulatorBridger-core-1.0-SNAPSHOT-jar-with-dependencies.jar")
+          jar3 = os.path.join(path, "SimulatorBridger-IOTSimOsmosisRES-1.0-SNAPSHOT-jar-with-dependencies.jar")
+          jar4 = os.path.join(path, "SimulatorBridger-traffic_information_collector-1.0-SNAPSHOT-jar-with-dependencies.jar")
+          jar5 = os.path.join(path, "SumoOsmosisBridger-1.0-SNAPSHOT-jar-with-dependencies.jar")
           jar = "C:\\Users\\rohin\\SimulatorBridger\\SimulatorBridger\\out\\artifacts\\SimulatorBridger_jar\\SimulatorBridger.jar"
-          jpype.startJVM(classpath=[jar])
+          print(jar5)
+          print(jpype.getDefaultJVMPath())
+          print([jar1, jar2, jar3, jar4, jar5])
+          jpype.startJVM(classpath=[jar1, jar2, jar3, jar4, jar5])
           from uk.ncl.giacomobergami.SumoOsmosisBridger import SimulatorManager
           self.this = SimulatorManager()
           SimulatorBridger.__instance = self

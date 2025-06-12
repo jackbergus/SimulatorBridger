@@ -1,0 +1,37 @@
+<routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="http://sumo.dlr.de/xsd/routes_file.xsd">
+   <trip id="ambulance_1_to_703667413" depart="100.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_2_to_703667413" depart="200.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_3_to_703667413" depart="300.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_4_to_703667413" depart="400.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_5_to_703667413" depart="500.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_6_to_703667413" depart="600.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_7_to_703667413" depart="700.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_8_to_703667413" depart="800.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_9_to_703667413" depart="900.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_10_to_703667413" depart="1000.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_11_to_703667413" depart="1100.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_12_to_703667413" depart="1200.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_13_to_703667413" depart="1300.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_14_to_703667413" depart="1400.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_15_to_703667413" depart="1500.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_16_to_703667413" depart="1600.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_17_to_703667413" depart="1700.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_18_to_703667413" depart="1800.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_19_to_703667413" depart="1900.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_20_to_703667413" depart="2000.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_21_to_703667413" depart="2100.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_22_to_703667413" depart="2200.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_23_to_703667413" depart="2300.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_24_to_703667413" depart="2400.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_25_to_703667413" depart="2500.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_26_to_703667413" depart="2600.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_27_to_703667413" depart="2700.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_28_to_703667413" depart="2800.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_29_to_703667413" depart="2900.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_30_to_703667413" depart="3000.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_31_to_703667413" depart="3100.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_32_to_703667413" depart="3200.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_33_to_703667413" depart="3300.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_34_to_703667413" depart="3400.00" fromJunction="269336256" toJunction="703667413" />
+   <trip id="ambulance_35_to_703667413" depart="3500.00" fromJunction="269336256" toJunction="703667413" />
+</routes>
